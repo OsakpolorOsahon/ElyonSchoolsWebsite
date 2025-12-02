@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -10,11 +9,11 @@ import {
   Music,
   Trophy,
   ArrowRight,
-  CheckCircle
+  CheckCircle,
+  Baby,
+  School,
+  Library
 } from 'lucide-react'
-import classroomImage from '@assets/generated_images/Classroom_Learning_Scene_15f24cb5.png'
-import labImage from '@assets/generated_images/Science_Lab_Activity_6e9e2453.png'
-import libraryImage from '@assets/generated_images/Library_Study_Area_96a8f944.png'
 
 export const metadata = {
   title: 'Academics - Elyon Schools',
@@ -146,13 +145,10 @@ export default function AcademicsPage() {
                   </Link>
                 </div>
 
-                <div className={`relative aspect-[4/3] rounded-lg overflow-hidden ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
-                  <Image
-                    src={index === 0 ? classroomImage : index === 1 ? libraryImage : labImage}
-                    alt={program.name}
-                    fill
-                    className="object-cover"
-                  />
+                <div className={`relative aspect-[4/3] rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 via-secondary/10 to-primary/20 flex items-center justify-center ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
+                  {index === 0 && <Baby className="w-24 h-24 text-yellow-500/60" />}
+                  {index === 1 && <School className="w-24 h-24 text-secondary/60" />}
+                  {index === 2 && <GraduationCap className="w-24 h-24 text-primary/60" />}
                 </div>
               </div>
             ))}

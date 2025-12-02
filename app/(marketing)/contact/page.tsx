@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -14,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useToast } from '@/components/hooks/use-toast'
+import { useToast } from '@/hooks/use-toast'
 import { 
   Phone, 
   Mail, 
@@ -22,9 +21,9 @@ import {
   Clock,
   Send,
   MessageSquare,
-  CheckCircle
+  CheckCircle,
+  Building2
 } from 'lucide-react'
-import campusImage from '@assets/generated_images/Campus_Aerial_View_5504009d.png'
 
 const contactInfo = [
   {
@@ -267,13 +266,8 @@ export default function ContactPage() {
             </p>
           </div>
           
-          <div className="relative aspect-[21/9] rounded-lg overflow-hidden bg-muted">
-            <Image
-              src={campusImage}
-              alt="Elyon Schools Campus Map"
-              fill
-              className="object-cover"
-            />
+          <div className="relative aspect-[21/9] rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 via-secondary/10 to-primary/20 flex items-center justify-center">
+            <Building2 className="w-32 h-32 text-primary/40" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
             <div className="absolute bottom-6 left-6 text-white">
               <p className="font-semibold text-lg">Elyon Schools Main Campus</p>

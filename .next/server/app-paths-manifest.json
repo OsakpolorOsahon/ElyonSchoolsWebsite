@@ -1,0 +1,17 @@
+{
+  "/(auth)/forgot-password/page": "app/(auth)/forgot-password/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(auth)/reset-password/page": "app/(auth)/reset-password/page.js",
+  "/(marketing)/about/page": "app/(marketing)/about/page.js",
+  "/(marketing)/academics/page": "app/(marketing)/academics/page.js",
+  "/(marketing)/admissions/page": "app/(marketing)/admissions/page.js",
+  "/(marketing)/contact/page": "app/(marketing)/contact/page.js",
+  "/(marketing)/page": "app/(marketing)/page.js",
+  "/(portal)/admin/page": "app/(portal)/admin/page.js",
+  "/(portal)/parent/page": "app/(portal)/parent/page.js",
+  "/(portal)/student/page": "app/(portal)/student/page.js",
+  "/(portal)/teacher/page": "app/(portal)/teacher/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/contact/route": "app/api/contact/route.js"
+}

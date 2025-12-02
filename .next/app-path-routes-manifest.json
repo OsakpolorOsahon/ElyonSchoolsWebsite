@@ -1,0 +1,17 @@
+{
+  "/(auth)/forgot-password/page": "/forgot-password",
+  "/(auth)/login/page": "/login",
+  "/(auth)/reset-password/page": "/reset-password",
+  "/(marketing)/about/page": "/about",
+  "/(marketing)/academics/page": "/academics",
+  "/(marketing)/admissions/page": "/admissions",
+  "/(marketing)/contact/page": "/contact",
+  "/(marketing)/page": "/",
+  "/(portal)/admin/page": "/admin",
+  "/(portal)/parent/page": "/parent",
+  "/(portal)/student/page": "/student",
+  "/(portal)/teacher/page": "/teacher",
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/contact/route": "/api/contact"
+}

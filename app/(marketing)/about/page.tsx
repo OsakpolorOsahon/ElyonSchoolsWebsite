@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -11,11 +10,10 @@ import {
   BookOpen,
   ArrowRight,
   Award,
-  Calendar
+  Calendar,
+  Building2,
+  User
 } from 'lucide-react'
-import campusImage from '@assets/generated_images/Campus_Aerial_View_5504009d.png'
-import principalImage from '@assets/generated_images/Principal_Portrait_040eb8df.png'
-import graduationImage from '@assets/generated_images/Graduation_Ceremony_965a6757.png'
 
 export const metadata = {
   title: 'About Us - Elyon Schools',
@@ -59,7 +57,6 @@ const leadership = [
     name: 'Dr. Emmanuel Okafor',
     role: 'Principal',
     bio: 'Dr. Okafor brings over 25 years of educational leadership experience, with a Ph.D. in Educational Administration.',
-    image: principalImage,
   },
 ]
 
@@ -92,13 +89,8 @@ export default function AboutPage() {
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="relative aspect-[4/3] rounded-lg overflow-hidden">
-              <Image
-                src={campusImage}
-                alt="Elyon Schools Campus"
-                fill
-                className="object-cover"
-              />
+            <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 via-secondary/10 to-primary/20 flex items-center justify-center">
+              <Building2 className="w-24 h-24 text-primary/40" />
             </div>
             <div>
               <h2 className="text-3xl font-bold tracking-tight text-foreground mb-6">
@@ -256,13 +248,8 @@ export default function AboutPage() {
           <div className="max-w-md mx-auto">
             {leadership.map((leader) => (
               <Card key={leader.name} className="overflow-hidden">
-                <div className="relative aspect-square">
-                  <Image
-                    src={leader.image}
-                    alt={leader.name}
-                    fill
-                    className="object-cover"
-                  />
+                <div className="relative aspect-square bg-gradient-to-br from-primary/20 via-secondary/10 to-primary/20 flex items-center justify-center">
+                  <User className="w-24 h-24 text-primary/40" />
                 </div>
                 <CardContent className="pt-6 text-center">
                   <h3 className="text-xl font-bold text-foreground">{leader.name}</h3>
@@ -312,13 +299,8 @@ export default function AboutPage() {
                 </div>
               </div>
             </div>
-            <div className="relative aspect-[4/3] rounded-lg overflow-hidden">
-              <Image
-                src={graduationImage}
-                alt="Graduation ceremony"
-                fill
-                className="object-cover"
-              />
+            <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 via-secondary/10 to-primary/20 flex items-center justify-center">
+              <GraduationCap className="w-24 h-24 text-primary/40" />
             </div>
           </div>
         </div>
