@@ -12,10 +12,6 @@ import {
   CheckCircle,
   Star
 } from 'lucide-react'
-import heroImage from '@assets/generated_images/School_Building_Exterior_Hero_4c95b726.png'
-import classroomImage from '@assets/generated_images/Classroom_Learning_Scene_15f24cb5.png'
-import labImage from '@assets/generated_images/Science_Lab_Activity_6e9e2453.png'
-import libraryImage from '@assets/generated_images/Library_Study_Area_96a8f944.png'
 
 const stats = [
   { id: 1, name: 'Years of Excellence', value: '30+', icon: Trophy },
@@ -66,7 +62,7 @@ export default function HomePage() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40 z-10" />
         <Image
-          src={heroImage}
+          src="/images/School_Building_Exterior_Hero_4c95b726.png"
           alt="Elyon Schools Campus"
           fill
           className="object-cover"
@@ -196,7 +192,7 @@ export default function HomePage() {
               <div className="space-y-4">
                 <div className="relative aspect-[4/3] rounded-lg overflow-hidden">
                   <Image
-                    src={classroomImage}
+                    src="/images/Classroom_Learning_Scene_15f24cb5.png"
                     alt="Classroom learning"
                     fill
                     className="object-cover"
@@ -204,7 +200,7 @@ export default function HomePage() {
                 </div>
                 <div className="relative aspect-square rounded-lg overflow-hidden">
                   <Image
-                    src={labImage}
+                    src="/images/Science_Lab_Activity_6e9e2453.png"
                     alt="Science laboratory"
                     fill
                     className="object-cover"
@@ -214,7 +210,7 @@ export default function HomePage() {
               <div className="pt-8">
                 <div className="relative aspect-[3/4] rounded-lg overflow-hidden">
                   <Image
-                    src={libraryImage}
+                    src="/images/Library_Study_Area_96a8f944.png"
                     alt="Library study area"
                     fill
                     className="object-cover"

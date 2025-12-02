@@ -8,9 +8,31 @@ export async function middleware(request: NextRequest) {
     },
   })
 
+  // Skip Supabase auth checks if credentials are not configured
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    // Allow public pages to work without Supabase
+    const publicPaths = ['/', '/about', '/academics', '/admissions', '/contact', '/gallery', '/news', '/events', '/payments']
+    const isPublicPath = publicPaths.some(path => 
+      request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith('/_next')
+    )
+    
+    // Redirect portal routes to login with a message that auth is not configured
+    if (request.nextUrl.pathname.startsWith('/admin') ||
+        request.nextUrl.pathname.startsWith('/teacher') ||
+        request.nextUrl.pathname.startsWith('/parent') ||
+        request.nextUrl.pathname.startsWith('/student')) {
+      return NextResponse.redirect(new URL('/login?error=auth_not_configured', request.url))
+    }
+    
+    return response
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         get(name: string) {
