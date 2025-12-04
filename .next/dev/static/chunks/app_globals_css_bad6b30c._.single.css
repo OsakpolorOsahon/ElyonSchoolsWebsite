@@ -3094,13 +3094,13 @@ body {
   color: hsl(var(--primary-foreground) / var(--tw-text-opacity, 1));
 }
 
+.hover\:text-primary\/80:hover {
+  color: hsl(var(--primary) / .8);
+}
+
 .hover\:text-sidebar-accent-foreground:hover {
   --tw-text-opacity: 1;
   color: hsl(var(--sidebar-accent-foreground) / var(--tw-text-opacity, 1));
-}
-
-.hover\:text-primary\/80:hover {
-  color: hsl(var(--primary) / .8);
 }
 
 .hover\:underline:hover {
