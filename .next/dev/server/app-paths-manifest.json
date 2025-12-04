@@ -1,3 +1,6 @@
 {
-  "/(marketing)/page": "app/(marketing)/page.js"
+  "/(marketing)/academics/secondary/page": "app/(marketing)/academics/secondary/page.js",
+  "/(marketing)/admissions/apply/page": "app/(marketing)/admissions/apply/page.js",
+  "/(marketing)/page": "app/(marketing)/page.js",
+  "/_not-found/page": "app/_not-found/page.js"
 }
