@@ -52,6 +52,24 @@
       "namedRegex": "^/academics(?:/)?$"
     },
     {
+      "page": "/academics/nursery",
+      "regex": "^/academics/nursery(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/academics/nursery(?:/)?$"
+    },
+    {
+      "page": "/academics/primary",
+      "regex": "^/academics/primary(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/academics/primary(?:/)?$"
+    },
+    {
+      "page": "/academics/secondary",
+      "regex": "^/academics/secondary(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/academics/secondary(?:/)?$"
+    },
+    {
       "page": "/admin",
       "regex": "^/admin(?:/)?$",
       "routeKeys": {},
@@ -62,6 +80,12 @@
       "regex": "^/admissions(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/admissions(?:/)?$"
+    },
+    {
+      "page": "/admissions/apply",
+      "regex": "^/admissions/apply(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admissions/apply(?:/)?$"
     },
     {
       "page": "/api/contact",
@@ -82,10 +106,22 @@
       "namedRegex": "^/forgot\\-password(?:/)?$"
     },
     {
+      "page": "/gallery",
+      "regex": "^/gallery(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/gallery(?:/)?$"
+    },
+    {
       "page": "/login",
       "regex": "^/login(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/news",
+      "regex": "^/news(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/news(?:/)?$"
     },
     {
       "page": "/parent",

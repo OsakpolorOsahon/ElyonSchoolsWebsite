@@ -203,7 +203,7 @@ export default function NewsPage() {
                           <CardDescription>{article.summary}</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <Button variant="link" className="p-0 h-auto gap-1" data-testid={`button-read-more-${article.id}`}>
+                          <Button variant="ghost" className="p-0 h-auto gap-1 text-primary hover:text-primary/80" data-testid={`button-read-more-${article.id}`}>
                             Read More <ChevronRight className="h-4 w-4" />
                           </Button>
                         </CardContent>

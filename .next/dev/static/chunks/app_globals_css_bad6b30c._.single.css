@@ -3099,6 +3099,10 @@ body {
   color: hsl(var(--sidebar-accent-foreground) / var(--tw-text-opacity, 1));
 }
 
+.hover\:text-primary\/80:hover {
+  color: hsl(var(--primary) / .8);
+}
+
 .hover\:underline:hover {
   text-decoration-line: underline;
 }
