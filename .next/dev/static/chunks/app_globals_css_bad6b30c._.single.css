@@ -467,6 +467,14 @@ body {
   z-index: 1;
 }
 
+.z-\[60\] {
+  z-index: 60;
+}
+
+.z-\[70\] {
+  z-index: 70;
+}
+
 .-m-1\.5 {
   margin: -.375rem;
 }
@@ -1533,6 +1541,10 @@ body {
 
 .bg-background\/95 {
   background-color: hsl(var(--background) / .95);
+}
+
+.bg-black\/50 {
+  background-color: #00000080;
 }
 
 .bg-black\/80 {
