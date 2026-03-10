@@ -62,11 +62,13 @@ function PaymentContent() {
             })
 
             if (verifyRes.ok) {
-              setIsPaid(true)
               toast({
                 title: 'Payment Successful!',
                 description: 'Your application is now being processed.',
               })
+              router.push(
+                `/payments/receipt?ref=${response.reference}&amount=${amount}&type=admission_fee&name=Applicant`
+              )
             } else {
               throw new Error('Verification failed')
             }

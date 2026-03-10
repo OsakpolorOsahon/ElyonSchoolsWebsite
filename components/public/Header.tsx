@@ -27,6 +27,7 @@ const navigation = [
   { name: 'Admissions', href: '/admissions' },
   { name: 'Gallery', href: '/gallery' },
   { name: 'News & Events', href: '/news' },
+  { name: 'Payments', href: '/payments' },
   { name: 'Contact', href: '/contact' },
 ]
 
@@ -99,7 +100,7 @@ export function Header() {
         </div>
 
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-2">
-          <Link href="/auth/login">
+          <Link href="/login">
             <Button variant="outline" data-testid="button-sign-in">
               Sign In
             </Button>
@@ -178,7 +179,7 @@ export function Header() {
                   ))}
                 </div>
                 <div className="py-6 space-y-3">
-                  <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="outline" className="w-full" data-testid="button-mobile-sign-in">
                       Sign In
                     </Button>

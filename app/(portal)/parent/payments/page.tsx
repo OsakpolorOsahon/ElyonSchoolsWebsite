@@ -6,6 +6,7 @@ import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { PaymentReceiptModal } from '@/components/portal/PaymentReceiptModal'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, ArrowLeft, CreditCard } from 'lucide-react'
 
@@ -16,6 +17,8 @@ interface Payment {
   method: string
   reference: string
   created_at: string
+  payment_type?: string
+  payer_name?: string
 }
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -23,6 +26,13 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
   failed: { label: 'Failed', color: 'bg-red-100 text-red-700' },
   refunded: { label: 'Refunded', color: 'bg-gray-100 text-gray-700' },
+}
+
+const paymentTypeLabels: Record<string, string> = {
+  school_fee: 'School Fees',
+  donation: 'Donation',
+  application_fee: 'Application Fee',
+  admission_fee: 'Admission Application Fee',
 }
 
 export default function ParentPaymentsPage() {
@@ -85,6 +95,7 @@ export default function ParentPaymentsPage() {
             <CardContent className="py-16 text-center text-muted-foreground">
               <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-30" />
               <p>No payment records yet</p>
+              <p className="text-sm mt-2">Payments made via the school portal will appear here.</p>
             </CardContent>
           </Card>
         ) : (
@@ -95,17 +106,22 @@ export default function ParentPaymentsPage() {
                 <Card key={payment.id}>
                   <CardContent className="py-4">
                     <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                           <CreditCard className="h-5 w-5 text-primary" />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-semibold">{formatAmount(payment.amount)}</span>
                             <Badge className={config.color}>{config.label}</Badge>
+                            {payment.payment_type && (
+                              <span className="text-xs text-muted-foreground">
+                                {paymentTypeLabels[payment.payment_type] || payment.payment_type}
+                              </span>
+                            )}
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {payment.method.toUpperCase()} · {payment.reference.slice(0, 24)}...
+                          <p className="text-sm text-muted-foreground truncate">
+                            {payment.method?.toUpperCase()} · {payment.reference?.slice(0, 24)}{payment.reference?.length > 24 ? '...' : ''}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {new Date(payment.created_at).toLocaleDateString('en-NG', {
@@ -115,6 +131,11 @@ export default function ParentPaymentsPage() {
                           </p>
                         </div>
                       </div>
+                      {payment.status === 'success' && (
+                        <div className="shrink-0">
+                          <PaymentReceiptModal payment={payment} />
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

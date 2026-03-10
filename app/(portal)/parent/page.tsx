@@ -1,14 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { 
   CreditCard, 
   FileText,
   Bell,
-  User
+  User,
+  Megaphone,
 } from 'lucide-react'
 
 export const metadata = {
@@ -28,17 +31,31 @@ export default async function ParentDashboard() {
 
   if (profile?.role !== 'parent') redirect('/')
 
-  const { data: children } = await supabase
-    .from('students')
-    .select('id, admission_number, class, profiles(full_name)')
-    .eq('parent_profile_id', session.user.id)
+  const adminDb = createAdminClient()
 
-  const { data: upcomingEvents } = await supabase
-    .from('events')
-    .select('title, start_ts')
-    .gte('start_ts', new Date().toISOString())
-    .order('start_ts')
-    .limit(3)
+  const [childrenResult, upcomingEventsResult, announcementsResult] = await Promise.all([
+    supabase
+      .from('students')
+      .select('id, admission_number, class, profiles(full_name)')
+      .eq('parent_profile_id', session.user.id),
+    supabase
+      .from('events')
+      .select('title, start_ts')
+      .gte('start_ts', new Date().toISOString())
+      .order('start_ts')
+      .limit(3),
+    adminDb
+      .from('announcements')
+      .select('id, title, body, created_at')
+      .eq('is_published', true)
+      .in('target_audience', ['all', 'parents'])
+      .order('created_at', { ascending: false })
+      .limit(3),
+  ])
+
+  const children = childrenResult.data
+  const upcomingEvents = upcomingEventsResult.data
+  const announcements = announcementsResult.data
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -49,6 +66,28 @@ export default async function ParentDashboard() {
       />
 
       <main className="mx-auto max-w-7xl px-6 py-8">
+        {announcements && announcements.length > 0 && (
+          <Card className="mb-6 border-primary/20 bg-primary/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Megaphone className="h-4 w-4 text-primary" />
+                School Announcements
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-0">
+              {announcements.map((ann: any) => (
+                <div key={ann.id} className="border-l-4 border-primary pl-3">
+                  <p className="font-medium text-sm">{ann.title}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{ann.body}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {new Date(ann.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         <h2 className="text-lg font-semibold text-foreground mb-4">My Children</h2>
 
         {children && children.length > 0 ? (

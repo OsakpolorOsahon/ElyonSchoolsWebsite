@@ -305,6 +305,53 @@ export default function AdmissionsPage() {
         </div>
       </section>
 
+      <section className="py-20">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Downloadable Resources
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Download and print our school prospectus and academic timetable for your reference.
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 max-w-2xl mx-auto">
+            <Card className="hover-elevate text-center">
+              <CardContent className="pt-8 pb-8">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mx-auto mb-4">
+                  <FileText className="h-7 w-7 text-primary" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">School Prospectus</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Complete information about our school, programmes, fees, and facilities.
+                </p>
+                <Link href="/downloads/prospectus" target="_blank">
+                  <Button className="gap-2 w-full">
+                    <Download className="h-4 w-4" /> View & Print Prospectus
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+            <Card className="hover-elevate text-center">
+              <CardContent className="pt-8 pb-8">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 mx-auto mb-4">
+                  <Calendar className="h-7 w-7 text-blue-600" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">Academic Timetable</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Primary and secondary school daily class timetables for the current session.
+                </p>
+                <Link href="/downloads/timetable" target="_blank">
+                  <Button variant="outline" className="gap-2 w-full">
+                    <Download className="h-4 w-4" /> View & Print Timetable
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       <section className="py-20 bg-primary text-primary-foreground">
         <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-6">

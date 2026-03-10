@@ -2,7 +2,7 @@
 
 ## Overview
 
-Elyon Schools is a comprehensive school management platform for a Nigerian educational institution established in 1994. It provides a public-facing marketing website and role-based portals for administrators, teachers, parents, and students. The system handles admissions, Paystack payments, content management, results, and day-to-day school operations.
+Elyon Schools is a comprehensive school management platform for a Nigerian educational institution established in 1994. It provides a public-facing marketing website and role-based portals for administrators, teachers, parents, and students. The system handles admissions, Paystack payments, gallery management, announcements, content management, results, and day-to-day school operations.
 
 ## User Preferences
 
@@ -17,11 +17,12 @@ Preferred communication style: Simple, everyday language.
 - **Auth**: Supabase Auth via `@supabase/ssr` (cookie-based sessions)
 - **UI**: shadcn/ui + Radix UI + Tailwind CSS (New York style)
 - **Payments**: Paystack (inline JS popup + server-side verification)
+- **Storage**: Supabase Storage (`gallery` bucket) for uploaded images
 - **Color Scheme**: Green primary HSL(133 65% 28%), gold accent HSL(50 100% 50%)
 
 ### Routing Strategy (App Router route groups)
 
-- `(marketing)` — Public pages: home, about, academics, admissions, contact, gallery, news
+- `(marketing)` — Public pages: home, about, academics, admissions, gallery, news, payments, contact, downloads
 - `(auth)` — Auth pages at `/login`, `/forgot-password`, `/reset-password`
 - `(portal)` — Protected dashboards: `/admin`, `/teacher`, `/parent`, `/student`
 
@@ -33,6 +34,7 @@ Preferred communication style: Simple, everyday language.
 - `lib/supabase/client.ts` — Browser-side Supabase client
 - `lib/supabase/admin.ts` — Service-role client for bypassing RLS on server writes
 - `components/portal/PortalHeader.tsx` — Shared header with logout for all portals
+- `components/portal/PaymentReceiptModal.tsx` — Printable payment receipt modal
 
 ### Environment Variables (Replit Secrets)
 
@@ -41,14 +43,22 @@ Preferred communication style: Simple, everyday language.
 - `SUPABASE_SERVICE_KEY` — Supabase service role key (for admin writes)
 - `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` — Paystack public key (optional)
 - `PAYSTACK_SECRET_KEY` — Paystack secret key for server-side verification (optional)
+- `NEXT_PUBLIC_SITE_URL` — Full URL of the site (used for invite redirects)
 
 ## Database Schema (Supabase)
+
+Run the migration files in `supabase/migrations/` in order:
+1. `20240101000001_initial_schema.sql` — Core tables
+2. `20240101000002_rls_policies.sql` — RLS policies for core tables
+3. `20240102000001_new_features.sql` — New tables + payment columns
 
 Key tables:
 - `profiles` — User profiles with `role` (admin | teacher | parent | student)
 - `students` — Student records linked to profiles and parent
 - `admissions` — Admission applications (`student_data` JSONB, `guardian_data` JSONB, `status`, `amount`)
-- `payments` — Payment records linked to admissions
+- `payments` — Payment records (+ new columns: `payment_type`, `payer_name`, `payer_email`, `metadata`, `paystack_response`)
+- `announcements` — School announcements with `target_audience` (all | parents | students | teachers), `is_published`
+- `gallery_items` — Gallery photos with `storage_path` and `public_url` from Supabase Storage
 - `contact_submissions` — Contact form submissions
 - `news_posts` — News articles with `status` (draft | published)
 - `events` — School events with `start_ts`, `end_ts`, `category`
@@ -57,27 +67,47 @@ Key tables:
 - `student_results` — Results linked to student, exam, subject
 - `teacher_assignments` — Links teachers to students
 
+### Supabase Storage
+
+- `gallery` bucket — Must be created in Supabase Storage with **public access enabled**
+  - Go to Supabase → Storage → Create bucket named `gallery` → toggle Public ON
+
 ## Features Implemented
 
 ### Public Website
 - Homepage with live events from Supabase (fallback to hardcoded if none)
+- Gallery page (`/gallery`) — fetches from `gallery_items` table; falls back to gradient placeholders if empty
 - News & Events page fetching from Supabase (server-rendered, revalidate: 60s)
 - Contact form → saves to `contact_submissions` table
 - Admission form (multi-step) → saves to `admissions` table → redirects to payment page
-- Paystack payment page at `/admissions/payment` using inline popup
+- Paystack payment page at `/admissions/payment` using inline popup → redirects to receipt on success
+- **Public Payments page** (`/payments`) — School fees, donations via Paystack inline
+- **Payment Receipt** (`/payments/receipt`) — Printable receipt page (query params: ref, amount, type, name)
+- **Downloadable Prospectus** (`/downloads/prospectus`) — Print-friendly school prospectus
+- **Downloadable Timetable** (`/downloads/timetable`) — Primary and secondary timetables
 
 ### API Routes
 - `POST /api/contact` — Save contact form submission
 - `POST /api/admissions` — Create admission application
-- `POST /api/paystack/verify` — Verify Paystack payment + update admission status
+- `POST /api/paystack/verify` — Verify Paystack admission payment + update admission status
+- `POST /api/paystack/general` — Verify general Paystack payments (school fees, donations) + record to DB
 - `GET/PATCH /api/admin/admissions` — Admin: list/update admissions (role-protected)
 - `GET/POST /api/admin/news` — Admin: manage news posts
 - `GET/POST /api/admin/events` — Admin: manage events
+- `GET/POST/PATCH/DELETE /api/admin/announcements` — Admin: manage announcements
+- `GET/POST/DELETE /api/admin/gallery` — Admin: upload/manage gallery images (Supabase Storage)
+- `GET/POST/PATCH /api/admin/users` — Admin: list users, update roles, invite by email
 
 ### Admin Portal (`/admin`)
-- Dashboard with live stats (pending admissions, active students, revenue, upcoming events)
+- Dashboard with live stats + **new payments notification badge** + "New" badges on recent payments
+- **Quick Actions**: Process Admission, Upload Results, Announcements, Gallery, Post News, Create Event, Manage Users
 - Admissions list with Accept/Reject actions
 - Students list with search
+- **Announcements** (`/admin/announcements`) — list, publish/unpublish, delete
+- **Announcements create** (`/admin/announcements/new`) — title, body, target audience, publish toggle
+- **Gallery** (`/admin/gallery`) — grid view with delete; image upload to Supabase Storage
+- **Gallery upload** (`/admin/gallery/upload`) — file picker, title, description, category
+- **User management** (`/admin/users`) — list all users, inline role change, invite by email
 - News management (list + create new post)
 - Events management (list + create new event)
 - Payments view with revenue summary
@@ -89,14 +119,16 @@ Key tables:
 
 ### Student Portal (`/student`)
 - Dashboard with real profile data (name, class, admission number)
+- **Announcements section** — shows published announcements targeting 'all' or 'students'
 - Recent results with grade badges
 - Upcoming events
 - Full results page (`/student/results`) — grouped by exam with averages
 
 ### Parent Portal (`/parent`)
 - Dashboard listing real children from Supabase
+- **Announcements section** — shows published announcements targeting 'all' or 'parents'
 - Child results page (`/parent/results/[admissionNumber]`)
-- Payment history page (`/parent/payments`)
+- Payment history page (`/parent/payments`) — with **Receipt** button opening printable modal
 
 ## Auth Flow
 
@@ -104,3 +136,11 @@ Key tables:
 2. Portal routes (`/admin`, `/teacher`, `/parent`, `/student`) redirect to `/login` if no valid session + matching role
 3. Login/signup flow at `/login` → role-based redirect to appropriate dashboard
 4. Sign Out: calls `supabase.auth.signOut()` → redirects to `/login`
+
+## Setup Notes for Production
+
+1. Run all SQL migrations in Supabase SQL Editor (in order)
+2. Create `gallery` bucket in Supabase Storage with public access
+3. Set all environment variables in Replit Secrets
+4. Ensure `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` and `PAYSTACK_SECRET_KEY` are set for payments to work
+5. Ensure `NEXT_PUBLIC_SITE_URL` is set to the production URL for invite emails to work

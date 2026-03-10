@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { 
   Users, 
   GraduationCap, 
@@ -15,7 +16,10 @@ import {
   Upload,
   Newspaper,
   ArrowRight,
-  Clock
+  Clock,
+  Megaphone,
+  Camera,
+  UserCog,
 } from 'lucide-react'
 
 export const metadata = {
@@ -25,8 +29,11 @@ export const metadata = {
 const quickActions = [
   { name: 'Process Admission', icon: UserPlus, href: '/admin/admissions', description: 'Review pending applications' },
   { name: 'Upload Results', icon: Upload, href: '/admin/results', description: 'Manage student grades' },
-  { name: 'Create Event', icon: Calendar, href: '/admin/events/new', description: 'Add new school event' },
+  { name: 'Announcements', icon: Megaphone, href: '/admin/announcements', description: 'Manage announcements' },
+  { name: 'Gallery', icon: Camera, href: '/admin/gallery', description: 'Manage school gallery' },
   { name: 'Post News', icon: Newspaper, href: '/admin/news/new', description: 'Publish news article' },
+  { name: 'Create Event', icon: Calendar, href: '/admin/events/new', description: 'Add new school event' },
+  { name: 'Manage Users', icon: UserCog, href: '/admin/users', description: 'Roles & invitations' },
 ]
 
 export default async function AdminDashboard() {
@@ -43,26 +50,38 @@ export default async function AdminDashboard() {
   if (profile?.role !== 'admin') redirect('/')
 
   const adminDb = createAdminClient()
+  const now = new Date()
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
   const [
     { count: pendingAdmissions },
     { count: totalStudents },
-    { data: recentPayments },
+    { data: allPayments },
     { count: upcomingEventsCount },
+    { count: newPaymentsCount },
+    { data: recentPaymentsList },
   ] = await Promise.all([
     adminDb.from('admissions').select('*', { count: 'exact', head: true }).eq('status', 'processing'),
     adminDb.from('students').select('*', { count: 'exact', head: true }).eq('status', 'active'),
     adminDb.from('payments').select('amount').eq('status', 'success'),
-    adminDb.from('events').select('*', { count: 'exact', head: true }).gte('start_ts', new Date().toISOString()),
+    adminDb.from('events').select('*', { count: 'exact', head: true }).gte('start_ts', now.toISOString()),
+    adminDb.from('payments').select('*', { count: 'exact', head: true }).gte('created_at', yesterday),
+    adminDb.from('payments')
+      .select('id, amount, status, created_at, reference, payment_type, payer_name, admissions(student_data)')
+      .order('created_at', { ascending: false })
+      .limit(5),
   ])
 
-  const totalRevenue = recentPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0
+  const totalRevenue = allPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0
   const formatAmount = (n: number) =>
     n >= 1_000_000
       ? `₦${(n / 1_000_000).toFixed(1)}M`
       : n >= 1_000
       ? `₦${(n / 1_000).toFixed(0)}K`
       : `₦${n}`
+  const formatAmountFull = (n: number) =>
+    new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(n)
 
   const stats = [
     { name: 'Pending Admissions', value: String(pendingAdmissions ?? 0), icon: FileText, href: '/admin/admissions', color: 'text-orange-500' },
@@ -76,12 +95,6 @@ export default async function AdminDashboard() {
     .select('id, student_data, class_applied, status, created_at')
     .order('created_at', { ascending: false })
     .limit(3)
-
-  const { data: recentPaymentsList } = await adminDb
-    .from('payments')
-    .select('id, amount, status, created_at, admissions(student_data)')
-    .order('created_at', { ascending: false })
-    .limit(4)
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -119,18 +132,18 @@ export default async function AdminDashboard() {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2">
                   {quickActions.map((action) => (
                     <Link key={action.name} href={action.href}>
                       <div className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
                           <action.icon className="h-5 w-5 text-primary" />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <p className="font-medium text-foreground">{action.name}</p>
                           <p className="text-sm text-muted-foreground">{action.description}</p>
                         </div>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
                       </div>
                     </Link>
                   ))}
@@ -204,7 +217,14 @@ export default async function AdminDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Recent Payments</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle>Recent Payments</CardTitle>
+                {(newPaymentsCount ?? 0) > 0 && (
+                  <Badge className="bg-red-500 text-white text-xs px-2 py-0.5">
+                    {newPaymentsCount} new
+                  </Badge>
+                )}
+              </div>
               <Button variant="outline" size="sm" asChild>
                 <Link href="/admin/payments">View All</Link>
               </Button>
@@ -213,16 +233,28 @@ export default async function AdminDashboard() {
               {recentPaymentsList && recentPaymentsList.length > 0 ? (
                 <div className="space-y-3">
                   {recentPaymentsList.map((p: any) => {
-                    const studentName = p.admissions?.student_data
-                      ? `${p.admissions.student_data.firstName || ''} ${p.admissions.student_data.lastName || ''}`.trim()
-                      : 'Unknown'
+                    const isNew = new Date(p.created_at) > new Date(yesterday)
+                    const studentName = p.payer_name
+                      || (p.admissions?.student_data
+                        ? `${p.admissions.student_data.firstName || ''} ${p.admissions.student_data.lastName || ''}`.trim()
+                        : null)
+                      || 'Unknown'
+                    const typeLabel: Record<string, string> = {
+                      school_fee: 'School Fee',
+                      donation: 'Donation',
+                      admission_fee: 'Admission Fee',
+                      application_fee: 'Application Fee',
+                    }
                     return (
                       <div key={p.id} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
                         <div>
-                          <p className="font-medium text-sm">
-                            {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(p.amount)}
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm">{formatAmountFull(p.amount)}</p>
+                            {isNew && <Badge className="bg-green-100 text-green-700 text-xs">New</Badge>}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {studentName} · {typeLabel[p.payment_type] || 'Payment'} · {new Date(p.created_at).toLocaleDateString('en-NG')}
                           </p>
-                          <p className="text-xs text-muted-foreground">{studentName} · {new Date(p.created_at).toLocaleDateString('en-NG')}</p>
                         </div>
                         <span className={`text-xs font-medium px-2 py-1 rounded-full ${p.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                           {p.status}

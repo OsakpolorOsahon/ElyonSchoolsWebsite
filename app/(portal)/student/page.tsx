@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { PortalHeader } from '@/components/portal/PortalHeader'
@@ -10,7 +11,8 @@ import {
   Clock,
   User,
   BookOpen,
-  Trophy
+  Trophy,
+  Megaphone,
 } from 'lucide-react'
 
 export const metadata = {
@@ -30,27 +32,41 @@ export default async function StudentDashboard() {
 
   if (profile?.role !== 'student') redirect('/')
 
+  const adminDb = createAdminClient()
+
   const { data: studentRecord } = await supabase
     .from('students')
     .select('id, admission_number, class, gender')
     .eq('profile_id', session.user.id)
     .single()
 
-  const { data: results } = studentRecord
-    ? await supabase
-        .from('student_results')
-        .select('score, grade, subjects(name), exams(name, term, year)')
-        .eq('student_id', studentRecord.id)
-        .order('created_at', { ascending: false })
-        .limit(6)
-    : { data: [] }
+  const [resultsResult, eventsResult, announcementsResult] = await Promise.all([
+    studentRecord
+      ? supabase
+          .from('student_results')
+          .select('score, grade, subjects(name), exams(name, term, year)')
+          .eq('student_id', studentRecord.id)
+          .order('created_at', { ascending: false })
+          .limit(6)
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from('events')
+      .select('title, start_ts, category')
+      .gte('start_ts', new Date().toISOString())
+      .order('start_ts')
+      .limit(3),
+    adminDb
+      .from('announcements')
+      .select('id, title, body, created_at')
+      .eq('is_published', true)
+      .in('target_audience', ['all', 'students'])
+      .order('created_at', { ascending: false })
+      .limit(3),
+  ])
 
-  const { data: upcomingEvents } = await supabase
-    .from('events')
-    .select('title, start_ts, category')
-    .gte('start_ts', new Date().toISOString())
-    .order('start_ts')
-    .limit(3)
+  const results = resultsResult.data
+  const upcomingEvents = eventsResult.data
+  const announcements = announcementsResult.data
 
   const average = results && results.length > 0
     ? results.reduce((sum: number, r: any) => sum + r.score, 0) / results.length
@@ -65,6 +81,28 @@ export default async function StudentDashboard() {
       />
 
       <main className="mx-auto max-w-7xl px-6 py-8">
+        {announcements && announcements.length > 0 && (
+          <Card className="mb-6 border-primary/20 bg-primary/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Megaphone className="h-4 w-4 text-primary" />
+                School Announcements
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-0">
+              {announcements.map((ann: any) => (
+                <div key={ann.id} className="border-l-4 border-primary pl-3">
+                  <p className="font-medium text-sm">{ann.title}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{ann.body}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {new Date(ann.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-3 mb-8">
           <Card className="lg:col-span-1">
             <CardContent className="pt-6">
