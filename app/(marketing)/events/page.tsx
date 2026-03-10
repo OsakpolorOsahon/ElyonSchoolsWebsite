@@ -21,16 +21,14 @@ interface SchoolEvent {
   start_ts: string
   end_ts: string | null
   location: string | null
-  event_type: string | null
+  category: string | null
 }
 
-const eventTypeColors: Record<string, string> = {
-  academic: 'bg-blue-100 text-blue-700',
-  sports: 'bg-green-100 text-green-700',
-  cultural: 'bg-purple-100 text-purple-700',
-  holiday: 'bg-yellow-100 text-yellow-700',
-  meeting: 'bg-gray-100 text-gray-700',
-  examination: 'bg-red-100 text-red-700',
+const categoryColors: Record<string, string> = {
+  Academic: 'bg-blue-100 text-blue-700',
+  Sports: 'bg-green-100 text-green-700',
+  Cultural: 'bg-purple-100 text-purple-700',
+  Other: 'bg-gray-100 text-gray-700',
 }
 
 export default async function EventsPage() {
@@ -41,12 +39,12 @@ export default async function EventsPage() {
   const [upcomingRes, pastRes] = await Promise.all([
     supabase
       .from('events')
-      .select('id, title, description, start_ts, end_ts, location, event_type')
+      .select('id, title, description, start_ts, end_ts, location, category')
       .gte('start_ts', now)
       .order('start_ts', { ascending: true }),
     supabase
       .from('events')
-      .select('id, title, description, start_ts, end_ts, location, event_type')
+      .select('id, title, description, start_ts, end_ts, location, category')
       .lt('start_ts', now)
       .order('start_ts', { ascending: false })
       .limit(10),
@@ -93,8 +91,8 @@ export default async function EventsPage() {
           ) : (
             <div className="space-y-4">
               {upcomingEvents.map(event => {
-                const typeColor = event.event_type
-                  ? (eventTypeColors[event.event_type] || 'bg-gray-100 text-gray-700')
+                const typeColor = event.category
+                  ? (categoryColors[event.category] || 'bg-gray-100 text-gray-700')
                   : 'bg-gray-100 text-gray-700'
                 return (
                   <Card key={event.id} className="border-l-4 border-l-primary hover:shadow-md transition-shadow">
@@ -115,9 +113,9 @@ export default async function EventsPage() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 flex-wrap mb-1">
                               <h3 className="font-semibold text-lg text-foreground">{event.title}</h3>
-                              {event.event_type && (
+                              {event.category && (
                                 <Badge className={`text-xs ${typeColor}`}>
-                                  {event.event_type.charAt(0).toUpperCase() + event.event_type.slice(1)}
+                                  {event.category}
                                 </Badge>
                               )}
                             </div>
@@ -186,7 +184,7 @@ export default async function EventsPage() {
         <div className="mt-12 text-center">
           <Link href="/news">
             <Button variant="outline" className="gap-2">
-              View News & Updates <ArrowRight className="h-4 w-4" />
+              View News &amp; Updates <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
         </div>
