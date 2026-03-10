@@ -1,14 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { 
-  GraduationCap, 
   CreditCard, 
   FileText,
   Bell,
-  ArrowRight,
   User
 } from 'lucide-react'
 
@@ -16,37 +15,10 @@ export const metadata = {
   title: 'Parent Dashboard - Elyon Schools',
 }
 
-const children = [
-  { 
-    name: 'Amara Okonkwo', 
-    class: 'SSS 2A', 
-    admissionNumber: 'ELY/2022/0234',
-    lastResult: '78%',
-    outstandingFees: '₦200,000'
-  },
-  { 
-    name: 'Chidi Okonkwo', 
-    class: 'Primary 4A', 
-    admissionNumber: 'ELY/2023/0567',
-    lastResult: '85%',
-    outstandingFees: '₦0'
-  },
-]
-
-const announcements = [
-  { title: 'School Resumes January 8, 2025', date: 'December 1, 2024' },
-  { title: 'Second Term Fees Due by January 15', date: 'November 28, 2024' },
-  { title: 'Parent-Teacher Meeting Scheduled', date: 'November 25, 2024' },
-]
-
 export default async function ParentDashboard() {
   const supabase = await createClient()
-  
   const { data: { session } } = await supabase.auth.getSession()
-  
-  if (!session) {
-    redirect('/auth/login?redirect=/parent')
-  }
+  if (!session) redirect('/login?redirect=/parent')
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -54,76 +26,73 @@ export default async function ParentDashboard() {
     .eq('id', session.user.id)
     .single()
 
-  if (profile?.role !== 'parent') {
-    redirect('/')
-  }
+  if (profile?.role !== 'parent') redirect('/')
+
+  const { data: children } = await supabase
+    .from('students')
+    .select('id, admission_number, class, profiles(full_name)')
+    .eq('parent_profile_id', session.user.id)
+
+  const { data: upcomingEvents } = await supabase
+    .from('events')
+    .select('title, start_ts')
+    .gte('start_ts', new Date().toISOString())
+    .order('start_ts')
+    .limit(3)
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="bg-background border-b border-border sticky top-0 z-40">
-        <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Parent Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Welcome back, {profile?.full_name || 'Parent'}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/">View Website</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <PortalHeader
+        title="Parent Dashboard"
+        subtitle={`Welcome back, ${profile?.full_name || 'Parent'}`}
+        role="parent"
+      />
 
       <main className="mx-auto max-w-7xl px-6 py-8">
         <h2 className="text-lg font-semibold text-foreground mb-4">My Children</h2>
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
-          {children.map((child) => (
-            <Card key={child.admissionNumber} className="hover-elevate">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                    <User className="h-7 w-7 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-foreground">{child.name}</h3>
-                    <p className="text-sm text-muted-foreground">{child.class}</p>
-                    <p className="text-xs text-muted-foreground">{child.admissionNumber}</p>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground">Last Term Result</p>
-                    <p className="text-lg font-bold text-primary">{child.lastResult}</p>
+        {children && children.length > 0 ? (
+          <div className="grid gap-6 md:grid-cols-2 mb-8">
+            {children.map((child: any) => (
+              <Card key={child.id} className="hover-elevate">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                      <User className="h-7 w-7 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-foreground">{child.profiles?.full_name || 'Student'}</h3>
+                      <p className="text-sm text-muted-foreground">{child.class}</p>
+                      <p className="text-xs text-muted-foreground">{child.admission_number}</p>
+                    </div>
                   </div>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground">Outstanding Fees</p>
-                    <p className={`text-lg font-bold ${child.outstandingFees === '₦0' ? 'text-green-600' : 'text-orange-500'}`}>
-                      {child.outstandingFees}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" className="flex-1" asChild>
-                    <Link href={`/parent/results/${child.admissionNumber}`}>
-                      <FileText className="h-4 w-4 mr-1" />
-                      View Results
-                    </Link>
-                  </Button>
-                  {child.outstandingFees !== '₦0' && (
-                    <Button size="sm" className="flex-1" asChild>
-                      <Link href={`/payments?student=${child.admissionNumber}`}>
-                        <CreditCard className="h-4 w-4 mr-1" />
-                        Pay Fees
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="flex-1" asChild>
+                      <Link href={`/parent/results/${encodeURIComponent(child.admission_number)}`}>
+                        <FileText className="h-4 w-4 mr-1" />
+                        View Results
                       </Link>
                     </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    <Button size="sm" className="flex-1" asChild>
+                      <Link href="/parent/payments">
+                        <CreditCard className="h-4 w-4 mr-1" />
+                        Payments
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="mb-8">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <User className="h-12 w-12 mx-auto mb-4 opacity-30" />
+              <p>No children linked to your account yet.</p>
+              <p className="text-sm mt-1">Please contact the school administrator.</p>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
@@ -139,7 +108,9 @@ export default async function ParentDashboard() {
             <CardContent>
               <div className="text-center py-8 text-muted-foreground">
                 <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Connect to Supabase to view payment history</p>
+                <Link href="/parent/payments">
+                  <Button variant="outline" size="sm">View Payment History</Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
@@ -148,23 +119,32 @@ export default async function ParentDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />
-                Announcements
+                Upcoming Events
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {announcements.map((announcement, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
-                      <Bell className="h-4 w-4 text-primary" />
+              {upcomingEvents && upcomingEvents.length > 0 ? (
+                <div className="space-y-4">
+                  {upcomingEvents.map((event: any, index: number) => (
+                    <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+                        <Bell className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground text-sm">{event.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(event.start_ts).toLocaleDateString('en-NG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground text-sm">{announcement.title}</p>
-                      <p className="text-xs text-muted-foreground">{announcement.date}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Bell className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No upcoming events</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

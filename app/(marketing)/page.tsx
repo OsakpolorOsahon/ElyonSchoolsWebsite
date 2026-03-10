@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { createClient } from '@/lib/supabase/server'
 import { 
   GraduationCap, 
   Users, 
@@ -12,6 +13,8 @@ import {
   CheckCircle,
   Star
 } from 'lucide-react'
+
+export const revalidate = 60
 
 const stats = [
   { id: 1, name: 'Years of Excellence', value: '30+', icon: Trophy },
@@ -56,7 +59,23 @@ const whyChooseUs = [
   'Excellent academic track record',
 ]
 
-export default function HomePage() {
+const fallbackEvents = [
+  { title: 'Open Day for Prospective Parents', start_ts: '2025-06-15T09:00:00', category: 'Admissions', location: 'School Hall' },
+  { title: 'Inter-House Sports Competition', start_ts: '2025-07-20T08:00:00', category: 'Sports', location: 'School Grounds' },
+  { title: 'Cultural Day Celebration', start_ts: '2025-08-01T10:00:00', category: 'Cultural', location: 'School Grounds' },
+]
+
+export default async function HomePage() {
+  const supabase = await createClient()
+  const { data: liveEvents } = await supabase
+    .from('events')
+    .select('title, start_ts, category, location')
+    .gte('start_ts', new Date().toISOString())
+    .order('start_ts', { ascending: true })
+    .limit(3)
+
+  const events = liveEvents && liveEvents.length > 0 ? liveEvents : fallbackEvents
+
   return (
     <div>
       <section className="relative overflow-hidden">
@@ -234,26 +253,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
-            {[
-              {
-                title: 'Open Day for Prospective Parents',
-                date: 'December 15, 2024',
-                time: '9:00 AM - 2:00 PM',
-                type: 'Admissions',
-              },
-              {
-                title: 'Inter-House Sports Competition',
-                date: 'January 20, 2025',
-                time: '8:00 AM - 4:00 PM',
-                type: 'Sports',
-              },
-              {
-                title: 'Cultural Day Celebration',
-                date: 'February 10, 2025',
-                time: '10:00 AM - 3:00 PM',
-                type: 'Cultural',
-              },
-            ].map((event, index) => (
+            {events.map((event: any, index: number) => (
               <Card key={index} className="hover-elevate">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
@@ -262,11 +262,15 @@ export default function HomePage() {
                     </div>
                     <div>
                       <span className="inline-block px-2 py-1 text-xs font-medium bg-accent/20 text-accent-foreground rounded-full mb-2">
-                        {event.type}
+                        {event.category}
                       </span>
                       <h3 className="font-semibold text-foreground">{event.title}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">{event.date}</p>
-                      <p className="text-sm text-muted-foreground">{event.time}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {new Date(event.start_ts).toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                      {event.location && (
+                        <p className="text-sm text-muted-foreground">{event.location}</p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -275,7 +279,7 @@ export default function HomePage() {
           </div>
 
           <div className="text-center mt-10">
-            <Link href="/events">
+            <Link href="/news">
               <Button variant="outline" className="gap-2" data-testid="button-view-all-events">
                 View All Events
                 <ArrowRight className="h-4 w-4" />

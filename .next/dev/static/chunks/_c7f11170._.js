@@ -613,6 +613,7 @@ __turbopack_context__.s([
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/navigation.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/client/app-dir/link.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/ui/button.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/ui/card.tsx [app-client] (ecmascript)");
@@ -634,6 +635,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$re
 ;
 var _s = __turbopack_context__.k.signature();
 'use client';
+;
 ;
 ;
 ;
@@ -738,6 +740,7 @@ const classOptions = [
 function ApplyPage() {
     _s();
     const { toast } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"])();
+    const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRouter"])();
     const [currentStep, setCurrentStep] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(1);
     const [isSubmitting, setIsSubmitting] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [formData, setFormData] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])({
@@ -787,15 +790,26 @@ function ApplyPage() {
         }
         setIsSubmitting(true);
         try {
-            await new Promise((resolve)=>setTimeout(resolve, 2000));
+            const response = await fetch('/api/admissions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'Submission failed');
+            }
             toast({
                 title: 'Application Submitted!',
-                description: 'Your admission application has been received. We will contact you shortly.'
+                description: 'Redirecting you to complete payment...'
             });
+            router.push(`/admissions/payment?id=${result.admissionId}&amount=${result.amount}`);
         } catch (error) {
             toast({
                 title: 'Submission Failed',
-                description: 'There was an error submitting your application. Please try again.',
+                description: error.message || 'There was an error submitting your application. Please try again.',
                 variant: 'destructive'
             });
         } finally{
@@ -817,14 +831,14 @@ function ApplyPage() {
                                     className: "mr-1 h-3 w-3"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                    lineNumber: 134,
+                                    lineNumber: 147,
                                     columnNumber: 13
                                 }, this),
                                 "Admission Application"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                            lineNumber: 133,
+                            lineNumber: 146,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
@@ -832,7 +846,7 @@ function ApplyPage() {
                             children: "Apply for Admission"
                         }, void 0, false, {
                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                            lineNumber: 137,
+                            lineNumber: 150,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -840,13 +854,13 @@ function ApplyPage() {
                             children: "Complete the form below to apply for admission to Elyon Schools"
                         }, void 0, false, {
                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                            lineNumber: 140,
+                            lineNumber: 153,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                    lineNumber: 132,
+                    lineNumber: 145,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("nav", {
@@ -866,18 +880,18 @@ function ApplyPage() {
                                                     className: "h-5 w-5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 158,
+                                                    lineNumber: 171,
                                                     columnNumber: 23
                                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(step.icon, {
                                                     className: "h-5 w-5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 160,
+                                                    lineNumber: 173,
                                                     columnNumber: 23
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                lineNumber: 150,
+                                                lineNumber: 163,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -885,36 +899,36 @@ function ApplyPage() {
                                                 children: step.name
                                             }, void 0, false, {
                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                lineNumber: 163,
+                                                lineNumber: 176,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                        lineNumber: 149,
+                                        lineNumber: 162,
                                         columnNumber: 17
                                     }, this),
                                     stepIdx !== steps.length - 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: `h-0.5 flex-1 mx-2 ${currentStep > step.id ? 'bg-primary' : 'bg-muted-foreground/30'}`
                                     }, void 0, false, {
                                         fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                        lineNumber: 170,
+                                        lineNumber: 183,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, step.id, true, {
                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                lineNumber: 148,
+                                lineNumber: 161,
                                 columnNumber: 15
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                        lineNumber: 146,
+                        lineNumber: 159,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                    lineNumber: 145,
+                    lineNumber: 158,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -925,7 +939,7 @@ function ApplyPage() {
                                     children: steps[currentStep - 1].name
                                 }, void 0, false, {
                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                    lineNumber: 181,
+                                    lineNumber: 194,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardDescription"], {
@@ -937,13 +951,13 @@ function ApplyPage() {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                    lineNumber: 182,
+                                    lineNumber: 195,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                            lineNumber: 180,
+                            lineNumber: 193,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -962,7 +976,7 @@ function ApplyPage() {
                                                             children: "First Name *"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 194,
+                                                            lineNumber: 207,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -973,13 +987,13 @@ function ApplyPage() {
                                                             "data-testid": "input-student-first-name"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 195,
+                                                            lineNumber: 208,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 193,
+                                                    lineNumber: 206,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -990,7 +1004,7 @@ function ApplyPage() {
                                                             children: "Last Name *"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 204,
+                                                            lineNumber: 217,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1001,19 +1015,19 @@ function ApplyPage() {
                                                             "data-testid": "input-student-last-name"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 205,
+                                                            lineNumber: 218,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 203,
+                                                    lineNumber: 216,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 192,
+                                            lineNumber: 205,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1024,7 +1038,7 @@ function ApplyPage() {
                                                     children: "Middle Name"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 215,
+                                                    lineNumber: 228,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1035,13 +1049,13 @@ function ApplyPage() {
                                                     "data-testid": "input-student-middle-name"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 216,
+                                                    lineNumber: 229,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 214,
+                                            lineNumber: 227,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1055,7 +1069,7 @@ function ApplyPage() {
                                                             children: "Date of Birth *"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 226,
+                                                            lineNumber: 239,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1066,13 +1080,13 @@ function ApplyPage() {
                                                             "data-testid": "input-date-of-birth"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 227,
+                                                            lineNumber: 240,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 225,
+                                                    lineNumber: 238,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1082,7 +1096,7 @@ function ApplyPage() {
                                                             children: "Gender *"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 236,
+                                                            lineNumber: 249,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["RadioGroup"], {
@@ -1099,7 +1113,7 @@ function ApplyPage() {
                                                                             "data-testid": "radio-male"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                            lineNumber: 243,
+                                                                            lineNumber: 256,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
@@ -1107,13 +1121,13 @@ function ApplyPage() {
                                                                             children: "Male"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                            lineNumber: 244,
+                                                                            lineNumber: 257,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                    lineNumber: 242,
+                                                                    lineNumber: 255,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1125,7 +1139,7 @@ function ApplyPage() {
                                                                             "data-testid": "radio-female"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                            lineNumber: 247,
+                                                                            lineNumber: 260,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
@@ -1133,31 +1147,31 @@ function ApplyPage() {
                                                                             children: "Female"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                            lineNumber: 248,
+                                                                            lineNumber: 261,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                    lineNumber: 246,
+                                                                    lineNumber: 259,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 237,
+                                                            lineNumber: 250,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 235,
+                                                    lineNumber: 248,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 224,
+                                            lineNumber: 237,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1171,7 +1185,7 @@ function ApplyPage() {
                                                             children: "Nationality"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 255,
+                                                            lineNumber: 268,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1182,13 +1196,13 @@ function ApplyPage() {
                                                             "data-testid": "input-nationality"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 256,
+                                                            lineNumber: 269,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 254,
+                                                    lineNumber: 267,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1199,7 +1213,7 @@ function ApplyPage() {
                                                             children: "State of Origin"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 265,
+                                                            lineNumber: 278,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1210,25 +1224,25 @@ function ApplyPage() {
                                                             "data-testid": "input-state-of-origin"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 266,
+                                                            lineNumber: 279,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 264,
+                                                    lineNumber: 277,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 253,
+                                            lineNumber: 266,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                    lineNumber: 191,
+                                    lineNumber: 204,
                                     columnNumber: 15
                                 }, this),
                                 currentStep === 2 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1245,7 +1259,7 @@ function ApplyPage() {
                                                             children: "Guardian First Name *"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 282,
+                                                            lineNumber: 295,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1256,13 +1270,13 @@ function ApplyPage() {
                                                             "data-testid": "input-guardian-first-name"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 283,
+                                                            lineNumber: 296,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 281,
+                                                    lineNumber: 294,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1273,7 +1287,7 @@ function ApplyPage() {
                                                             children: "Guardian Last Name *"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 292,
+                                                            lineNumber: 305,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1284,19 +1298,19 @@ function ApplyPage() {
                                                             "data-testid": "input-guardian-last-name"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 293,
+                                                            lineNumber: 306,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 291,
+                                                    lineNumber: 304,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 280,
+                                            lineNumber: 293,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1310,7 +1324,7 @@ function ApplyPage() {
                                                             children: "Email Address *"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 304,
+                                                            lineNumber: 317,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1322,13 +1336,13 @@ function ApplyPage() {
                                                             "data-testid": "input-guardian-email"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 305,
+                                                            lineNumber: 318,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 303,
+                                                    lineNumber: 316,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1339,7 +1353,7 @@ function ApplyPage() {
                                                             children: "Phone Number *"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 315,
+                                                            lineNumber: 328,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1351,19 +1365,19 @@ function ApplyPage() {
                                                             "data-testid": "input-guardian-phone"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 316,
+                                                            lineNumber: 329,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 314,
+                                                    lineNumber: 327,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 302,
+                                            lineNumber: 315,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1374,7 +1388,7 @@ function ApplyPage() {
                                                     children: "Home Address *"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 327,
+                                                    lineNumber: 340,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -1386,13 +1400,13 @@ function ApplyPage() {
                                                     "data-testid": "input-guardian-address"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 328,
+                                                    lineNumber: 341,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 326,
+                                            lineNumber: 339,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1406,7 +1420,7 @@ function ApplyPage() {
                                                             children: "Relationship to Student *"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 339,
+                                                            lineNumber: 352,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -1419,12 +1433,12 @@ function ApplyPage() {
                                                                         placeholder: "Select relationship"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                        lineNumber: 345,
+                                                                        lineNumber: 358,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                    lineNumber: 344,
+                                                                    lineNumber: 357,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -1434,7 +1448,7 @@ function ApplyPage() {
                                                                             children: "Father"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                            lineNumber: 348,
+                                                                            lineNumber: 361,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -1442,7 +1456,7 @@ function ApplyPage() {
                                                                             children: "Mother"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                            lineNumber: 349,
+                                                                            lineNumber: 362,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -1450,7 +1464,7 @@ function ApplyPage() {
                                                                             children: "Guardian"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                            lineNumber: 350,
+                                                                            lineNumber: 363,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -1458,25 +1472,25 @@ function ApplyPage() {
                                                                             children: "Other"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                            lineNumber: 351,
+                                                                            lineNumber: 364,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                    lineNumber: 347,
+                                                                    lineNumber: 360,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 340,
+                                                            lineNumber: 353,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 338,
+                                                    lineNumber: 351,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1487,7 +1501,7 @@ function ApplyPage() {
                                                             children: "Occupation"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 356,
+                                                            lineNumber: 369,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1498,25 +1512,25 @@ function ApplyPage() {
                                                             "data-testid": "input-guardian-occupation"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 357,
+                                                            lineNumber: 370,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 355,
+                                                    lineNumber: 368,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 337,
+                                            lineNumber: 350,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                    lineNumber: 279,
+                                    lineNumber: 292,
                                     columnNumber: 15
                                 }, this),
                                 currentStep === 3 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1530,7 +1544,7 @@ function ApplyPage() {
                                                     children: "Class Applying For *"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 372,
+                                                    lineNumber: 385,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -1543,12 +1557,12 @@ function ApplyPage() {
                                                                 placeholder: "Select class"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                lineNumber: 378,
+                                                                lineNumber: 391,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 377,
+                                                            lineNumber: 390,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -1557,24 +1571,24 @@ function ApplyPage() {
                                                                     children: option.label
                                                                 }, option.value, false, {
                                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                    lineNumber: 382,
+                                                                    lineNumber: 395,
                                                                     columnNumber: 25
                                                                 }, this))
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 380,
+                                                            lineNumber: 393,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 373,
+                                                    lineNumber: 386,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 371,
+                                            lineNumber: 384,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1585,7 +1599,7 @@ function ApplyPage() {
                                                     children: "Previous School (if any)"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 390,
+                                                    lineNumber: 403,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1596,13 +1610,13 @@ function ApplyPage() {
                                                     "data-testid": "input-previous-school"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 391,
+                                                    lineNumber: 404,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 389,
+                                            lineNumber: 402,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1613,7 +1627,7 @@ function ApplyPage() {
                                                     children: "Medical Conditions / Allergies"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 400,
+                                                    lineNumber: 413,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -1625,19 +1639,19 @@ function ApplyPage() {
                                                     "data-testid": "input-medical-conditions"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 401,
+                                                    lineNumber: 414,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 399,
+                                            lineNumber: 412,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                    lineNumber: 370,
+                                    lineNumber: 383,
                                     columnNumber: 15
                                 }, this),
                                 currentStep === 4 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1656,12 +1670,12 @@ function ApplyPage() {
                                                                 children: "Student Name"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                lineNumber: 418,
+                                                                lineNumber: 431,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 417,
+                                                            lineNumber: 430,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -1676,18 +1690,18 @@ function ApplyPage() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                lineNumber: 421,
+                                                                lineNumber: 434,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 420,
+                                                            lineNumber: 433,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 416,
+                                                    lineNumber: 429,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -1700,12 +1714,12 @@ function ApplyPage() {
                                                                 children: "Date of Birth"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                lineNumber: 428,
+                                                                lineNumber: 441,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 427,
+                                                            lineNumber: 440,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -1714,18 +1728,18 @@ function ApplyPage() {
                                                                 children: formData.dateOfBirth || 'Not provided'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                lineNumber: 431,
+                                                                lineNumber: 444,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 430,
+                                                            lineNumber: 443,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 426,
+                                                    lineNumber: 439,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -1738,12 +1752,12 @@ function ApplyPage() {
                                                                 children: "Gender"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                lineNumber: 436,
+                                                                lineNumber: 449,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 435,
+                                                            lineNumber: 448,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -1752,18 +1766,18 @@ function ApplyPage() {
                                                                 children: formData.gender || 'Not provided'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                lineNumber: 439,
+                                                                lineNumber: 452,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 438,
+                                                            lineNumber: 451,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 434,
+                                                    lineNumber: 447,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -1776,12 +1790,12 @@ function ApplyPage() {
                                                                 children: "Class Applied"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                lineNumber: 444,
+                                                                lineNumber: 457,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 443,
+                                                            lineNumber: 456,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -1790,18 +1804,18 @@ function ApplyPage() {
                                                                 children: classOptions.find((c)=>c.value === formData.classApplied)?.label || 'Not selected'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                lineNumber: 447,
+                                                                lineNumber: 460,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 446,
+                                                            lineNumber: 459,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 442,
+                                                    lineNumber: 455,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -1814,12 +1828,12 @@ function ApplyPage() {
                                                                 children: "Guardian Name"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                lineNumber: 454,
+                                                                lineNumber: 467,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 453,
+                                                            lineNumber: 466,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -1832,18 +1846,18 @@ function ApplyPage() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                lineNumber: 457,
+                                                                lineNumber: 470,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 456,
+                                                            lineNumber: 469,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 452,
+                                                    lineNumber: 465,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -1856,12 +1870,12 @@ function ApplyPage() {
                                                                 children: "Guardian Contact"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                lineNumber: 462,
+                                                                lineNumber: 475,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 461,
+                                                            lineNumber: 474,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -1871,7 +1885,7 @@ function ApplyPage() {
                                                                     children: formData.guardianPhone || 'Not provided'
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                    lineNumber: 465,
+                                                                    lineNumber: 478,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1879,25 +1893,25 @@ function ApplyPage() {
                                                                     children: formData.guardianEmail
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                    lineNumber: 466,
+                                                                    lineNumber: 479,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                            lineNumber: 464,
+                                                            lineNumber: 477,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 460,
+                                                    lineNumber: 473,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 415,
+                                            lineNumber: 428,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1910,7 +1924,7 @@ function ApplyPage() {
                                                     "data-testid": "checkbox-agree-terms"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 472,
+                                                    lineNumber: 485,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1927,7 +1941,7 @@ function ApplyPage() {
                                                                 children: "Terms and Conditions"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                                lineNumber: 481,
+                                                                lineNumber: 494,
                                                                 columnNumber: 23
                                                             }, this),
                                                             ' ',
@@ -1935,24 +1949,24 @@ function ApplyPage() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                        lineNumber: 479,
+                                                        lineNumber: 492,
                                                         columnNumber: 21
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 478,
+                                                    lineNumber: 491,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 471,
+                                            lineNumber: 484,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                    lineNumber: 414,
+                                    lineNumber: 427,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1969,14 +1983,14 @@ function ApplyPage() {
                                                     className: "h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 499,
+                                                    lineNumber: 512,
                                                     columnNumber: 17
                                                 }, this),
                                                 "Previous"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 492,
+                                            lineNumber: 505,
                                             columnNumber: 15
                                         }, this),
                                         currentStep < 4 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1989,13 +2003,13 @@ function ApplyPage() {
                                                     className: "h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 505,
+                                                    lineNumber: 518,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 503,
+                                            lineNumber: 516,
                                             columnNumber: 17
                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                                             onClick: handleSubmit,
@@ -2008,31 +2022,31 @@ function ApplyPage() {
                                                     className: "h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                                    lineNumber: 515,
+                                                    lineNumber: 528,
                                                     columnNumber: 37
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                            lineNumber: 508,
+                                            lineNumber: 521,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                                    lineNumber: 491,
+                                    lineNumber: 504,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                            lineNumber: 189,
+                            lineNumber: 202,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                    lineNumber: 179,
+                    lineNumber: 192,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2045,30 +2059,31 @@ function ApplyPage() {
                             children: "Contact our admissions team"
                         }, void 0, false, {
                             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                            lineNumber: 523,
+                            lineNumber: 536,
                             columnNumber: 22
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-                    lineNumber: 522,
+                    lineNumber: 535,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-            lineNumber: 131,
+            lineNumber: 144,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/app/(marketing)/admissions/apply/page.tsx",
-        lineNumber: 130,
+        lineNumber: 143,
         columnNumber: 5
     }, this);
 }
-_s(ApplyPage, "ud8gMgjotXaGe7G+Y7a86xOY58Q=", false, function() {
+_s(ApplyPage, "mQ82/dRc8uZu+OmPk2xgGKeaQ+A=", false, function() {
     return [
-        __TURBOPACK__imported__module__$5b$project$5d2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"]
+        __TURBOPACK__imported__module__$5b$project$5d2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRouter"]
     ];
 });
 _c = ApplyPage;

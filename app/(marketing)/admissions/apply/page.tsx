@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -56,6 +57,7 @@ const classOptions = [
 
 export default function ApplyPage() {
   const { toast } = useToast()
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -108,17 +110,28 @@ export default function ApplyPage() {
     setIsSubmitting(true)
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
+      const response = await fetch('/api/admissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Submission failed')
+      }
+
       toast({
         title: 'Application Submitted!',
-        description: 'Your admission application has been received. We will contact you shortly.',
+        description: 'Redirecting you to complete payment...',
       })
-      
-    } catch (error) {
+
+      router.push(`/admissions/payment?id=${result.admissionId}&amount=${result.amount}`)
+    } catch (error: any) {
       toast({
         title: 'Submission Failed',
-        description: 'There was an error submitting your application. Please try again.',
+        description: error.message || 'There was an error submitting your application. Please try again.',
         variant: 'destructive',
       })
     } finally {

@@ -117,22 +117,22 @@ async function proxy(request) {
     // Protect portal routes
     if (request.nextUrl.pathname.startsWith('/admin')) {
         if (!session || userRole !== 'admin') {
-            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL('/auth/login?redirect=/admin', request.url));
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL('/login?redirect=/admin', request.url));
         }
     }
     if (request.nextUrl.pathname.startsWith('/teacher')) {
         if (!session || userRole !== 'teacher') {
-            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL('/auth/login?redirect=/teacher', request.url));
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL('/login?redirect=/teacher', request.url));
         }
     }
     if (request.nextUrl.pathname.startsWith('/parent')) {
         if (!session || userRole !== 'parent') {
-            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL('/auth/login?redirect=/parent', request.url));
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL('/login?redirect=/parent', request.url));
         }
     }
     if (request.nextUrl.pathname.startsWith('/student')) {
         if (!session || userRole !== 'student') {
-            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL('/auth/login?redirect=/student', request.url));
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL('/login?redirect=/student', request.url));
         }
     }
     // Redirect authenticated users away from auth pages

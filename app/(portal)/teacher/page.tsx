@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { 
@@ -16,26 +17,10 @@ export const metadata = {
   title: 'Teacher Dashboard - Elyon Schools',
 }
 
-const assignedClasses = [
-  { name: 'JSS 2A', subject: 'Mathematics', students: 35 },
-  { name: 'JSS 3A', subject: 'Mathematics', students: 32 },
-  { name: 'SSS 1A', subject: 'Further Mathematics', students: 28 },
-]
-
-const upcomingEvents = [
-  { title: 'Staff Meeting', date: 'December 5, 2024', time: '2:00 PM' },
-  { title: 'First Term Examination', date: 'December 10, 2024', time: '8:00 AM' },
-  { title: 'Inter-House Sports', date: 'January 20, 2025', time: '8:00 AM' },
-]
-
 export default async function TeacherDashboard() {
   const supabase = await createClient()
-  
   const { data: { session } } = await supabase.auth.getSession()
-  
-  if (!session) {
-    redirect('/auth/login?redirect=/teacher')
-  }
+  if (!session) redirect('/login?redirect=/teacher')
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -43,25 +28,39 @@ export default async function TeacherDashboard() {
     .eq('id', session.user.id)
     .single()
 
-  if (profile?.role !== 'teacher') {
-    redirect('/')
-  }
+  if (profile?.role !== 'teacher') redirect('/')
+
+  const { data: assignments } = await supabase
+    .from('teacher_assignments')
+    .select('students(id, admission_number, class, profiles(full_name))')
+    .eq('teacher_profile_id', session.user.id)
+
+  const students = (assignments || []).map((a: any) => a.students).filter(Boolean).flat()
+
+  const classCounts = students.reduce((acc: Record<string, number>, s: any) => {
+    acc[s.class] = (acc[s.class] || 0) + 1
+    return acc
+  }, {})
+
+  const assignedClasses = Object.entries(classCounts).map(([name, count]) => ({
+    name,
+    students: count,
+  }))
+
+  const { data: upcomingEventsData } = await supabase
+    .from('events')
+    .select('title, start_ts, location')
+    .gte('start_ts', new Date().toISOString())
+    .order('start_ts')
+    .limit(3)
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="bg-background border-b border-border sticky top-0 z-40">
-        <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Teacher Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Welcome back, {profile?.full_name || 'Teacher'}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/">View Website</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <PortalHeader
+        title="Teacher Dashboard"
+        subtitle={`Welcome back, ${profile?.full_name || 'Teacher'}`}
+        role="teacher"
+      />
 
       <main className="mx-auto max-w-7xl px-6 py-8">
         <div className="mb-8">
@@ -72,7 +71,7 @@ export default async function TeacherDashboard() {
                   <div>
                     <p className="text-lg font-semibold">Upload Student Results</p>
                     <p className="text-sm text-primary-foreground/80">
-                      Upload grades for your assigned classes
+                      Upload grades for your assigned students
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -85,48 +84,73 @@ export default async function TeacherDashboard() {
           </Link>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3 mb-8">
-          {assignedClasses.map((cls) => (
-            <Card key={cls.name} className="hover-elevate">
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                    <BookOpen className="h-6 w-6 text-primary" />
-                  </div>
-                  <span className="text-sm font-medium text-muted-foreground">{cls.students} students</span>
-                </div>
-                <h3 className="text-xl font-bold text-foreground">{cls.name}</h3>
-                <p className="text-muted-foreground">{cls.subject}</p>
-                <div className="mt-4 flex gap-2">
-                  <Button size="sm" variant="outline" className="flex-1" asChild>
-                    <Link href={`/teacher/classes/${cls.name.toLowerCase().replace(/\s+/g, '-')}`}>
-                      View Students
-                    </Link>
-                  </Button>
-                  <Button size="sm" className="flex-1" asChild>
-                    <Link href={`/teacher/results/upload?class=${cls.name}`}>
-                      Upload Results
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {assignedClasses.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">My Classes</h2>
+            <div className="grid gap-6 lg:grid-cols-3">
+              {assignedClasses.map((cls) => (
+                <Card key={cls.name} className="hover-elevate">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                        <BookOpen className="h-6 w-6 text-primary" />
+                      </div>
+                      <span className="text-sm font-medium text-muted-foreground">{cls.students} student{cls.students !== 1 ? 's' : ''}</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground">{cls.name}</h3>
+                    <div className="mt-4 flex gap-2">
+                      <Button size="sm" variant="outline" className="flex-1" asChild>
+                        <Link href={`/teacher/classes/${cls.name.toLowerCase().replace(/\s+/g, '-')}`}>
+                          View Students
+                        </Link>
+                      </Button>
+                      <Button size="sm" className="flex-1" asChild>
+                        <Link href={`/teacher/results/upload?class=${cls.name}`}>
+                          Upload Results
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                My Students
+                My Students ({students.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Connect to Supabase to view your assigned students</p>
-              </div>
+              {students.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No students assigned yet. Contact admin.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {students.slice(0, 5).map((s: any) => (
+                    <div key={s.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Users className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{s.profiles?.full_name || 'Unknown'}</p>
+                        <p className="text-xs text-muted-foreground">{s.class} · {s.admission_number}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {students.length > 5 && (
+                    <p className="text-sm text-muted-foreground text-center pt-2">
+                      +{students.length - 5} more students
+                    </p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -138,19 +162,29 @@ export default async function TeacherDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {upcomingEvents.map((event, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted flex-shrink-0">
-                      <Clock className="h-5 w-5 text-muted-foreground" />
+              {upcomingEventsData && upcomingEventsData.length > 0 ? (
+                <div className="space-y-4">
+                  {upcomingEventsData.map((event: any, index: number) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted flex-shrink-0">
+                        <Clock className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{event.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(event.start_ts).toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' })}
+                          {event.location && ` · ${event.location}`}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">{event.title}</p>
-                      <p className="text-sm text-muted-foreground">{event.date} at {event.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No upcoming events</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

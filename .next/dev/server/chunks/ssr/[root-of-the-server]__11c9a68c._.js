@@ -241,7 +241,9 @@ CardFooter.displayName = "CardFooter";
 
 __turbopack_context__.s([
     "default",
-    ()=>HomePage
+    ()=>HomePage,
+    "revalidate",
+    ()=>revalidate
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/rsc/react-jsx-dev-runtime.js [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$image$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/image.js [app-rsc] (ecmascript)");
@@ -261,6 +263,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$re
 ;
 ;
 ;
+const revalidate = 60;
 const stats = [
     {
         id: 1,
@@ -346,7 +349,7 @@ function HomePage() {
                         className: "absolute inset-0 bg-gradient-to-r from-black/70 to-black/40 z-10"
                     }, void 0, false, {
                         fileName: "[project]/app/(marketing)/page.tsx",
-                        lineNumber: 63,
+                        lineNumber: 66,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$image$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"], {
@@ -357,7 +360,7 @@ function HomePage() {
                         priority: true
                     }, void 0, false, {
                         fileName: "[project]/app/(marketing)/page.tsx",
-                        lineNumber: 64,
+                        lineNumber: 67,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -372,14 +375,14 @@ function HomePage() {
                                             className: "h-4 w-4"
                                         }, void 0, false, {
                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                            lineNumber: 74,
+                                            lineNumber: 77,
                                             columnNumber: 15
                                         }, this),
                                         "Celebrating 30 Years of Excellence"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 73,
+                                    lineNumber: 76,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
@@ -392,13 +395,13 @@ function HomePage() {
                                             children: "Nursery to Secondary"
                                         }, void 0, false, {
                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                            lineNumber: 79,
+                                            lineNumber: 82,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 77,
+                                    lineNumber: 80,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -406,7 +409,7 @@ function HomePage() {
                                     children: "At Elyon Schools, we provide quality education that develops the whole child academically, morally, and socially. Join our community of learners and discover your child's full potential."
                                 }, void 0, false, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 81,
+                                    lineNumber: 84,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -424,18 +427,18 @@ function HomePage() {
                                                         className: "h-4 w-4"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                                        lineNumber: 90,
+                                                        lineNumber: 93,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/(marketing)/page.tsx",
-                                                lineNumber: 88,
+                                                lineNumber: 91,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                            lineNumber: 87,
+                                            lineNumber: 90,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$react$2d$server$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"], {
@@ -448,35 +451,35 @@ function HomePage() {
                                                 children: "Learn More About Us"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/(marketing)/page.tsx",
-                                                lineNumber: 94,
+                                                lineNumber: 97,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                            lineNumber: 93,
+                                            lineNumber: 96,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 86,
+                                    lineNumber: 89,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(marketing)/page.tsx",
-                            lineNumber: 72,
+                            lineNumber: 75,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/(marketing)/page.tsx",
-                        lineNumber: 71,
+                        lineNumber: 74,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/(marketing)/page.tsx",
-                lineNumber: 62,
+                lineNumber: 65,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("section", {
@@ -496,12 +499,12 @@ function HomePage() {
                                                 className: "h-6 w-6 text-primary"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/(marketing)/page.tsx",
-                                                lineNumber: 110,
+                                                lineNumber: 113,
                                                 columnNumber: 21
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                            lineNumber: 109,
+                                            lineNumber: 112,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -510,7 +513,7 @@ function HomePage() {
                                             children: stat.value
                                         }, void 0, false, {
                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                            lineNumber: 112,
+                                            lineNumber: 115,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -518,33 +521,33 @@ function HomePage() {
                                             children: stat.name
                                         }, void 0, false, {
                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                            lineNumber: 113,
+                                            lineNumber: 116,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 108,
+                                    lineNumber: 111,
                                     columnNumber: 17
                                 }, this)
                             }, stat.id, false, {
                                 fileName: "[project]/app/(marketing)/page.tsx",
-                                lineNumber: 107,
+                                lineNumber: 110,
                                 columnNumber: 15
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/app/(marketing)/page.tsx",
-                        lineNumber: 105,
+                        lineNumber: 108,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/app/(marketing)/page.tsx",
-                    lineNumber: 104,
+                    lineNumber: 107,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/(marketing)/page.tsx",
-                lineNumber: 103,
+                lineNumber: 106,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("section", {
@@ -560,7 +563,7 @@ function HomePage() {
                                     children: "Education for Every Stage"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 124,
+                                    lineNumber: 127,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -568,13 +571,13 @@ function HomePage() {
                                     children: "From early childhood through secondary education, we provide age-appropriate learning experiences that prepare students for success."
                                 }, void 0, false, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 127,
+                                    lineNumber: 130,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(marketing)/page.tsx",
-                            lineNumber: 123,
+                            lineNumber: 126,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -586,7 +589,7 @@ function HomePage() {
                                             className: `absolute top-0 left-0 right-0 h-2 ${level.color}`
                                         }, void 0, false, {
                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                            lineNumber: 136,
+                                            lineNumber: 139,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -600,7 +603,7 @@ function HomePage() {
                                                             children: level.name
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                                            lineNumber: 139,
+                                                            lineNumber: 142,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -608,13 +611,13 @@ function HomePage() {
                                                             children: level.ages
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                                            lineNumber: 140,
+                                                            lineNumber: 143,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                                    lineNumber: 138,
+                                                    lineNumber: 141,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -622,7 +625,7 @@ function HomePage() {
                                                     children: level.description
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                                    lineNumber: 142,
+                                                    lineNumber: 145,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -634,25 +637,25 @@ function HomePage() {
                                                                     className: "h-4 w-4 text-primary flex-shrink-0"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                                                    lineNumber: 146,
+                                                                    lineNumber: 149,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                     children: feature
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                                                    lineNumber: 147,
+                                                                    lineNumber: 150,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             ]
                                                         }, feature, true, {
                                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                                            lineNumber: 145,
+                                                            lineNumber: 148,
                                                             columnNumber: 23
                                                         }, this))
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                                    lineNumber: 143,
+                                                    lineNumber: 146,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$react$2d$server$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"], {
@@ -667,46 +670,46 @@ function HomePage() {
                                                                 className: "h-4 w-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/(marketing)/page.tsx",
-                                                                lineNumber: 154,
+                                                                lineNumber: 157,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                                        lineNumber: 152,
+                                                        lineNumber: 155,
                                                         columnNumber: 21
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                                    lineNumber: 151,
+                                                    lineNumber: 154,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                            lineNumber: 137,
+                                            lineNumber: 140,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, level.name, true, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 135,
+                                    lineNumber: 138,
                                     columnNumber: 15
                                 }, this))
                         }, void 0, false, {
                             fileName: "[project]/app/(marketing)/page.tsx",
-                            lineNumber: 133,
+                            lineNumber: 136,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/(marketing)/page.tsx",
-                    lineNumber: 122,
+                    lineNumber: 125,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/(marketing)/page.tsx",
-                lineNumber: 121,
+                lineNumber: 124,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("section", {
@@ -723,7 +726,7 @@ function HomePage() {
                                         children: "Why Choose Elyon Schools?"
                                     }, void 0, false, {
                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                        lineNumber: 168,
+                                        lineNumber: 171,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -731,7 +734,7 @@ function HomePage() {
                                         children: "For over 30 years, Elyon Schools has been a beacon of educational excellence in Nigeria. Our commitment to holistic development ensures that every child receives the best foundation for their future."
                                     }, void 0, false, {
                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                        lineNumber: 171,
+                                        lineNumber: 174,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -743,7 +746,7 @@ function HomePage() {
                                                         className: "h-5 w-5 text-primary flex-shrink-0 mt-0.5"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                                        lineNumber: 179,
+                                                        lineNumber: 182,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -751,18 +754,18 @@ function HomePage() {
                                                         children: reason
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                                        lineNumber: 180,
+                                                        lineNumber: 183,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, index, true, {
                                                 fileName: "[project]/app/(marketing)/page.tsx",
-                                                lineNumber: 178,
+                                                lineNumber: 181,
                                                 columnNumber: 19
                                             }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                        lineNumber: 176,
+                                        lineNumber: 179,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$react$2d$server$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"], {
@@ -777,24 +780,24 @@ function HomePage() {
                                                     className: "h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                                    lineNumber: 187,
+                                                    lineNumber: 190,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                            lineNumber: 185,
+                                            lineNumber: 188,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                        lineNumber: 184,
+                                        lineNumber: 187,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/(marketing)/page.tsx",
-                                lineNumber: 167,
+                                lineNumber: 170,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -812,12 +815,12 @@ function HomePage() {
                                                     className: "object-cover"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                                    lineNumber: 194,
+                                                    lineNumber: 197,
                                                     columnNumber: 19
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/(marketing)/page.tsx",
-                                                lineNumber: 193,
+                                                lineNumber: 196,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -829,18 +832,18 @@ function HomePage() {
                                                     className: "object-cover"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                                    lineNumber: 202,
+                                                    lineNumber: 205,
                                                     columnNumber: 19
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/(marketing)/page.tsx",
-                                                lineNumber: 201,
+                                                lineNumber: 204,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                        lineNumber: 192,
+                                        lineNumber: 195,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -854,39 +857,39 @@ function HomePage() {
                                                 className: "object-cover"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/(marketing)/page.tsx",
-                                                lineNumber: 212,
+                                                lineNumber: 215,
                                                 columnNumber: 19
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                            lineNumber: 211,
+                                            lineNumber: 214,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                        lineNumber: 210,
+                                        lineNumber: 213,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/(marketing)/page.tsx",
-                                lineNumber: 191,
+                                lineNumber: 194,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/(marketing)/page.tsx",
-                        lineNumber: 166,
+                        lineNumber: 169,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/app/(marketing)/page.tsx",
-                    lineNumber: 165,
+                    lineNumber: 168,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/(marketing)/page.tsx",
-                lineNumber: 164,
+                lineNumber: 167,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("section", {
@@ -902,7 +905,7 @@ function HomePage() {
                                     children: "Upcoming Events"
                                 }, void 0, false, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 228,
+                                    lineNumber: 231,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -910,13 +913,13 @@ function HomePage() {
                                     children: "Stay connected with our school community through events and activities."
                                 }, void 0, false, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 231,
+                                    lineNumber: 234,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(marketing)/page.tsx",
-                            lineNumber: 227,
+                            lineNumber: 230,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -953,12 +956,12 @@ function HomePage() {
                                                         className: "h-5 w-5"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                                        lineNumber: 261,
+                                                        lineNumber: 264,
                                                         columnNumber: 23
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                                    lineNumber: 260,
+                                                    lineNumber: 263,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -968,7 +971,7 @@ function HomePage() {
                                                             children: event.type
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                                            lineNumber: 264,
+                                                            lineNumber: 267,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -976,7 +979,7 @@ function HomePage() {
                                                             children: event.title
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                                            lineNumber: 267,
+                                                            lineNumber: 270,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -984,7 +987,7 @@ function HomePage() {
                                                             children: event.date
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                                            lineNumber: 268,
+                                                            lineNumber: 271,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -992,34 +995,34 @@ function HomePage() {
                                                             children: event.time
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                                            lineNumber: 269,
+                                                            lineNumber: 272,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                                    lineNumber: 263,
+                                                    lineNumber: 266,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                            lineNumber: 259,
+                                            lineNumber: 262,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                        lineNumber: 258,
+                                        lineNumber: 261,
                                         columnNumber: 17
                                     }, this)
                                 }, index, false, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 257,
+                                    lineNumber: 260,
                                     columnNumber: 15
                                 }, this))
                         }, void 0, false, {
                             fileName: "[project]/app/(marketing)/page.tsx",
-                            lineNumber: 236,
+                            lineNumber: 239,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1036,34 +1039,34 @@ function HomePage() {
                                             className: "h-4 w-4"
                                         }, void 0, false, {
                                             fileName: "[project]/app/(marketing)/page.tsx",
-                                            lineNumber: 281,
+                                            lineNumber: 284,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 279,
+                                    lineNumber: 282,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/(marketing)/page.tsx",
-                                lineNumber: 278,
+                                lineNumber: 281,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/app/(marketing)/page.tsx",
-                            lineNumber: 277,
+                            lineNumber: 280,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/(marketing)/page.tsx",
-                    lineNumber: 226,
+                    lineNumber: 229,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/(marketing)/page.tsx",
-                lineNumber: 225,
+                lineNumber: 228,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("section", {
@@ -1076,7 +1079,7 @@ function HomePage() {
                             children: "Ready to Join Our Community?"
                         }, void 0, false, {
                             fileName: "[project]/app/(marketing)/page.tsx",
-                            lineNumber: 290,
+                            lineNumber: 293,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1084,7 +1087,7 @@ function HomePage() {
                             children: "Applications for the 2025/2026 academic session are now open. Give your child the gift of quality education at Elyon Schools."
                         }, void 0, false, {
                             fileName: "[project]/app/(marketing)/page.tsx",
-                            lineNumber: 293,
+                            lineNumber: 296,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1103,18 +1106,18 @@ function HomePage() {
                                                 className: "h-4 w-4"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/(marketing)/page.tsx",
-                                                lineNumber: 301,
+                                                lineNumber: 304,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                        lineNumber: 299,
+                                        lineNumber: 302,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 298,
+                                    lineNumber: 301,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$react$2d$server$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"], {
@@ -1127,35 +1130,35 @@ function HomePage() {
                                         children: "Contact Us"
                                     }, void 0, false, {
                                         fileName: "[project]/app/(marketing)/page.tsx",
-                                        lineNumber: 305,
+                                        lineNumber: 308,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/app/(marketing)/page.tsx",
-                                    lineNumber: 304,
+                                    lineNumber: 307,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/(marketing)/page.tsx",
-                            lineNumber: 297,
+                            lineNumber: 300,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/(marketing)/page.tsx",
-                    lineNumber: 289,
+                    lineNumber: 292,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/(marketing)/page.tsx",
-                lineNumber: 288,
+                lineNumber: 291,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/app/(marketing)/page.tsx",
-        lineNumber: 61,
+        lineNumber: 64,
         columnNumber: 5
     }, this);
 }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Elyon Schools is a comprehensive school management platform built with Next.js 14, providing both public-facing marketing pages and role-based portals for administrators, teachers, parents, and students. The system handles admissions, payments, content management, and day-to-day school operations for a Nigerian educational institution established in 1994.
+Elyon Schools is a comprehensive school management platform for a Nigerian educational institution established in 1994. It provides a public-facing marketing website and role-based portals for administrators, teachers, parents, and students. The system handles admissions, Paystack payments, content management, results, and day-to-day school operations.
 
 ## User Preferences
 
@@ -10,97 +10,97 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
+### Stack
 
-**Framework**: Next.js 14 with App Router
-- **Hybrid Rendering**: Server components for marketing pages, client components for interactive portals
-- **Routing Strategy**: App Router with route groups for logical separation
-  - `(marketing)` - Public pages (home, about, admissions, contact)
-  - `(auth)` - Authentication pages (login, registration, password reset)
-  - `(portal)` - Protected admin/teacher/parent/student dashboards
-- **State Management**: React Query (@tanstack/react-query) for server state
-- **UI Framework**: shadcn/ui components built on Radix UI primitives
-- **Styling**: Tailwind CSS with custom design system (New York style variant)
-- **Typography**: Inter font family (400, 500, 600, 700 weights) via Google Fonts
+- **Framework**: Next.js 16 (App Router) running on port 5000
+- **Database**: Supabase PostgreSQL with Row-Level Security (RLS)
+- **Auth**: Supabase Auth via `@supabase/ssr` (cookie-based sessions)
+- **UI**: shadcn/ui + Radix UI + Tailwind CSS (New York style)
+- **Payments**: Paystack (inline JS popup + server-side verification)
+- **Color Scheme**: Green primary HSL(133 65% 28%), gold accent HSL(50 100% 50%)
 
-**Design System Principles**:
-- Dual personality: Professional/institutional for public pages, efficient/practical for portals
-- Color scheme: Green-based primary (HSL 133 65% 28%), gold accent (HSL 50 100% 50%)
-- Component library: Full shadcn/ui suite with consistent spacing primitives (Tailwind units: 2, 4, 6, 8, 12, 16, 20, 24)
-- Responsive breakpoints: Mobile-first with 768px mobile threshold
+### Routing Strategy (App Router route groups)
 
-### Backend Architecture
+- `(marketing)` — Public pages: home, about, academics, admissions, contact, gallery, news
+- `(auth)` — Auth pages at `/login`, `/forgot-password`, `/reset-password`
+- `(portal)` — Protected dashboards: `/admin`, `/teacher`, `/parent`, `/student`
 
-**Server Strategy**: Next.js Server Components and Server Actions
-- **Development Server**: Custom server wrapper (`server/index.ts`) spawning Next.js dev process
-- **API Layer**: Next.js Route Handlers for API endpoints (planned, currently minimal in `server/routes.ts`)
-- **Data Fetching**: Server components fetch directly, client components use React Query
-- **Session Management**: Supabase Auth with SSR support via `@supabase/ssr`
+### Key Files
 
-**Storage Pattern**:
-- In-memory storage interface defined (`server/storage.ts`) with `MemStorage` implementation
-- Interface supports CRUD operations for users (currently basic schema)
-- Designed for future database integration (Drizzle ORM configured but minimal schema)
+- `proxy.ts` — Auth middleware (exported as `proxy` not `middleware` — Next.js 16 requirement)
+- `next.config.js` — Next.js config with `allowedDevOrigins` for Replit
+- `lib/supabase/server.ts` — Server-side Supabase client (cookie-based)
+- `lib/supabase/client.ts` — Browser-side Supabase client
+- `lib/supabase/admin.ts` — Service-role client for bypassing RLS on server writes
+- `components/portal/PortalHeader.tsx` — Shared header with logout for all portals
 
-### Data Storage Solutions
+### Environment Variables (Replit Secrets)
 
-**Database**: PostgreSQL (via Neon serverless driver)
-- **ORM**: Drizzle ORM with schema defined in `shared/schema.ts`
-- **Current Schema**: Minimal users table (id, username, password) - appears to be initial setup
-- **Migration Strategy**: Drizzle Kit configured with migrations output to `./migrations`
-- **Connection**: Environment-based DATABASE_URL required
+- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anonymous key
+- `SUPABASE_SERVICE_KEY` — Supabase service role key (for admin writes)
+- `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` — Paystack public key (optional)
+- `PAYSTACK_SECRET_KEY` — Paystack secret key for server-side verification (optional)
 
-**Type Definitions** (`types/database.ts`):
-- UserRole: admin | teacher | parent | student
-- Entities: Profile, Student, Admission, Payment (with status enums)
-- Indicates planned comprehensive data model not yet implemented in actual schema
+## Database Schema (Supabase)
 
-**File Storage**: Configured for Supabase Storage
-- Image optimization setup for `*.supabase.co` domains
-- 5MB body size limit for server actions
+Key tables:
+- `profiles` — User profiles with `role` (admin | teacher | parent | student)
+- `students` — Student records linked to profiles and parent
+- `admissions` — Admission applications (`student_data` JSONB, `guardian_data` JSONB, `status`, `amount`)
+- `payments` — Payment records linked to admissions
+- `contact_submissions` — Contact form submissions
+- `news_posts` — News articles with `status` (draft | published)
+- `events` — School events with `start_ts`, `end_ts`, `category`
+- `exams` — Exam records (name, term, year)
+- `subjects` — Subject records
+- `student_results` — Results linked to student, exam, subject
+- `teacher_assignments` — Links teachers to students
 
-### Authentication and Authorization
+## Features Implemented
 
-**Provider**: Supabase Auth
-- **Session Management**: Cookie-based with middleware handling (`middleware.ts`)
-- **Client/Server Split**: Separate Supabase clients for browser and server contexts
-- **Graceful Degradation**: Middleware allows public pages when Supabase not configured
-- **Protected Routes**: Portal paths redirect to login if unauthenticated
-- **Role-Based Access**: Profile-based roles (admin, teacher, parent, student) stored in database
+### Public Website
+- Homepage with live events from Supabase (fallback to hardcoded if none)
+- News & Events page fetching from Supabase (server-rendered, revalidate: 60s)
+- Contact form → saves to `contact_submissions` table
+- Admission form (multi-step) → saves to `admissions` table → redirects to payment page
+- Paystack payment page at `/admissions/payment` using inline popup
 
-**Auth Flow**:
-1. Middleware intercepts all requests
-2. Checks Supabase credentials availability
-3. Public paths bypass authentication
-4. Portal paths require session, redirect to login otherwise
-5. Post-login routing based on user profile role
+### API Routes
+- `POST /api/contact` — Save contact form submission
+- `POST /api/admissions` — Create admission application
+- `POST /api/paystack/verify` — Verify Paystack payment + update admission status
+- `GET/PATCH /api/admin/admissions` — Admin: list/update admissions (role-protected)
+- `GET/POST /api/admin/news` — Admin: manage news posts
+- `GET/POST /api/admin/events` — Admin: manage events
 
-### External Dependencies
+### Admin Portal (`/admin`)
+- Dashboard with live stats (pending admissions, active students, revenue, upcoming events)
+- Admissions list with Accept/Reject actions
+- Students list with search
+- News management (list + create new post)
+- Events management (list + create new event)
+- Payments view with revenue summary
 
-**Third-Party Services**:
-- **Supabase**: Authentication, database, storage (optional - app degrades gracefully)
-- **Neon Database**: PostgreSQL hosting (via `@neondatabase/serverless`)
-- **Vercel**: Deployment target (vercel.json configuration present)
+### Teacher Portal (`/teacher`)
+- Dashboard with assigned students and upcoming events (live data)
+- Class view page (`/teacher/classes/[class]`)
+- Results upload page (`/teacher/results/upload`) — select exam/subject, enter scores per student
 
-**Payment Integration** (planned):
-- Paystack reference fields in database types suggest Nigerian payment gateway integration
-- Not yet implemented in codebase
+### Student Portal (`/student`)
+- Dashboard with real profile data (name, class, admission number)
+- Recent results with grade badges
+- Upcoming events
+- Full results page (`/student/results`) — grouped by exam with averages
 
-**Key NPM Packages**:
-- **UI**: @radix-ui/* primitives (20+ components), cmdk, vaul (drawer), embla-carousel
-- **Forms**: react-hook-form, @hookform/resolvers, zod
-- **Data**: @tanstack/react-query, drizzle-orm, drizzle-zod
-- **Calendar**: react-big-calendar, react-day-picker
-- **Utilities**: clsx, tailwind-merge, class-variance-authority, papaparse
-- **Development**: Replit-specific tooling (@replit/vite-plugin-*)
+### Parent Portal (`/parent`)
+- Dashboard listing real children from Supabase
+- Child results page (`/parent/results/[admissionNumber]`)
+- Payment history page (`/parent/payments`)
 
-**Build Tools**:
-- Vite for development with React plugin
-- esbuild for production server bundling
-- TypeScript with strict mode enabled
-- PostCSS with Tailwind and Autoprefixer
+## Auth Flow
 
-**Deployment Configuration**:
-- Next.js framework with custom build command
-- Turbopack enabled for faster development
-- Environment variables required: DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+1. `proxy.ts` intercepts all requests, checks Supabase session
+2. Portal routes (`/admin`, `/teacher`, `/parent`, `/student`) redirect to `/login` if no valid session + matching role
+3. Login/signup flow at `/login` → role-based redirect to appropriate dashboard
+4. Sign Out: calls `supabase.auth.signOut()` → redirects to `/login`

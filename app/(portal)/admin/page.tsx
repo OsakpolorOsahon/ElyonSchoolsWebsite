@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { 
@@ -20,13 +22,6 @@ export const metadata = {
   title: 'Admin Dashboard - Elyon Schools',
 }
 
-const stats = [
-  { name: 'Pending Admissions', value: '12', icon: FileText, href: '/admin/admissions', color: 'text-orange-500' },
-  { name: 'Active Students', value: '1,543', icon: GraduationCap, href: '/admin/students', color: 'text-primary' },
-  { name: 'Total Revenue', value: '₦45.2M', icon: CreditCard, href: '/admin/payments', color: 'text-green-500' },
-  { name: 'Upcoming Events', value: '5', icon: Calendar, href: '/admin/events', color: 'text-blue-500' },
-]
-
 const quickActions = [
   { name: 'Process Admission', icon: UserPlus, href: '/admin/admissions', description: 'Review pending applications' },
   { name: 'Upload Results', icon: Upload, href: '/admin/results', description: 'Manage student grades' },
@@ -34,22 +29,10 @@ const quickActions = [
   { name: 'Post News', icon: Newspaper, href: '/admin/news/new', description: 'Publish news article' },
 ]
 
-const recentActivity = [
-  { type: 'admission', message: 'New admission application from Adaeze Okonkwo', time: '5 minutes ago' },
-  { type: 'payment', message: 'Payment of ₦200,000 received from Mr. Chukwu', time: '1 hour ago' },
-  { type: 'result', message: 'First term results uploaded by Mrs. Adebayo', time: '2 hours ago' },
-  { type: 'event', message: 'Cultural Day event created for February 10', time: '3 hours ago' },
-  { type: 'news', message: 'News article published: Science Competition Winners', time: '5 hours ago' },
-]
-
 export default async function AdminDashboard() {
   const supabase = await createClient()
-  
   const { data: { session } } = await supabase.auth.getSession()
-  
-  if (!session) {
-    redirect('/auth/login?redirect=/admin')
-  }
+  if (!session) redirect('/login?redirect=/admin')
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -57,25 +40,56 @@ export default async function AdminDashboard() {
     .eq('id', session.user.id)
     .single()
 
-  if (profile?.role !== 'admin') {
-    redirect('/')
-  }
+  if (profile?.role !== 'admin') redirect('/')
+
+  const adminDb = createAdminClient()
+
+  const [
+    { count: pendingAdmissions },
+    { count: totalStudents },
+    { data: recentPayments },
+    { count: upcomingEventsCount },
+  ] = await Promise.all([
+    adminDb.from('admissions').select('*', { count: 'exact', head: true }).eq('status', 'processing'),
+    adminDb.from('students').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+    adminDb.from('payments').select('amount').eq('status', 'success'),
+    adminDb.from('events').select('*', { count: 'exact', head: true }).gte('start_ts', new Date().toISOString()),
+  ])
+
+  const totalRevenue = recentPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0
+  const formatAmount = (n: number) =>
+    n >= 1_000_000
+      ? `₦${(n / 1_000_000).toFixed(1)}M`
+      : n >= 1_000
+      ? `₦${(n / 1_000).toFixed(0)}K`
+      : `₦${n}`
+
+  const stats = [
+    { name: 'Pending Admissions', value: String(pendingAdmissions ?? 0), icon: FileText, href: '/admin/admissions', color: 'text-orange-500' },
+    { name: 'Active Students', value: String(totalStudents ?? 0), icon: GraduationCap, href: '/admin/students', color: 'text-primary' },
+    { name: 'Total Revenue', value: formatAmount(totalRevenue), icon: CreditCard, href: '/admin/payments', color: 'text-green-500' },
+    { name: 'Upcoming Events', value: String(upcomingEventsCount ?? 0), icon: Calendar, href: '/admin/events', color: 'text-blue-500' },
+  ]
+
+  const { data: recentAdmissions } = await adminDb
+    .from('admissions')
+    .select('id, student_data, class_applied, status, created_at')
+    .order('created_at', { ascending: false })
+    .limit(3)
+
+  const { data: recentPaymentsList } = await adminDb
+    .from('payments')
+    .select('id, amount, status, created_at, admissions(student_data)')
+    .order('created_at', { ascending: false })
+    .limit(4)
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="bg-background border-b border-border sticky top-0 z-40">
-        <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Welcome back, {profile?.full_name || 'Administrator'}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/">View Website</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <PortalHeader
+        title="Admin Dashboard"
+        subtitle={`Welcome back, ${profile?.full_name || 'Administrator'}`}
+        role="admin"
+      />
 
       <main className="mx-auto max-w-7xl px-6 py-8">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -86,9 +100,7 @@ export default async function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">{stat.name}</p>
-                      <p className="text-3xl font-bold text-foreground" data-testid={`text-stat-${stat.name.toLowerCase().replace(/\s+/g, '-')}`}>
-                        {stat.value}
-                      </p>
+                      <p className="text-3xl font-bold text-foreground">{stat.value}</p>
                     </div>
                     <div className={`p-3 rounded-full bg-muted ${stat.color}`}>
                       <stat.icon className="h-6 w-6" />
@@ -133,17 +145,23 @@ export default async function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted flex-shrink-0">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
+                {(recentAdmissions || []).map((admission: any) => {
+                  const name = `${admission.student_data?.firstName || ''} ${admission.student_data?.lastName || ''}`.trim()
+                  return (
+                    <div key={admission.id} className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted flex-shrink-0">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-foreground">New application: {name || 'Applicant'}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(admission.created_at).toLocaleDateString('en-NG')}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-foreground">{activity.message}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
+                {(!recentAdmissions || recentAdmissions.length === 0) && (
+                  <p className="text-sm text-muted-foreground">No recent activity</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -158,10 +176,29 @@ export default async function AdminDashboard() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Connect to Supabase to view pending admissions</p>
-              </div>
+              {recentAdmissions && recentAdmissions.length > 0 ? (
+                <div className="space-y-3">
+                  {recentAdmissions.map((a: any) => {
+                    const name = `${a.student_data?.firstName || ''} ${a.student_data?.lastName || ''}`.trim()
+                    return (
+                      <div key={a.id} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
+                        <div>
+                          <p className="font-medium text-sm">{name || 'Applicant'}</p>
+                          <p className="text-xs text-muted-foreground">{a.class_applied} · {a.status}</p>
+                        </div>
+                        <Link href="/admin/admissions">
+                          <Button size="sm" variant="outline">Review</Button>
+                        </Link>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No pending admissions</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -173,10 +210,33 @@ export default async function AdminDashboard() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Connect to Supabase to view recent payments</p>
-              </div>
+              {recentPaymentsList && recentPaymentsList.length > 0 ? (
+                <div className="space-y-3">
+                  {recentPaymentsList.map((p: any) => {
+                    const studentName = p.admissions?.student_data
+                      ? `${p.admissions.student_data.firstName || ''} ${p.admissions.student_data.lastName || ''}`.trim()
+                      : 'Unknown'
+                    return (
+                      <div key={p.id} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
+                        <div>
+                          <p className="font-medium text-sm">
+                            {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(p.amount)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{studentName} · {new Date(p.created_at).toLocaleDateString('en-NG')}</p>
+                        </div>
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${p.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                          {p.status}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No payments yet</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -95,25 +95,25 @@ export async function proxy(request: NextRequest) {
   // Protect portal routes
   if (request.nextUrl.pathname.startsWith('/admin')) {
     if (!session || userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/auth/login?redirect=/admin', request.url))
+      return NextResponse.redirect(new URL('/login?redirect=/admin', request.url))
     }
   }
 
   if (request.nextUrl.pathname.startsWith('/teacher')) {
     if (!session || userRole !== 'teacher') {
-      return NextResponse.redirect(new URL('/auth/login?redirect=/teacher', request.url))
+      return NextResponse.redirect(new URL('/login?redirect=/teacher', request.url))
     }
   }
 
   if (request.nextUrl.pathname.startsWith('/parent')) {
     if (!session || userRole !== 'parent') {
-      return NextResponse.redirect(new URL('/auth/login?redirect=/parent', request.url))
+      return NextResponse.redirect(new URL('/login?redirect=/parent', request.url))
     }
   }
 
   if (request.nextUrl.pathname.startsWith('/student')) {
     if (!session || userRole !== 'student') {
-      return NextResponse.redirect(new URL('/auth/login?redirect=/student', request.url))
+      return NextResponse.redirect(new URL('/login?redirect=/student', request.url))
     }
   }
 
