@@ -28,8 +28,8 @@ const footerNavigation = {
     { name: 'Contact Us', href: '/contact' },
     { name: 'News & Updates', href: '/news' },
     { name: 'Events Calendar', href: '/events' },
-    { name: 'Parent Portal', href: '/auth/login' },
-    { name: 'Student Portal', href: '/auth/login' },
+    { name: 'Parent Portal', href: '/login' },
+    { name: 'Student Portal', href: '/login' },
   ],
 }
 

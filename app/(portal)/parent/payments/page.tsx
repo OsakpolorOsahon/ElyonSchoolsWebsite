@@ -56,10 +56,11 @@ export default function ParentPaymentsPage() {
         .single()
       setProfile(p)
 
+      const userEmail = session.user.email || ''
       const { data } = await supabase
         .from('payments')
         .select('*')
-        .eq('user_id', session.user.id)
+        .or(`user_id.eq.${session.user.id},payer_email.eq.${userEmail}`)
         .order('created_at', { ascending: false })
 
       setPayments(data || [])

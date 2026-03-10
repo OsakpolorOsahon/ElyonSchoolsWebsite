@@ -6,17 +6,17 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { CreditCard, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react'
+import { CreditCard, ArrowLeft, Loader2 } from 'lucide-react'
 
 function PaymentContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { toast } = useToast()
   const [isPaying, setIsPaying] = useState(false)
-  const [isPaid, setIsPaid] = useState(false)
 
   const admissionId = searchParams.get('id')
   const amount = parseInt(searchParams.get('amount') || '50000', 10)
+  const applicantEmail = searchParams.get('email') || 'applicant@elyonschools.edu.ng'
   const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
 
   useEffect(() => {
@@ -45,7 +45,7 @@ function PaymentContent() {
     script.onload = () => {
       const handler = (window as any).PaystackPop.setup({
         key: paystackKey,
-        email: 'applicant@elyonschools.edu.ng',
+        email: applicantEmail,
         amount: amount * 100,
         currency: 'NGN',
         ref: `ELYON-ADM-${admissionId}-${Date.now()}`,
@@ -67,7 +67,7 @@ function PaymentContent() {
                 description: 'Your application is now being processed.',
               })
               router.push(
-                `/payments/receipt?ref=${response.reference}&amount=${amount}&type=admission_fee&name=Applicant`
+                `/payments/receipt?ref=${response.reference}&amount=${amount}&type=admission_fee&name=${encodeURIComponent(applicantEmail)}`
               )
             } else {
               throw new Error('Verification failed')
@@ -95,33 +95,6 @@ function PaymentContent() {
     document.head.appendChild(script)
   }
 
-  if (isPaid) {
-    return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center py-12 px-4">
-        <Card className="w-full max-w-md text-center">
-          <CardContent className="pt-10 pb-8">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-              <CheckCircle className="h-10 w-10 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Application Complete!</h2>
-            <p className="text-muted-foreground mb-2">
-              Your admission application and payment have been received.
-            </p>
-            <p className="text-sm text-muted-foreground mb-6">
-              Application ID: <span className="font-mono font-medium">{admissionId}</span>
-            </p>
-            <p className="text-sm text-muted-foreground mb-8">
-              We will review your application and contact you within 3-5 business days.
-            </p>
-            <Link href="/">
-              <Button className="w-full">Return to Home</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-muted/30 flex items-center justify-center py-12 px-4">
       <Card className="w-full max-w-md">
@@ -139,6 +112,10 @@ function PaymentContent() {
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm text-muted-foreground">Application ID</span>
               <span className="text-sm font-mono font-medium">{admissionId?.slice(0, 8)}...</span>
+            </div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm text-muted-foreground">Email</span>
+              <span className="text-sm font-medium truncate max-w-[200px]">{applicantEmail}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="font-medium">Application Fee</span>

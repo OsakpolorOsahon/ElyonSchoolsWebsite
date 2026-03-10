@@ -127,7 +127,7 @@ export default function ApplyPage() {
         description: 'Redirecting you to complete payment...',
       })
 
-      router.push(`/admissions/payment?id=${result.admissionId}&amount=${result.amount}`)
+      router.push(`/admissions/payment?id=${result.admissionId}&amount=${result.amount}&email=${encodeURIComponent(formData.guardianEmail)}`)
     } catch (error: any) {
       toast({
         title: 'Submission Failed',

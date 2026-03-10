@@ -214,6 +214,7 @@ export default async function HomePage() {
                     src="/images/Classroom_Learning_Scene_15f24cb5.png"
                     alt="Classroom learning"
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 25vw, 300px"
                     className="object-cover"
                   />
                 </div>
@@ -222,6 +223,7 @@ export default async function HomePage() {
                     src="/images/Science_Lab_Activity_6e9e2453.png"
                     alt="Science laboratory"
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 25vw, 300px"
                     className="object-cover"
                   />
                 </div>
@@ -232,6 +234,7 @@ export default async function HomePage() {
                     src="/images/Library_Study_Area_96a8f944.png"
                     alt="Library study area"
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 25vw, 300px"
                     className="object-cover"
                   />
                 </div>

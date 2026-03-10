@@ -136,7 +136,7 @@ async function proxy(request) {
         }
     }
     // Redirect authenticated users away from auth pages
-    if (request.nextUrl.pathname.startsWith('/auth') && session) {
+    if ((request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/forgot-password' || request.nextUrl.pathname === '/reset-password') && session) {
         // Redirect to appropriate dashboard based on role
         const dashboards = {
             admin: '/admin',

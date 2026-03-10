@@ -27,13 +27,15 @@ export const metadata = {
 }
 
 const quickActions = [
-  { name: 'Process Admission', icon: UserPlus, href: '/admin/admissions', description: 'Review pending applications' },
-  { name: 'Upload Results', icon: Upload, href: '/admin/results', description: 'Manage student grades' },
+  { name: 'Process Admissions', icon: UserPlus, href: '/admin/admissions', description: 'Review pending applications' },
+  { name: 'Manage Exams', icon: Upload, href: '/admin/exams', description: 'Create & manage exams' },
+  { name: 'Manage Subjects', icon: GraduationCap, href: '/admin/subjects', description: 'Create & manage subjects' },
   { name: 'Announcements', icon: Megaphone, href: '/admin/announcements', description: 'Manage announcements' },
   { name: 'Gallery', icon: Camera, href: '/admin/gallery', description: 'Manage school gallery' },
   { name: 'Post News', icon: Newspaper, href: '/admin/news/new', description: 'Publish news article' },
   { name: 'Create Event', icon: Calendar, href: '/admin/events/new', description: 'Add new school event' },
   { name: 'Manage Users', icon: UserCog, href: '/admin/users', description: 'Roles & invitations' },
+  { name: 'All Students', icon: Users, href: '/admin/students', description: 'View enrolled students' },
 ]
 
 export default async function AdminDashboard() {

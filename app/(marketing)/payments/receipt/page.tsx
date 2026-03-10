@@ -1,10 +1,10 @@
 'use client'
 
-import { Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Printer, Home, Loader2 } from 'lucide-react'
+import { Printer, Home, Loader2, AlertCircle } from 'lucide-react'
 
 const paymentTypeLabels: Record<string, string> = {
   school_fee: 'School Fees',
@@ -16,13 +16,81 @@ const paymentTypeLabels: Record<string, string> = {
 function ReceiptContent() {
   const params = useSearchParams()
   const ref = params.get('ref') || ''
-  const amount = parseFloat(params.get('amount') || '0')
-  const type = params.get('type') || 'payment'
-  const name = params.get('name') || 'N/A'
-  const now = new Date()
+
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [receipt, setReceipt] = useState<{
+    amount: number
+    payment_type?: string
+    payer_name?: string
+    payer_email?: string
+    reference: string
+    created_at: string
+    method?: string
+  } | null>(null)
+
+  useEffect(() => {
+    if (!ref) {
+      setError('No payment reference provided.')
+      setLoading(false)
+      return
+    }
+
+    fetch(`/api/payments/${encodeURIComponent(ref)}`)
+      .then(async res => {
+        const data = await res.json()
+        if (!res.ok) {
+          setError(data.error || 'Receipt not found.')
+        } else {
+          setReceipt(data)
+        }
+      })
+      .catch(() => setError('Failed to load receipt. Please try again.'))
+      .finally(() => setLoading(false))
+  }, [ref])
 
   const formatAmount = (n: number) =>
     new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(n)
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (error || !receipt) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center py-12 px-4">
+        <div className="text-center max-w-md">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+            <AlertCircle className="h-8 w-8 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Receipt Not Found</h2>
+          <p className="text-muted-foreground mb-6">
+            {error || 'This payment receipt could not be found. Please ensure you have the correct reference.'}
+          </p>
+          <div className="space-y-3">
+            <Link href="/payments">
+              <Button className="w-full gap-2">
+                <Home className="h-4 w-4" /> Go to Payments
+              </Button>
+            </Link>
+            <Link href="/contact">
+              <Button variant="outline" className="w-full">Contact School</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const paymentDate = new Date(receipt.created_at)
+  const displayName = receipt.payer_name || receipt.payer_email || 'N/A'
+  const typeLabel = receipt.payment_type
+    ? (paymentTypeLabels[receipt.payment_type] || receipt.payment_type)
+    : 'Payment'
 
   return (
     <div className="min-h-screen bg-white">
@@ -58,13 +126,13 @@ function ReceiptContent() {
 
           <div className="space-y-3 mb-6">
             {[
-              { label: 'Receipt No.', value: ref.slice(0, 20) + (ref.length > 20 ? '...' : '') },
-              { label: 'Payment Type', value: paymentTypeLabels[type] || type },
-              { label: 'Payer Name', value: name || 'N/A' },
-              { label: 'Amount Paid', value: formatAmount(amount), highlight: true },
-              { label: 'Payment Method', value: 'Paystack (Online)' },
-              { label: 'Date', value: now.toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' }) },
-              { label: 'Time', value: now.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }) },
+              { label: 'Receipt No.', value: receipt.reference.slice(0, 24) + (receipt.reference.length > 24 ? '...' : '') },
+              { label: 'Payment Type', value: typeLabel },
+              { label: 'Payer Name', value: displayName },
+              { label: 'Amount Paid', value: formatAmount(receipt.amount), highlight: true },
+              { label: 'Payment Method', value: receipt.method ? receipt.method.charAt(0).toUpperCase() + receipt.method.slice(1) + ' (Online)' : 'Online' },
+              { label: 'Date', value: paymentDate.toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' }) },
+              { label: 'Time', value: paymentDate.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }) },
               { label: 'Status', value: 'PAID', status: true },
             ].map(row => (
               <div key={row.label} className="flex items-center justify-between py-2 border-b border-dashed border-gray-200 last:border-0">
@@ -79,7 +147,7 @@ function ReceiptContent() {
           <div className="text-center text-xs text-muted-foreground pt-4 border-t">
             <p>This is a computer-generated receipt. No signature required.</p>
             <p className="mt-1">Keep this receipt for your records.</p>
-            <p className="mt-1">© {now.getFullYear()} Elyon Schools. All rights reserved.</p>
+            <p className="mt-1">© {paymentDate.getFullYear()} Elyon Schools. All rights reserved.</p>
           </div>
         </div>
 

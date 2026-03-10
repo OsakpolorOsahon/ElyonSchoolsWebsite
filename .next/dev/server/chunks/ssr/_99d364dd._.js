@@ -139,11 +139,11 @@ const footerNavigation = {
         },
         {
             name: 'Parent Portal',
-            href: '/auth/login'
+            href: '/login'
         },
         {
             name: 'Student Portal',
-            href: '/auth/login'
+            href: '/login'
         }
     ]
 };
