@@ -47,43 +47,25 @@ module.exports = mod;
 __turbopack_context__.s([
     "config",
     ()=>config,
-    "middleware",
-    ()=>middleware
+    "proxy",
+    ()=>proxy
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$supabase$2f$ssr$2f$dist$2f$module$2f$index$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/@supabase/ssr/dist/module/index.js [middleware] (ecmascript) <locals>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$supabase$2f$ssr$2f$dist$2f$module$2f$createServerClient$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@supabase/ssr/dist/module/createServerClient.js [middleware] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/server.js [middleware] (ecmascript)");
 ;
 ;
-async function middleware(request) {
+async function proxy(request) {
     let response = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].next({
         request: {
             headers: request.headers
         }
     });
     // Skip Supabase auth checks if credentials are not configured
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseAnonKey) {
-        // Allow public pages to work without Supabase
-        const publicPaths = [
-            '/',
-            '/about',
-            '/academics',
-            '/admissions',
-            '/contact',
-            '/gallery',
-            '/news',
-            '/events',
-            '/payments'
-        ];
-        const isPublicPath = publicPaths.some((path)=>request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith('/_next'));
-        // Redirect portal routes to login with a message that auth is not configured
-        if (request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.startsWith('/teacher') || request.nextUrl.pathname.startsWith('/parent') || request.nextUrl.pathname.startsWith('/student')) {
-            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL('/login?error=auth_not_configured', request.url));
-        }
-        return response;
-    }
+    const supabaseUrl = ("TURBOPACK compile-time value", "https://awssuivefuqemjrwyrkw.supabase.co");
+    const supabaseAnonKey = ("TURBOPACK compile-time value", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3c3N1aXZlZnVxZW1qcnd5cmt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTAyMDksImV4cCI6MjA4MDEyNjIwOX0.EJkfJNLfO2A6KmBlRn2PdN9en2KuWbvYE0uqF9SYd7c");
+    if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
+    ;
     const supabase = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$supabase$2f$ssr$2f$dist$2f$module$2f$createServerClient$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["createServerClient"])(supabaseUrl, supabaseAnonKey, {
         cookies: {
             get (name) {

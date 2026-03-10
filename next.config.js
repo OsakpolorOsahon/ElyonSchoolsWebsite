@@ -14,6 +14,7 @@ const nextConfig = {
       bodySizeLimit: '5mb',
     },
   },
+  allowedDevOrigins: ['*.riker.replit.dev', '*.replit.dev', '*.replit.app'],
 }
 
 export default nextConfig
