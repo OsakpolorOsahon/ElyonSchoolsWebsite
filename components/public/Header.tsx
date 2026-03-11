@@ -35,92 +35,94 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 lg:px-8" aria-label="Global">
-        <div className="flex lg:flex-1">
-          <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-3" data-testid="link-home-logo">
-            <Image
-              src="/logo.png"
-              alt="Elyon Schools Logo"
-              width={48}
-              height={48}
-              className="h-12 w-auto"
-              priority
-            />
-            <div className="hidden sm:block">
-              <p className="text-lg font-bold text-primary leading-tight">Elyon Schools</p>
-              <p className="text-xs text-muted-foreground">Excellence in Education</p>
-            </div>
-          </Link>
-        </div>
+    <>
+      <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 lg:px-8" aria-label="Global">
+          <div className="flex lg:flex-1">
+            <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-3" data-testid="link-home-logo">
+              <Image
+                src="/logo.png"
+                alt="Elyon Schools Logo"
+                width={48}
+                height={48}
+                className="h-12 w-auto"
+                priority
+              />
+              <div className="hidden sm:block">
+                <p className="text-lg font-bold text-primary leading-tight">Elyon Schools</p>
+                <p className="text-xs text-muted-foreground">Excellence in Education</p>
+              </div>
+            </Link>
+          </div>
 
-        <div className="flex lg:hidden">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setMobileMenuOpen(true)}
-            data-testid="button-mobile-menu"
-          >
-            <span className="sr-only">Open main menu</span>
-            <Menu className="h-6 w-6" aria-hidden="true" />
-          </Button>
-        </div>
-
-        <div className="hidden lg:flex lg:gap-x-1">
-          {navigation.map((item) => (
-            item.children ? (
-              <DropdownMenu key={item.name}>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="gap-1" data-testid={`button-nav-${item.name.toLowerCase()}`}>
-                    {item.name}
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center">
-                  {item.children.map((child) => (
-                    <DropdownMenuItem key={child.name} asChild>
-                      <Link href={child.href} data-testid={`link-nav-${child.name.toLowerCase().replace(/\s+/g, '-')}`}>
-                        {child.name}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                data-testid={`link-nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                {item.name}
-              </Link>
-            )
-          ))}
-        </div>
-
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-2">
-          <Link href="/login">
-            <Button variant="outline" data-testid="button-sign-in">
-              Sign In
+          <div className="flex lg:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(true)}
+              data-testid="button-mobile-menu"
+            >
+              <span className="sr-only">Open main menu</span>
+              <Menu className="h-6 w-6" aria-hidden="true" />
             </Button>
-          </Link>
-          <Link href="/admissions/apply">
-            <Button data-testid="button-apply-now">
-              Apply Now
-            </Button>
-          </Link>
-        </div>
-      </nav>
+          </div>
+
+          <div className="hidden lg:flex lg:gap-x-1">
+            {navigation.map((item) => (
+              item.children ? (
+                <DropdownMenu key={item.name}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="gap-1" data-testid={`button-nav-${item.name.toLowerCase()}`}>
+                      {item.name}
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center">
+                    {item.children.map((child) => (
+                      <DropdownMenuItem key={child.name} asChild>
+                        <Link href={child.href} data-testid={`link-nav-${child.name.toLowerCase().replace(/\s+/g, '-')}`}>
+                          {child.name}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  data-testid={`link-nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  {item.name}
+                </Link>
+              )
+            ))}
+          </div>
+
+          <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-2">
+            <Link href="/login">
+              <Button variant="outline" data-testid="button-sign-in">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/admissions/apply">
+              <Button data-testid="button-apply-now">
+                Apply Now
+              </Button>
+            </Link>
+          </div>
+        </nav>
+      </header>
 
       {mobileMenuOpen && (
-        <div className="lg:hidden" role="dialog" aria-modal="true">
-          <div 
-            className="fixed inset-0 z-[60] bg-black/50" 
+        <div role="dialog" aria-modal="true">
+          <div
+            className="fixed inset-0 z-[200] bg-black/50"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
-          <div className="fixed inset-y-0 right-0 z-[70] w-full overflow-y-auto bg-background px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-border shadow-xl">
+          <div className="fixed inset-y-0 right-0 z-[210] w-full overflow-y-auto bg-background px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-border shadow-xl">
             <div className="flex items-center justify-between">
               <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
                 <Image
@@ -195,6 +197,6 @@ export function Header() {
           </div>
         </div>
       )}
-    </header>
+    </>
   )
 }

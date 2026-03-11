@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
+import { InviteRedirect } from '@/components/InviteRedirect'
 import { 
   GraduationCap, 
   Users, 
@@ -77,7 +78,7 @@ export default async function HomePage() {
   const events = liveEvents && liveEvents.length > 0 ? liveEvents : fallbackEvents
 
   return (
-    <div>
+    <>
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40 z-10" />
         <Image
@@ -316,6 +317,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-    </div>
+    <InviteRedirect />
+    </>
   )
 }

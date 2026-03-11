@@ -334,11 +334,17 @@ Now that you have your real website address, you need to tell Supabase about it.
    https://YOUR-REAL-VERCEL-URL.vercel.app
    ```
    Use the exact URL from your Notepad (`MY WEBSITE URL`).
-5. Find the section called **"Redirect URLs"**. Click **"Add URL"** and type:
+5. Find the section called **"Redirect URLs"**. Click **"Add URL"** and add **both** of these (add them one at a time):
    ```
    https://YOUR-REAL-VERCEL-URL.vercel.app/**
    ```
-   *(The `/**` at the end is important — it means "all pages on my website". Do not remove it.)*
+   ```
+   https://YOUR-REAL-VERCEL-URL.vercel.app/reset-password
+   ```
+   *(The first entry with `/**` covers all pages. The second entry specifically covers the password-creation page that invitation emails link to. Both are required.)*
+
+   > **Important — invitation emails:** If you skip adding `/reset-password` to this list, clicking the invite link in the email will land on the homepage instead of the password-creation page. The website has a fallback that will redirect automatically, but adding it here is the proper fix.
+
 6. Click **"Save"**.
 
 ### Step 6.2 — Update the Variable in Vercel
