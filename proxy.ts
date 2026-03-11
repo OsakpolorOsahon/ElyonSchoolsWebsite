@@ -118,7 +118,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Redirect authenticated users away from auth pages
-  if ((request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/forgot-password' || request.nextUrl.pathname === '/reset-password') && session) {
+  if ((request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/forgot-password') && session) {
     // Redirect to appropriate dashboard based on role
     const dashboards: Record<string, string> = {
       admin: '/admin',
