@@ -3,10 +3,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { reference: string } }
+  { params }: { params: Promise<{ reference: string }> }
 ) {
   try {
-    const { reference } = params
+    const { reference } = await params
 
     if (!reference) {
       return NextResponse.json({ error: 'Reference required' }, { status: 400 })

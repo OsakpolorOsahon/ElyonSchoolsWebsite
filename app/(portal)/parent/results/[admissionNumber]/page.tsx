@@ -62,7 +62,7 @@ export default function ChildResultsPage() {
         setLoading(false)
         return
       }
-      setStudent(studentData)
+      setStudent(studentData as unknown as Student)
 
       const { data: resultsData } = await supabase
         .from('student_results')
@@ -70,7 +70,7 @@ export default function ChildResultsPage() {
         .eq('student_id', studentData.id)
         .order('created_at', { ascending: false })
 
-      setResults(resultsData || [])
+      setResults((resultsData || []) as unknown as Result[])
       setLoading(false)
     }
     load()

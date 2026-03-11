@@ -62,7 +62,7 @@ export default function StudentResultsPage() {
         .eq('student_id', studentRecord.id)
         .order('created_at', { ascending: false })
 
-      setResults(data || [])
+      setResults((data || []) as unknown as Result[])
       setLoading(false)
     }
     load()

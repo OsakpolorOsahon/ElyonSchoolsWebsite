@@ -39,8 +39,8 @@ export default function AdminStudentsPage() {
         .select('id, admission_number, class, gender, status, profiles(full_name)')
         .order('created_at', { ascending: false })
 
-      setStudents(data || [])
-      setFiltered(data || [])
+      setStudents((data || []) as unknown as Student[])
+      setFiltered((data || []) as unknown as Student[])
       setLoading(false)
     }
     load()
