@@ -8,13 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Eye, EyeOff, Lock, CheckCircle, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Lock, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [isReady, setIsReady] = useState(false)
+  const [isError, setIsError] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -27,23 +28,56 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const supabase = createClient()
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    async function initSession() {
+      const hash = window.location.hash
+      const params = new URLSearchParams(hash.replace(/^#/, ''))
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+      const type = params.get('type')
+
+      if (accessToken && refreshToken && (type === 'invite' || type === 'recovery')) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        })
+        if (error) {
+          setIsError(true)
+        } else {
+          setIsReady(true)
+        }
+        return
+      }
+
+      const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         setIsReady(true)
+        return
       }
-    })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (
-        event === 'PASSWORD_RECOVERY' ||
-        event === 'SIGNED_IN' ||
-        event === 'USER_UPDATED'
-      ) {
-        setIsReady(true)
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (
+          (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') &&
+          session
+        ) {
+          setIsReady(true)
+          subscription.unsubscribe()
+        }
+      })
+
+      const timer = setTimeout(() => {
+        setIsError(true)
+      }, 12000)
+
+      return () => {
+        clearTimeout(timer)
+        subscription.unsubscribe()
       }
-    })
+    }
 
-    return () => subscription.unsubscribe()
+    const cleanup = initSession()
+    return () => {
+      cleanup.then(fn => fn?.())
+    }
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -130,22 +164,33 @@ export default function ResetPasswordPage() {
               <p className="text-sm text-muted-foreground mb-6">
                 Your password has been set. Sign in to access your account.
               </p>
-              <Button onClick={() => router.push('/login')} className="w-full gap-2" data-testid="button-go-to-login">
+              <Button onClick={() => { window.location.href = '/login' }} className="w-full gap-2" data-testid="button-go-to-login">
                 <Lock className="h-4 w-4" />
                 Go to Sign In
               </Button>
             </div>
+          ) : isError ? (
+            <div className="text-center py-6">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+                <AlertCircle className="h-8 w-8 text-destructive" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Link expired or invalid</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                This link has expired or already been used. Request a new password reset link below.
+              </p>
+              <Button onClick={() => { window.location.href = '/forgot-password' }} className="w-full gap-2">
+                Request New Link
+              </Button>
+              <div className="mt-3">
+                <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground underline">
+                  Back to Sign In
+                </Link>
+              </div>
+            </div>
           ) : !isReady ? (
             <div className="flex flex-col items-center justify-center py-10 gap-3 text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm">Verifying your invitation link&hellip;</p>
-              <p className="text-xs text-center">
-                If this takes more than 10 seconds,{' '}
-                <Link href="/login" className="underline text-primary">
-                  go to Sign In
-                </Link>{' '}
-                and use &ldquo;Forgot password&rdquo;.
-              </p>
+              <p className="text-sm">Verifying your link&hellip;</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
