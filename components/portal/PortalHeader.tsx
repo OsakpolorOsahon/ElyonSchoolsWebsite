@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { LogOut, Globe } from 'lucide-react'
@@ -21,13 +20,10 @@ const roleColors: Record<string, string> = {
 }
 
 export function PortalHeader({ title, subtitle, role }: PortalHeaderProps) {
-  const router = useRouter()
-
   const handleSignOut = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    window.location.href = '/login'
   }
 
   return (
