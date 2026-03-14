@@ -110,6 +110,8 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - `GET/POST/PATCH /api/admin/users` — Admin: list users, update roles, invite by email
 - `GET /api/report-card/[studentId]/[examId]` — Assemble report card data (student info, results, school settings, principal comment). Role-gated: students see only their own, parents see their children, teachers/admins see all. Unpublished exams blocked for student/parent roles.
 - `POST /api/report-card/[studentId]/[examId]` — Admin only: upsert principal's comment per student per exam
+- `GET/POST/DELETE /api/admin/fee-structures` — Admin: CRUD for fee structures. Server-side validation: class/term/fee_type allowlists, year 2000-2100, amount > 0. Unique constraint on (class, term, year, fee_type)
+- `POST /api/admin/payments` — Admin: record offline payments (cash/bank_transfer). Validates student_id, amount, payment_type allowlist, method. Auto-generates reference if not provided
 
 ### Admin Portal (`/admin`)
 - Dashboard with live stats + **new payments notification badge** + "New" badges on recent payments
@@ -127,7 +129,8 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - **Settings** (`/admin/settings`) — Academic configuration: current term, current year, school name, principal name (stored in `academic_settings` singleton)
 - News management (list + create new post)
 - Events management (list + create new event)
-- Payments view with revenue summary
+- **Payments** (`/admin/payments`) — Revenue summary card, Payment Records tab with filter by type (All/Admission Fee/School Fee/Donation/Offline), Outstanding Fees tab (per-student balance vs fee structures for current term, color badges: green=paid/amber=partial/red=unpaid, CSV export), Record Offline Payment dialog (student search, amount, type, method, date, reference, notes). Receipt buttons for successful payments
+- **Fee Structures** (`/admin/fee-structures`) — CRUD for fee definitions per class/term/year/type (tuition, pta_levy, books, uniform, technology_fee, sports_fee, lab_fee, exam_fee). Grouped by class with totals. Filter by class and term
 
 ### Teacher Portal (`/teacher`)
 - Dashboard with assigned students and upcoming events (live data)

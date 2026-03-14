@@ -22,6 +22,7 @@ import {
   UserCog,
   BookOpen,
   Settings,
+  Banknote,
 } from 'lucide-react'
 
 export const metadata = {
@@ -38,6 +39,7 @@ const quickActions = [
   { name: 'Create Event', icon: Calendar, href: '/admin/events/new', description: 'Add new school event' },
   { name: 'Manage Users', icon: UserCog, href: '/admin/users', description: 'Roles & invitations' },
   { name: 'All Students', icon: Users, href: '/admin/students', description: 'View & enrol students' },
+  { name: 'Fee Structures', icon: Banknote, href: '/admin/fee-structures', description: 'Manage term fees by class' },
   { name: 'Class Teachers', icon: BookOpen, href: '/admin/class-teachers', description: 'Assign teachers to classes' },
   { name: 'Settings', icon: Settings, href: '/admin/settings', description: 'Academic term & school config' },
 ]
