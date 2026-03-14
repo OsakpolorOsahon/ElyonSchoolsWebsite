@@ -33,7 +33,7 @@ Preferred communication style: Simple, everyday language.
 - `lib/supabase/server.ts` — Server-side Supabase client (cookie-based)
 - `lib/supabase/client.ts` — Browser-side Supabase client
 - `lib/supabase/admin.ts` — Service-role client for bypassing RLS on server writes
-- `components/portal/PortalHeader.tsx` — Shared header with logout for all portals
+- `components/portal/PortalHeader.tsx` — Shared header with logout for all portals + current term badge from `academic_settings`
 - `components/portal/PaymentReceiptModal.tsx` — Printable payment receipt modal
 
 ### Environment Variables (Replit Secrets)
@@ -111,7 +111,7 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 
 ### Admin Portal (`/admin`)
 - Dashboard with live stats + **new payments notification badge** + "New" badges on recent payments
-- **Quick Actions**: Process Admission, Upload Results, Announcements, Gallery, Post News, Create Event, Manage Users
+- **Quick Actions**: Process Admission, Upload Results, Announcements, Gallery, Post News, Create Event, Manage Users, Settings
 - Admissions list with Accept/Reject actions
 - **Students** (`/admin/students`) — Full lifecycle management: filter by status (active/graduated/withdrawn/transferred), search, add new students, change status, promote/graduate individual students, set SSS department. Buttons for individual promote/graduate and link to bulk promotion
 - **End-of-Year Promotion** (`/admin/promotion`) — Bulk promotion page: preview all active students grouped by class level, mark individual students as "Repeating" to skip, confirm to promote all to next class (SSS 3 → graduated). Shows error details on partial failure
@@ -120,6 +120,9 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - **Gallery** (`/admin/gallery`) — grid view with delete; image upload to Supabase Storage
 - **Gallery upload** (`/admin/gallery/upload`) — file picker, title, description, category
 - **User management** (`/admin/users`) — list all users, inline role change, invite by email
+- **Subjects** (`/admin/subjects`) — Create subjects, edit applicability (multi-select for `applicable_classes` and `applicable_departments`), delete subjects
+- **Exams** (`/admin/exams`) — Create exams (default unpublished/draft), publish/unpublish toggle with Draft/Published badges, delete exams
+- **Settings** (`/admin/settings`) — Academic configuration: current term, current year, school name, principal name (stored in `academic_settings` singleton)
 - News management (list + create new post)
 - Events management (list + create new event)
 - Payments view with revenue summary
@@ -127,19 +130,19 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 ### Teacher Portal (`/teacher`)
 - Dashboard with assigned students and upcoming events (live data)
 - Class view page (`/teacher/classes/[class]`)
-- Results upload page (`/teacher/results/upload`) — select exam/subject, enter scores per student
+- Results upload page (`/teacher/results/upload`) — select exam/subject, enter scores per student. Subjects are filtered by `applicable_classes` and `applicable_departments` (SSS classes only) — empty arrays mean "applies to all"
 
 ### Student Portal (`/student`)
 - Dashboard with real profile data (name, class, admission number)
 - **Announcements section** — shows published announcements targeting 'all' or 'students'
 - Recent results with grade badges
 - Upcoming events
-- Full results page (`/student/results`) — grouped by exam with averages
+- Full results page (`/student/results`) — grouped by exam with averages, published-only filter, term selector for historical browsing
 
 ### Parent Portal (`/parent`)
 - Dashboard listing real children from Supabase
 - **Announcements section** — shows published announcements targeting 'all' or 'parents'
-- Child results page (`/parent/results/[admissionNumber]`)
+- Child results page (`/parent/results/[admissionNumber]`) — published-only filter, term selector for historical browsing
 - Payment history page (`/parent/payments`) — with **Receipt** button opening printable modal
 
 ## Auth Flow

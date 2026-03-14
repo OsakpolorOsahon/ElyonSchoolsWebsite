@@ -7,16 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Plus, Trash2, BookOpen } from 'lucide-react'
+import { Loader2, ArrowLeft, Plus, Trash2, BookOpen, Eye, EyeOff } from 'lucide-react'
 
 interface Exam {
   id: string
   name: string
   term: string
   year: number
+  published: boolean
   created_at: string
 }
 
@@ -31,6 +33,7 @@ export default function AdminExamsPage() {
   const [profile, setProfile] = useState<any>(null)
   const [form, setForm] = useState({ name: '', term: '', year: String(currentYear) })
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
 
   useEffect(() => {
     load()
@@ -45,7 +48,7 @@ export default function AdminExamsPage() {
     setProfile(p)
 
     const { data } = await supabase.from('exams').select('*').order('year', { ascending: false }).order('term')
-    setExams(data || [])
+    setExams((data || []) as Exam[])
     setLoading(false)
   }
 
@@ -62,9 +65,10 @@ export default function AdminExamsPage() {
         name: form.name.trim(),
         term: form.term,
         year: parseInt(form.year),
+        published: false,
       })
       if (error) throw error
-      toast({ title: 'Exam created', description: `${form.name} has been added.` })
+      toast({ title: 'Exam created', description: `${form.name} has been added (unpublished).` })
       setForm({ name: '', term: '', year: String(currentYear) })
       await load()
     } catch (err: any) {
@@ -90,6 +94,29 @@ export default function AdminExamsPage() {
     }
   }
 
+  const togglePublish = async (exam: Exam) => {
+    setTogglingId(exam.id)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('exams')
+        .update({ published: !exam.published })
+        .eq('id', exam.id)
+      if (error) throw error
+      toast({
+        title: exam.published ? 'Exam unpublished' : 'Exam published',
+        description: exam.published
+          ? `${exam.name} results are now hidden from students and parents.`
+          : `${exam.name} results are now visible to students and parents.`,
+      })
+      await load()
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to toggle', variant: 'destructive' })
+    } finally {
+      setTogglingId(null)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-muted/30">
       <PortalHeader
@@ -111,7 +138,7 @@ export default function AdminExamsPage() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Create New Exam</CardTitle>
-            <CardDescription>Add an exam that teachers can upload results for</CardDescription>
+            <CardDescription>New exams are created as unpublished (draft). Publish when results are ready.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreate} className="grid gap-4 sm:grid-cols-3">
@@ -122,12 +149,13 @@ export default function AdminExamsPage() {
                   placeholder="e.g. First Term Examination"
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  data-testid="input-exam-name"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Term *</Label>
                 <Select value={form.term} onValueChange={v => setForm(f => ({ ...f, term: v }))}>
-                  <SelectTrigger>
+                  <SelectTrigger data-testid="select-exam-term">
                     <SelectValue placeholder="Select term" />
                   </SelectTrigger>
                   <SelectContent>
@@ -140,7 +168,7 @@ export default function AdminExamsPage() {
               <div className="space-y-2">
                 <Label>Year *</Label>
                 <Select value={form.year} onValueChange={v => setForm(f => ({ ...f, year: v }))}>
-                  <SelectTrigger>
+                  <SelectTrigger data-testid="select-exam-year">
                     <SelectValue placeholder="Select year" />
                   </SelectTrigger>
                   <SelectContent>
@@ -151,7 +179,7 @@ export default function AdminExamsPage() {
                 </Select>
               </div>
               <div className="sm:col-span-3">
-                <Button type="submit" disabled={isSubmitting} className="gap-2">
+                <Button type="submit" disabled={isSubmitting} className="gap-2" data-testid="button-create-exam">
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                   {isSubmitting ? 'Creating...' : 'Create Exam'}
                 </Button>
@@ -178,22 +206,51 @@ export default function AdminExamsPage() {
             ) : (
               <div className="space-y-2">
                 {exams.map(exam => (
-                  <div key={exam.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-                    <div>
-                      <p className="font-medium">{exam.name}</p>
-                      <p className="text-sm text-muted-foreground">{exam.term} · {exam.year}</p>
+                  <div key={exam.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg" data-testid={`exam-${exam.id}`}>
+                    <div className="flex items-center gap-3">
+                      {exam.published && (
+                        <div className="h-2.5 w-2.5 rounded-full bg-green-500 shrink-0" />
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{exam.name}</p>
+                          <Badge className={exam.published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                            {exam.published ? 'Published' : 'Draft'}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{exam.term} · {exam.year}</p>
+                      </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDelete(exam.id, exam.name)}
-                      disabled={deletingId === exam.id}
-                    >
-                      {deletingId === exam.id
-                        ? <Loader2 className="h-4 w-4 animate-spin" />
-                        : <Trash2 className="h-4 w-4" />}
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => togglePublish(exam)}
+                        disabled={togglingId === exam.id}
+                        className={exam.published ? 'text-amber-600 hover:text-amber-700' : 'text-green-600 hover:text-green-700'}
+                        data-testid={`button-toggle-${exam.id}`}
+                      >
+                        {togglingId === exam.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : exam.published ? (
+                          <><EyeOff className="h-4 w-4 mr-1" /> Unpublish</>
+                        ) : (
+                          <><Eye className="h-4 w-4 mr-1" /> Publish</>
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(exam.id, exam.name)}
+                        disabled={deletingId === exam.id}
+                        data-testid={`button-delete-exam-${exam.id}`}
+                      >
+                        {deletingId === exam.id
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <Trash2 className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

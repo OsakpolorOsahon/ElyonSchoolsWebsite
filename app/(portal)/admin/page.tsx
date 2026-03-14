@@ -21,6 +21,7 @@ import {
   Camera,
   UserCog,
   BookOpen,
+  Settings,
 } from 'lucide-react'
 
 export const metadata = {
@@ -38,6 +39,7 @@ const quickActions = [
   { name: 'Manage Users', icon: UserCog, href: '/admin/users', description: 'Roles & invitations' },
   { name: 'All Students', icon: Users, href: '/admin/students', description: 'View & enrol students' },
   { name: 'Class Teachers', icon: BookOpen, href: '/admin/class-teachers', description: 'Assign teachers to classes' },
+  { name: 'Settings', icon: Settings, href: '/admin/settings', description: 'Academic term & school config' },
 ]
 
 export default async function AdminDashboard() {

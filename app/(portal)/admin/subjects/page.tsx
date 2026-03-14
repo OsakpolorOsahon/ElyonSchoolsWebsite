@@ -7,15 +7,29 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Plus, Trash2, BookMarked } from 'lucide-react'
+import { Loader2, ArrowLeft, Plus, Trash2, BookMarked, Pencil } from 'lucide-react'
 
 interface Subject {
   id: string
   name: string
   code: string
+  applicable_classes: string[]
+  applicable_departments: string[]
 }
+
+const ALL_CLASSES = [
+  'Nursery 1', 'Nursery 2',
+  'Primary 1', 'Primary 2', 'Primary 3', 'Primary 4', 'Primary 5', 'Primary 6',
+  'JSS 1', 'JSS 2', 'JSS 3',
+  'SSS 1', 'SSS 2', 'SSS 3',
+]
+
+const DEPARTMENTS = ['Science', 'Commercial', 'Art']
 
 export default function AdminSubjectsPage() {
   const { toast } = useToast()
@@ -25,6 +39,11 @@ export default function AdminSubjectsPage() {
   const [profile, setProfile] = useState<any>(null)
   const [form, setForm] = useState({ name: '', code: '' })
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const [editTarget, setEditTarget] = useState<Subject | null>(null)
+  const [editClasses, setEditClasses] = useState<string[]>([])
+  const [editDepts, setEditDepts] = useState<string[]>([])
+  const [editSaving, setEditSaving] = useState(false)
 
   useEffect(() => {
     load()
@@ -39,7 +58,7 @@ export default function AdminSubjectsPage() {
     setProfile(p)
 
     const { data } = await supabase.from('subjects').select('*').order('name')
-    setSubjects(data || [])
+    setSubjects((data || []) as Subject[])
     setLoading(false)
   }
 
@@ -88,6 +107,53 @@ export default function AdminSubjectsPage() {
     }
   }
 
+  function openEdit(subject: Subject) {
+    setEditTarget(subject)
+    setEditClasses(subject.applicable_classes || [])
+    setEditDepts(subject.applicable_departments || [])
+  }
+
+  function toggleClass(cls: string) {
+    setEditClasses(prev => prev.includes(cls) ? prev.filter(c => c !== cls) : [...prev, cls])
+  }
+
+  function toggleDept(dept: string) {
+    setEditDepts(prev => prev.includes(dept) ? prev.filter(d => d !== dept) : [...prev, dept])
+  }
+
+  async function handleEditSave() {
+    if (!editTarget) return
+    setEditSaving(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('subjects')
+        .update({
+          applicable_classes: editClasses,
+          applicable_departments: editDepts,
+        })
+        .eq('id', editTarget.id)
+      if (error) throw error
+      toast({ title: 'Subject updated', description: `Applicability for ${editTarget.name} saved.` })
+      setEditTarget(null)
+      await load()
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to update', variant: 'destructive' })
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
+  function getApplicabilityLabel(subject: Subject): string {
+    const classes = subject.applicable_classes || []
+    const depts = subject.applicable_departments || []
+    if (classes.length === 0 && depts.length === 0) return 'All classes'
+    const parts: string[] = []
+    if (classes.length > 0) parts.push(`${classes.length} class${classes.length > 1 ? 'es' : ''}`)
+    if (depts.length > 0) parts.push(depts.join(', '))
+    return parts.join(' · ')
+  }
+
   return (
     <div className="min-h-screen bg-muted/30">
       <PortalHeader
@@ -120,6 +186,7 @@ export default function AdminSubjectsPage() {
                   placeholder="e.g. Mathematics"
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  data-testid="input-subject-name"
                 />
               </div>
               <div className="space-y-2">
@@ -130,10 +197,11 @@ export default function AdminSubjectsPage() {
                   value={form.code}
                   onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
                   maxLength={10}
+                  data-testid="input-subject-code"
                 />
               </div>
               <div className="sm:col-span-2">
-                <Button type="submit" disabled={isSubmitting} className="gap-2">
+                <Button type="submit" disabled={isSubmitting} className="gap-2" data-testid="button-add-subject">
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                   {isSubmitting ? 'Adding...' : 'Add Subject'}
                 </Button>
@@ -145,6 +213,7 @@ export default function AdminSubjectsPage() {
         <Card>
           <CardHeader>
             <CardTitle>All Subjects ({subjects.length})</CardTitle>
+            <CardDescription>Click Edit to assign which classes and departments each subject applies to</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -160,22 +229,34 @@ export default function AdminSubjectsPage() {
             ) : (
               <div className="grid gap-2 sm:grid-cols-2">
                 {subjects.map(subject => (
-                  <div key={subject.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-                    <div>
+                  <div key={subject.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg" data-testid={`subject-${subject.id}`}>
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium">{subject.name}</p>
                       <p className="text-sm text-muted-foreground font-mono">{subject.code}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{getApplicabilityLabel(subject)}</p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDelete(subject.id, subject.name)}
-                      disabled={deletingId === subject.id}
-                    >
-                      {deletingId === subject.id
-                        ? <Loader2 className="h-4 w-4 animate-spin" />
-                        : <Trash2 className="h-4 w-4" />}
-                    </Button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEdit(subject)}
+                        data-testid={`button-edit-${subject.id}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(subject.id, subject.name)}
+                        disabled={deletingId === subject.id}
+                        data-testid={`button-delete-${subject.id}`}
+                      >
+                        {deletingId === subject.id
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <Trash2 className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -183,6 +264,64 @@ export default function AdminSubjectsPage() {
           </CardContent>
         </Card>
       </main>
+
+      <Dialog open={!!editTarget} onOpenChange={() => setEditTarget(null)}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit {editTarget?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-2">
+            <div>
+              <Label className="text-sm font-medium mb-3 block">Applicable Classes</Label>
+              <p className="text-xs text-muted-foreground mb-3">Leave all unchecked = applies to all classes</p>
+              <div className="grid grid-cols-2 gap-2">
+                {ALL_CLASSES.map(cls => (
+                  <label key={cls} className="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded hover:bg-muted/50">
+                    <Checkbox
+                      checked={editClasses.includes(cls)}
+                      onCheckedChange={() => toggleClass(cls)}
+                      data-testid={`checkbox-class-${cls}`}
+                    />
+                    {cls}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium mb-3 block">Applicable Departments (SSS only)</Label>
+              <p className="text-xs text-muted-foreground mb-3">Leave all unchecked = applies to all departments</p>
+              <div className="space-y-2">
+                {DEPARTMENTS.map(dept => (
+                  <label key={dept} className="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded hover:bg-muted/50">
+                    <Checkbox
+                      checked={editDepts.includes(dept)}
+                      onCheckedChange={() => toggleDept(dept)}
+                      data-testid={`checkbox-dept-${dept}`}
+                    />
+                    {dept}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {editClasses.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Selected: {editClasses.join(', ')}
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditTarget(null)}>Cancel</Button>
+            <Button onClick={handleEditSave} disabled={editSaving} data-testid="button-save-applicability">
+              {editSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

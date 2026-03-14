@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, ArrowLeft, Trophy, User } from 'lucide-react'
 
@@ -14,7 +15,8 @@ interface Result {
   id: string
   score: number
   grade: string | null
-  exams: { name: string; term: string; year: number } | null
+  exam_id: string
+  exams: { id: string; name: string; term: string; year: number; published: boolean } | null
   subjects: { name: string; code: string } | null
 }
 
@@ -41,6 +43,7 @@ export default function ChildResultsPage() {
   const [results, setResults] = useState<Result[]>([])
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
+  const [termFilter, setTermFilter] = useState('all')
 
   useEffect(() => {
     const load = async () => {
@@ -66,17 +69,32 @@ export default function ChildResultsPage() {
 
       const { data: resultsData } = await supabase
         .from('student_results')
-        .select('id, score, grade, exams(name, term, year), subjects(name, code)')
+        .select('id, score, grade, exam_id, exams(id, name, term, year, published), subjects(name, code)')
         .eq('student_id', studentData.id)
         .order('created_at', { ascending: false })
 
-      setResults((resultsData || []) as unknown as Result[])
+      const allResults = (resultsData || []) as unknown as Result[]
+      const publishedResults = allResults.filter(r => r.exams?.published === true)
+      setResults(publishedResults)
       setLoading(false)
     }
     load()
   }, [admissionNumber])
 
-  const groupedByExam = results.reduce((acc, result) => {
+  const termOptions = useMemo(() => {
+    const terms = new Set<string>()
+    results.forEach(r => {
+      if (r.exams) terms.add(`${r.exams.term} ${r.exams.year}`)
+    })
+    return Array.from(terms).sort().reverse()
+  }, [results])
+
+  const filteredResults = useMemo(() => {
+    if (termFilter === 'all') return results
+    return results.filter(r => r.exams && `${r.exams.term} ${r.exams.year}` === termFilter)
+  }, [results, termFilter])
+
+  const groupedByExam = filteredResults.reduce((acc, result) => {
     const examKey = result.exams ? `${result.exams.term} ${result.exams.year} — ${result.exams.name}` : 'Unknown Exam'
     if (!acc[examKey]) acc[examKey] = []
     acc[examKey].push(result)
@@ -92,17 +110,32 @@ export default function ChildResultsPage() {
       />
 
       <main className="mx-auto max-w-4xl px-6 py-8">
-        <div className="flex items-center gap-4 mb-6">
-          <Link href="/parent">
-            <Button variant="ghost" size="sm" className="gap-1">
-              <ArrowLeft className="h-4 w-4" /> Dashboard
-            </Button>
-          </Link>
-          {student && (
-            <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">{student.profiles?.full_name} — Results</h2>
-            </div>
+        <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+          <div className="flex items-center gap-4">
+            <Link href="/parent">
+              <Button variant="ghost" size="sm" className="gap-1">
+                <ArrowLeft className="h-4 w-4" /> Dashboard
+              </Button>
+            </Link>
+            {student && (
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-xl font-semibold">{student.profiles?.full_name} — Results</h2>
+              </div>
+            )}
+          </div>
+          {termOptions.length > 1 && (
+            <Select value={termFilter} onValueChange={setTermFilter}>
+              <SelectTrigger className="w-48" data-testid="select-term-filter">
+                <SelectValue placeholder="Filter by term" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Terms</SelectItem>
+                {termOptions.map(t => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </div>
 
@@ -119,11 +152,12 @@ export default function ChildResultsPage() {
               </Link>
             </CardContent>
           </Card>
-        ) : results.length === 0 ? (
+        ) : filteredResults.length === 0 ? (
           <Card>
             <CardContent className="py-16 text-center text-muted-foreground">
               <Trophy className="h-12 w-12 mx-auto mb-4 opacity-30" />
-              <p>No results available yet for {student.profiles?.full_name}</p>
+              <p>No published results available yet for {student.profiles?.full_name}</p>
+              <p className="text-sm mt-2">Results will appear here once the admin publishes them.</p>
             </CardContent>
           </Card>
         ) : (
@@ -147,7 +181,7 @@ export default function ChildResultsPage() {
                   <CardContent>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       {examResults.map(result => (
-                        <div key={result.id} className="p-3 bg-muted/40 rounded-lg">
+                        <div key={result.id} className="p-3 bg-muted/40 rounded-lg" data-testid={`result-${result.id}`}>
                           <div className="flex items-center justify-between mb-2">
                             <span className="font-medium text-sm">{result.subjects?.name}</span>
                             <Badge className={gradeColors[result.grade || 'F'] || gradeColors.F}>

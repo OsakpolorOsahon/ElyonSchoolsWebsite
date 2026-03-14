@@ -44,8 +44,9 @@ export default async function StudentDashboard() {
     studentRecord
       ? supabase
           .from('student_results')
-          .select('score, grade, subjects(name), exams(name, term, year)')
+          .select('score, grade, subjects(name), exams!inner(name, term, year, published)')
           .eq('student_id', studentRecord.id)
+          .eq('exams.published', true)
           .order('created_at', { ascending: false })
           .limit(6)
       : Promise.resolve({ data: [] }),

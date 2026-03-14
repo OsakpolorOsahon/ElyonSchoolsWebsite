@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { PortalHeader } from '@/components/portal/PortalHeader'
@@ -17,6 +17,7 @@ interface Student {
   id: string
   admission_number: string
   class: string
+  department: string | null
   profiles: { full_name: string } | null
 }
 
@@ -31,7 +32,11 @@ interface Subject {
   id: string
   name: string
   code: string
+  applicable_classes: string[]
+  applicable_departments: string[]
 }
+
+const SSS_CLASSES = new Set(['SSS 1', 'SSS 2', 'SSS 3'])
 
 export default function UploadResultsPage() {
   const { toast } = useToast()
@@ -42,7 +47,7 @@ export default function UploadResultsPage() {
   const [assignedClasses, setAssignedClasses] = useState<string[]>([])
   const [allStudents, setAllStudents] = useState<Student[]>([])
   const [exams, setExams] = useState<Exam[]>([])
-  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [allSubjects, setAllSubjects] = useState<Subject[]>([])
   const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedClass, setSelectedClass] = useState(preselectedClass)
@@ -50,7 +55,33 @@ export default function UploadResultsPage() {
   const [selectedSubject, setSelectedSubject] = useState('')
   const [scores, setScores] = useState<Record<string, string>>({})
 
-  const students = allStudents.filter(s => s.class === selectedClass)
+  const classStudents = allStudents.filter(s => s.class === selectedClass)
+
+  const filteredSubjects = useMemo(() => {
+    if (!selectedClass) return allSubjects
+    return allSubjects.filter(subject => {
+      const classes = subject.applicable_classes || []
+      if (classes.length > 0 && !classes.includes(selectedClass)) return false
+      if (SSS_CLASSES.has(selectedClass)) {
+        const depts = subject.applicable_departments || []
+        if (depts.length > 0) {
+          const classDepts = new Set(classStudents.map(s => s.department).filter(Boolean))
+          const hasOverlap = depts.some(d => classDepts.has(d))
+          if (!hasOverlap) return false
+        }
+      }
+      return true
+    })
+  }, [selectedClass, allSubjects, classStudents])
+
+  const selectedSubjectObj = allSubjects.find(s => s.id === selectedSubject)
+
+  const students = useMemo(() => {
+    if (!selectedSubject || !selectedSubjectObj) return classStudents
+    const depts = selectedSubjectObj.applicable_departments || []
+    if (depts.length === 0 || !SSS_CLASSES.has(selectedClass)) return classStudents
+    return classStudents.filter(s => s.department && depts.includes(s.department))
+  }, [classStudents, selectedSubject, selectedSubjectObj, selectedClass])
 
   useEffect(() => {
     const load = async () => {
@@ -80,7 +111,7 @@ export default function UploadResultsPage() {
       if (classes.length > 0) {
         const { data: studs } = await supabase
           .from('students')
-          .select('id, admission_number, class, profiles(full_name)')
+          .select('id, admission_number, class, department, profiles(full_name)')
           .in('class', classes)
           .eq('status', 'active')
           .order('admission_number')
@@ -88,7 +119,7 @@ export default function UploadResultsPage() {
       }
 
       setExams(examsRes.data || [])
-      setSubjects(subjectsRes.data || [])
+      setAllSubjects((subjectsRes.data || []) as Subject[])
 
       if (preselectedClass && classes.includes(preselectedClass)) {
         setSelectedClass(preselectedClass)
@@ -103,6 +134,7 @@ export default function UploadResultsPage() {
 
   useEffect(() => {
     setScores({})
+    setSelectedSubject('')
   }, [selectedClass])
 
   const getGrade = (score: number): string => {
@@ -118,6 +150,11 @@ export default function UploadResultsPage() {
     e.preventDefault()
     if (!selectedClass || !selectedExam || !selectedSubject) {
       toast({ title: 'Missing selection', description: 'Please select a class, exam and subject.', variant: 'destructive' })
+      return
+    }
+    const isValidSubject = filteredSubjects.some(s => s.id === selectedSubject)
+    if (!isValidSubject) {
+      toast({ title: 'Invalid subject', description: 'The selected subject is not applicable to this class.', variant: 'destructive' })
       return
     }
     const entries = Object.entries(scores).filter(([, v]) => v !== '')
@@ -234,16 +271,26 @@ export default function UploadResultsPage() {
                   <Label>Subject</Label>
                   <Select value={selectedSubject} onValueChange={setSelectedSubject}>
                     <SelectTrigger data-testid="select-subject">
-                      <SelectValue placeholder="Select subject..." />
+                      <SelectValue placeholder={selectedClass ? 'Select subject...' : 'Select a class first'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {subjects.map(s => (
+                      {filteredSubjects.map(s => (
                         <SelectItem key={s.id} value={s.id}>
                           {s.name} ({s.code})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {selectedClass && filteredSubjects.length === 0 && (
+                    <p className="text-xs text-amber-600">
+                      No subjects are applicable to {selectedClass}. Ask admin to assign subjects.
+                    </p>
+                  )}
+                  {selectedClass && filteredSubjects.length > 0 && filteredSubjects.length < allSubjects.length && (
+                    <p className="text-xs text-muted-foreground">
+                      Showing {filteredSubjects.length} of {allSubjects.length} subjects applicable to {selectedClass}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -253,7 +300,11 @@ export default function UploadResultsPage() {
                 <CardTitle>Step 2 — Enter Scores</CardTitle>
                 <CardDescription>
                   {selectedClass
-                    ? `${students.length} student${students.length !== 1 ? 's' : ''} in ${selectedClass}`
+                    ? `${students.length} student${students.length !== 1 ? 's' : ''} in ${selectedClass}${
+                        selectedSubjectObj && (selectedSubjectObj.applicable_departments || []).length > 0 && SSS_CLASSES.has(selectedClass)
+                          ? ` (filtered to ${(selectedSubjectObj.applicable_departments || []).join(', ')} department${(selectedSubjectObj.applicable_departments || []).length > 1 ? 's' : ''})`
+                          : ''
+                      }`
                     : 'Select a class above to see students'}
                 </CardDescription>
               </CardHeader>
