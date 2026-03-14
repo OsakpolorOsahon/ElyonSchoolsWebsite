@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Trophy, BookOpen } from 'lucide-react'
+import { Loader2, ArrowLeft, Trophy, BookOpen, FileText } from 'lucide-react'
 
 interface Result {
   id: string
@@ -34,6 +34,7 @@ export default function StudentResultsPage() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
   const [termFilter, setTermFilter] = useState('all')
+  const [studentId, setStudentId] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -58,6 +59,7 @@ export default function StudentResultsPage() {
         setLoading(false)
         return
       }
+      setStudentId(studentRecord.id)
 
       const { data } = await supabase
         .from('student_results')
@@ -86,11 +88,12 @@ export default function StudentResultsPage() {
   }, [results, termFilter])
 
   const groupedByExam = filteredResults.reduce((acc, result) => {
+    const examId = result.exams?.id || 'unknown'
     const examKey = result.exams ? `${result.exams.term} ${result.exams.year} — ${result.exams.name}` : 'Unknown Exam'
-    if (!acc[examKey]) acc[examKey] = []
-    acc[examKey].push(result)
+    if (!acc[examId]) acc[examId] = { label: examKey, results: [] }
+    acc[examId].results.push(result)
     return acc
-  }, {} as Record<string, Result[]>)
+  }, {} as Record<string, { label: string; results: Result[] }>)
 
   const getAverage = (examResults: Result[]) => {
     if (examResults.length === 0) return 0
@@ -144,19 +147,29 @@ export default function StudentResultsPage() {
           </Card>
         ) : (
           <div className="space-y-6">
-            {Object.entries(groupedByExam).map(([examName, examResults]) => {
+            {Object.entries(groupedByExam).map(([examId, { label: examName, results: examResults }]) => {
               const average = getAverage(examResults)
               return (
-                <Card key={examName}>
+                <Card key={examId}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2">
                         <Trophy className="h-5 w-5 text-primary" />
                         {examName}
                       </CardTitle>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Average</p>
-                        <p className="text-2xl font-bold text-primary">{average.toFixed(1)}%</p>
+                      <div className="flex items-center gap-4">
+                        {studentId && examId !== 'unknown' && (
+                          <Link href={`/report-card/${studentId}/${examId}`}>
+                            <Button variant="outline" size="sm" className="gap-1" data-testid={`button-report-card-${examId}`}>
+                              <FileText className="h-4 w-4" />
+                              Report Card
+                            </Button>
+                          </Link>
+                        )}
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground">Average</p>
+                          <p className="text-2xl font-bold text-primary">{average.toFixed(1)}%</p>
+                        </div>
                       </div>
                     </div>
                   </CardHeader>

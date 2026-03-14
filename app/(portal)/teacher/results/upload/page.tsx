@@ -54,6 +54,7 @@ export default function UploadResultsPage() {
   const [selectedExam, setSelectedExam] = useState('')
   const [selectedSubject, setSelectedSubject] = useState('')
   const [scores, setScores] = useState<Record<string, string>>({})
+  const [remarks, setRemarks] = useState<Record<string, string>>({})
 
   const classStudents = allStudents.filter(s => s.class === selectedClass)
 
@@ -134,6 +135,7 @@ export default function UploadResultsPage() {
 
   useEffect(() => {
     setScores({})
+    setRemarks({})
     setSelectedSubject('')
   }, [selectedClass])
 
@@ -181,6 +183,7 @@ export default function UploadResultsPage() {
           subject_id: selectedSubject,
           score,
           grade: getGrade(score),
+          remarks: remarks[studentId]?.trim() || null,
           uploaded_by: null,
         }
       })
@@ -193,6 +196,7 @@ export default function UploadResultsPage() {
 
       toast({ title: 'Results saved!', description: `${entries.length} result${entries.length !== 1 ? 's' : ''} saved successfully.` })
       setScores({})
+      setRemarks({})
     } catch (err: any) {
       toast({ title: 'Error saving results', description: err.message || 'Something went wrong.', variant: 'destructive' })
     } finally {
@@ -321,29 +325,38 @@ export default function UploadResultsPage() {
                 ) : (
                   <div className="space-y-3">
                     {students.map(student => (
-                      <div key={student.id} className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{student.profiles?.full_name || 'Unknown'}</p>
-                          <p className="text-sm text-muted-foreground">{student.admission_number}</p>
+                      <div key={student.id} className="p-3 bg-muted/30 rounded-lg space-y-2">
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{student.profiles?.full_name || 'Unknown'}</p>
+                            <p className="text-sm text-muted-foreground">{student.admission_number}</p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.5"
+                              className="w-24 text-center"
+                              placeholder="Score"
+                              value={scores[student.id] || ''}
+                              onChange={e => setScores(prev => ({ ...prev, [student.id]: e.target.value }))}
+                              data-testid={`input-score-${student.id}`}
+                            />
+                            {scores[student.id] && (
+                              <span className="text-sm font-bold w-6 text-primary">
+                                {getGrade(parseFloat(scores[student.id]))}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.5"
-                            className="w-24 text-center"
-                            placeholder="Score"
-                            value={scores[student.id] || ''}
-                            onChange={e => setScores(prev => ({ ...prev, [student.id]: e.target.value }))}
-                            data-testid={`input-score-${student.id}`}
-                          />
-                          {scores[student.id] && (
-                            <span className="text-sm font-bold w-6 text-primary">
-                              {getGrade(parseFloat(scores[student.id]))}
-                            </span>
-                          )}
-                        </div>
+                        <Input
+                          placeholder="Remark (optional)"
+                          className="text-sm h-8"
+                          value={remarks[student.id] || ''}
+                          onChange={e => setRemarks(prev => ({ ...prev, [student.id]: e.target.value }))}
+                          data-testid={`input-remark-${student.id}`}
+                        />
                       </div>
                     ))}
                   </div>

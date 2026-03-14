@@ -7,7 +7,8 @@ import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, User, GraduationCap } from 'lucide-react'
+import { Loader2, ArrowLeft, User, GraduationCap, FileText } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface Student {
   id: string
@@ -17,10 +18,20 @@ interface Student {
   profiles: { full_name: string } | null
 }
 
+interface Exam {
+  id: string
+  name: string
+  term: string
+  year: number
+  published: boolean
+}
+
 export default function ClassStudentsPage() {
   const params = useParams()
   const className = decodeURIComponent(params.class as string)
   const [students, setStudents] = useState<Student[]>([])
+  const [exams, setExams] = useState<Exam[]>([])
+  const [selectedExam, setSelectedExam] = useState('')
   const [loading, setLoading] = useState(true)
   const [authorized, setAuthorized] = useState(true)
   const [profile, setProfile] = useState<any>(null)
@@ -51,14 +62,22 @@ export default function ClassStudentsPage() {
         return
       }
 
-      const { data } = await supabase
-        .from('students')
-        .select('id, admission_number, class, gender, profiles(full_name)')
-        .eq('class', className)
-        .eq('status', 'active')
-        .order('admission_number')
+      const [studentsRes, examsRes] = await Promise.all([
+        supabase
+          .from('students')
+          .select('id, admission_number, class, gender, profiles(full_name)')
+          .eq('class', className)
+          .eq('status', 'active')
+          .order('admission_number'),
+        supabase
+          .from('exams')
+          .select('id, name, term, year, published')
+          .order('year', { ascending: false })
+          .order('term'),
+      ])
 
-      setStudents((data || []) as unknown as Student[])
+      setStudents((studentsRes.data || []) as unknown as Student[])
+      setExams((examsRes.data || []) as Exam[])
       setLoading(false)
     }
     load()
@@ -83,6 +102,24 @@ export default function ClassStudentsPage() {
             {loading ? className : `${className} — ${students.length} student${students.length !== 1 ? 's' : ''}`}
           </h2>
         </div>
+
+        {!loading && students.length > 0 && exams.length > 0 && (
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-sm text-muted-foreground shrink-0">Report cards for:</span>
+            <Select value={selectedExam} onValueChange={setSelectedExam}>
+              <SelectTrigger className="w-64" data-testid="select-exam-report">
+                <SelectValue placeholder="Select exam to view report cards..." />
+              </SelectTrigger>
+              <SelectContent>
+                {exams.map(e => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.name} — {e.term} {e.year} {e.published ? '' : '(Draft)'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex justify-center py-16">
@@ -111,13 +148,21 @@ export default function ClassStudentsPage() {
                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       <User className="h-5 w-5 text-primary" />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="font-semibold">{student.profiles?.full_name || 'Unknown'}</p>
                       <p className="text-sm text-muted-foreground">
                         {student.admission_number}
                         {student.gender && ` · ${student.gender}`}
                       </p>
                     </div>
+                    {selectedExam && (
+                      <Link href={`/report-card/${student.id}/${selectedExam}`}>
+                        <Button variant="outline" size="sm" className="gap-1 shrink-0" data-testid={`button-report-${student.id}`}>
+                          <FileText className="h-4 w-4" />
+                          Report Card
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </CardContent>
               </Card>

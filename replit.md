@@ -108,6 +108,8 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - `GET/POST/PATCH/DELETE /api/admin/announcements` — Admin: manage announcements
 - `GET/POST/DELETE /api/admin/gallery` — Admin: upload/manage gallery images (Supabase Storage)
 - `GET/POST/PATCH /api/admin/users` — Admin: list users, update roles, invite by email
+- `GET /api/report-card/[studentId]/[examId]` — Assemble report card data (student info, results, school settings, principal comment). Role-gated: students see only their own, parents see their children, teachers/admins see all. Unpublished exams blocked for student/parent roles.
+- `POST /api/report-card/[studentId]/[examId]` — Admin only: upsert principal's comment per student per exam
 
 ### Admin Portal (`/admin`)
 - Dashboard with live stats + **new payments notification badge** + "New" badges on recent payments
@@ -129,21 +131,29 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 
 ### Teacher Portal (`/teacher`)
 - Dashboard with assigned students and upcoming events (live data)
-- Class view page (`/teacher/classes/[class]`)
-- Results upload page (`/teacher/results/upload`) — select exam/subject, enter scores per student. Subjects are filtered by `applicable_classes` and `applicable_departments` (SSS classes only) — empty arrays mean "applies to all"
+- Class view page (`/teacher/classes/[class]`) — exam selector + "View Report Card" links per student
+- Results upload page (`/teacher/results/upload`) — select exam/subject, enter scores + remarks per student. Subjects are filtered by `applicable_classes` and `applicable_departments` (SSS classes only) — empty arrays mean "applies to all"
 
 ### Student Portal (`/student`)
 - Dashboard with real profile data (name, class, admission number)
 - **Announcements section** — shows published announcements targeting 'all' or 'students'
 - Recent results with grade badges
 - Upcoming events
-- Full results page (`/student/results`) — grouped by exam with averages, published-only filter, term selector for historical browsing
+- Full results page (`/student/results`) — grouped by exam with averages, published-only filter, term selector, "View Report Card" link per exam
 
 ### Parent Portal (`/parent`)
 - Dashboard listing real children from Supabase
 - **Announcements section** — shows published announcements targeting 'all' or 'parents'
-- Child results page (`/parent/results/[admissionNumber]`) — published-only filter, term selector for historical browsing
+- Child results page (`/parent/results/[admissionNumber]`) — published-only filter, term selector, "View Report Card" link per exam
 - Payment history page (`/parent/payments`) — with **Receipt** button opening printable modal
+
+### Report Card (`/report-card/[studentId]/[examId]`)
+- Print-optimized report card page with school logo, student info, results table, grades, teacher remarks
+- Principal's comment field (admin-editable textarea, saved to `report_card_comments` table)
+- Signature lines and school stamp area
+- "Print / Save as PDF" button triggers browser print dialog
+- `@media print` CSS hides all navigation, only the report card prints on A4
+- Role-gated: students see only their own, parents see their children, unpublished exams blocked for student/parent
 
 ## Auth Flow
 

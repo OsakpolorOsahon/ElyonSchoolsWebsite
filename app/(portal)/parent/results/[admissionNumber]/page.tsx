@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Trophy, User } from 'lucide-react'
+import { Loader2, ArrowLeft, Trophy, User, FileText } from 'lucide-react'
 
 interface Result {
   id: string
@@ -94,11 +94,12 @@ export default function ChildResultsPage() {
   }, [results, termFilter])
 
   const groupedByExam = filteredResults.reduce((acc, result) => {
+    const eId = result.exams?.id || 'unknown'
     const examKey = result.exams ? `${result.exams.term} ${result.exams.year} — ${result.exams.name}` : 'Unknown Exam'
-    if (!acc[examKey]) acc[examKey] = []
-    acc[examKey].push(result)
+    if (!acc[eId]) acc[eId] = { label: examKey, results: [] }
+    acc[eId].results.push(result)
     return acc
-  }, {} as Record<string, Result[]>)
+  }, {} as Record<string, { label: string; results: Result[] }>)
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -161,19 +162,29 @@ export default function ChildResultsPage() {
           </Card>
         ) : (
           <div className="space-y-6">
-            {Object.entries(groupedByExam).map(([examName, examResults]) => {
+            {Object.entries(groupedByExam).map(([eId, { label: examName, results: examResults }]) => {
               const avg = examResults.reduce((s, r) => s + r.score, 0) / examResults.length
               return (
-                <Card key={examName}>
+                <Card key={eId}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2">
                         <Trophy className="h-5 w-5 text-primary" />
                         {examName}
                       </CardTitle>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Average</p>
-                        <p className="text-2xl font-bold text-primary">{avg.toFixed(1)}%</p>
+                      <div className="flex items-center gap-4">
+                        {student && eId !== 'unknown' && (
+                          <Link href={`/report-card/${student.id}/${eId}`}>
+                            <Button variant="outline" size="sm" className="gap-1" data-testid={`button-report-card-${eId}`}>
+                              <FileText className="h-4 w-4" />
+                              Report Card
+                            </Button>
+                          </Link>
+                        )}
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground">Average</p>
+                          <p className="text-2xl font-bold text-primary">{avg.toFixed(1)}%</p>
+                        </div>
                       </div>
                     </div>
                   </CardHeader>
