@@ -12,7 +12,9 @@ import {
   Bell,
   User,
   Megaphone,
+  Wallet,
 } from 'lucide-react'
+import ParentChildSelector from '@/components/portal/ParentChildSelector'
 
 export const metadata = {
   title: 'Parent Dashboard - Elyon Schools',
@@ -37,7 +39,8 @@ export default async function ParentDashboard() {
     supabase
       .from('students')
       .select('id, admission_number, class, profiles(full_name)')
-      .eq('parent_profile_id', session.user.id),
+      .eq('parent_profile_id', session.user.id)
+      .eq('status', 'active'),
     supabase
       .from('events')
       .select('title, start_ts')
@@ -53,7 +56,12 @@ export default async function ParentDashboard() {
       .limit(3),
   ])
 
-  const children = childrenResult.data
+  const children = (childrenResult.data || []) as unknown as Array<{
+    id: string
+    admission_number: string
+    class: string
+    profiles: { full_name: string } | null
+  }>
   const upcomingEvents = upcomingEventsResult.data
   const announcements = announcementsResult.data
 
@@ -90,39 +98,49 @@ export default async function ParentDashboard() {
 
         <h2 className="text-lg font-semibold text-foreground mb-4">My Children</h2>
 
-        {children && children.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 mb-8">
-            {children.map((child: any) => (
-              <Card key={child.id} className="hover-elevate">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                      <User className="h-7 w-7 text-primary" />
+        {children.length > 0 ? (
+          <>
+            {children.length > 1 ? (
+              <ParentChildSelector children={children} />
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 mb-8">
+                <Card className="hover-elevate">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                        <User className="h-7 w-7 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-foreground">{children[0].profiles?.full_name || 'Student'}</h3>
+                        <p className="text-sm text-muted-foreground">{children[0].class}</p>
+                        <p className="text-xs text-muted-foreground">{children[0].admission_number}</p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-foreground">{child.profiles?.full_name || 'Student'}</h3>
-                      <p className="text-sm text-muted-foreground">{child.class}</p>
-                      <p className="text-xs text-muted-foreground">{child.admission_number}</p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" className="flex-1" asChild>
+                        <Link href={`/parent/results/${encodeURIComponent(children[0].admission_number)}`}>
+                          <FileText className="h-4 w-4 mr-1" />
+                          Results
+                        </Link>
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1" asChild>
+                        <Link href="/parent/fees">
+                          <Wallet className="h-4 w-4 mr-1" />
+                          Fees
+                        </Link>
+                      </Button>
+                      <Button size="sm" className="flex-1" asChild>
+                        <Link href="/parent/payments">
+                          <CreditCard className="h-4 w-4 mr-1" />
+                          Payments
+                        </Link>
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1" asChild>
-                      <Link href={`/parent/results/${encodeURIComponent(child.admission_number)}`}>
-                        <FileText className="h-4 w-4 mr-1" />
-                        View Results
-                      </Link>
-                    </Button>
-                    <Button size="sm" className="flex-1" asChild>
-                      <Link href="/parent/payments">
-                        <CreditCard className="h-4 w-4 mr-1" />
-                        Payments
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </>
         ) : (
           <Card className="mb-8">
             <CardContent className="py-12 text-center text-muted-foreground">

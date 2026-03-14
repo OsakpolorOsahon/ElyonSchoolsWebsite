@@ -35,6 +35,7 @@ Preferred communication style: Simple, everyday language.
 - `lib/supabase/admin.ts` — Service-role client for bypassing RLS on server writes
 - `components/portal/PortalHeader.tsx` — Shared header with logout for all portals + current term badge from `academic_settings`
 - `components/portal/PaymentReceiptModal.tsx` — Printable payment receipt modal
+- `components/portal/ParentChildSelector.tsx` — Multi-child selector (tabs for 2-3, dropdown for 4+)
 
 ### Environment Variables (Replit Secrets)
 
@@ -99,7 +100,7 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - `POST /api/contact` — Save contact form submission
 - `POST /api/admissions` — Create admission application
 - `POST /api/paystack/verify` — Verify Paystack admission payment + update admission status
-- `POST /api/paystack/general` — Verify general Paystack payments (school fees, donations) + record to DB
+- `POST /api/paystack/general` — Verify general Paystack payments (school fees, donations, parent fee payments) + record to DB. Auto-links `student_id` and `term/year` from metadata/academic_settings
 - `GET/PATCH /api/admin/admissions` — Admin: list/update admissions (role-protected)
 - `POST/PATCH /api/admin/students` — Admin: create student record (POST), update status/class/department (PATCH). Validates class against ALL_CLASSES whitelist, department restricted to SSS classes, graduation_year 1994-2100, transfer_note max 500 chars
 - `POST /api/admin/students/promote` — Admin: bulk end-of-year promotion. Moves each active student to next class (SSS 3 → graduated). Accepts `skipIds` for repeating students. Returns per-student error details for unknown classes
@@ -141,14 +142,16 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - Dashboard with real profile data (name, class, admission number)
 - **Announcements section** — shows published announcements targeting 'all' or 'students'
 - Recent results with grade badges
+- **Fee status card** — Shows current term expected fees, amount paid, outstanding balance with color-coded status badge (green=paid, amber=partial, red=unpaid)
 - Upcoming events
 - Full results page (`/student/results`) — grouped by exam with averages, published-only filter, term selector, "View Report Card" link per exam
 
 ### Parent Portal (`/parent`)
-- Dashboard listing real children from Supabase
+- Dashboard with **child selector** — tabs for 2-3 children, dropdown for more. All data filters to selected child
 - **Announcements section** — shows published announcements targeting 'all' or 'parents'
+- **Fees page** (`/parent/fees`) — Current term fee breakdown by child's class, expected/paid/outstanding summary cards, "Pay Now" Paystack button for outstanding balance, payment history with receipt links
 - Child results page (`/parent/results/[admissionNumber]`) — published-only filter, term selector, "View Report Card" link per exam
-- Payment history page (`/parent/payments`) — with **Receipt** button opening printable modal
+- Payment history page (`/parent/payments`) — includes child-linked offline payments, **Receipt** links to dedicated receipt page
 
 ### Report Card (`/report-card/[studentId]/[examId]`)
 - Print-optimized report card page with school logo, student info, results table, grades, teacher remarks

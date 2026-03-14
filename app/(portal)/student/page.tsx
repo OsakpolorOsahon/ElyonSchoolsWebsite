@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { 
   Calendar,
   FileText,
@@ -13,11 +14,16 @@ import {
   BookOpen,
   Trophy,
   Megaphone,
+  Wallet,
+  CheckCircle,
+  AlertTriangle,
 } from 'lucide-react'
 
 export const metadata = {
   title: 'Student Dashboard - Elyon Schools',
 }
+
+const FEE_RELEVANT_TYPES = ['school_fee', 'tuition', 'pta_levy', 'books', 'uniform', 'technology_fee', 'sports_fee', 'lab_fee', 'exam_fee']
 
 export default async function StudentDashboard() {
   const supabase = await createClient()
@@ -40,7 +46,7 @@ export default async function StudentDashboard() {
     .eq('profile_id', session.user.id)
     .single()
 
-  const [resultsResult, eventsResult, announcementsResult] = await Promise.all([
+  const [resultsResult, eventsResult, announcementsResult, settingsResult] = await Promise.all([
     studentRecord
       ? supabase
           .from('student_results')
@@ -63,15 +69,62 @@ export default async function StudentDashboard() {
       .in('target_audience', ['all', 'students'])
       .order('created_at', { ascending: false })
       .limit(3),
+    supabase
+      .from('academic_settings')
+      .select('current_term, current_year')
+      .eq('singleton_key', true)
+      .single(),
   ])
 
   const results = resultsResult.data
   const upcomingEvents = eventsResult.data
   const announcements = announcementsResult.data
+  const settings = settingsResult.data
 
   const average = results && results.length > 0
     ? results.reduce((sum: number, r: any) => sum + r.score, 0) / results.length
     : null
+
+  let feeExpected = 0
+  let feePaid = 0
+  let feeStatus: 'paid' | 'partial' | 'unpaid' | 'none' = 'none'
+
+  if (studentRecord && settings) {
+    const { data: fees } = await adminDb
+      .from('fee_structures')
+      .select('amount')
+      .eq('class', studentRecord.class)
+      .eq('term', settings.current_term)
+      .eq('year', settings.current_year)
+
+    feeExpected = (fees || []).reduce((s: number, f: any) => s + Number(f.amount), 0)
+
+    const { data: payments } = await adminDb
+      .from('payments')
+      .select('amount, payment_type')
+      .eq('student_id', studentRecord.id)
+      .eq('status', 'success')
+      .eq('term', settings.current_term)
+      .eq('year', settings.current_year)
+
+    const feePayments = (payments || []).filter((p: any) => FEE_RELEVANT_TYPES.includes(p.payment_type || ''))
+    feePaid = feePayments.reduce((s: number, p: any) => s + Number(p.amount), 0)
+
+    if (feeExpected === 0) {
+      feeStatus = feePaid > 0 ? 'paid' : 'none'
+    } else if (feeExpected - feePaid <= 0) {
+      feeStatus = 'paid'
+    } else if (feePaid > 0) {
+      feeStatus = 'partial'
+    } else {
+      feeStatus = 'unpaid'
+    }
+  }
+
+  const feeOutstanding = Math.max(0, feeExpected - feePaid)
+
+  const formatAmount = (n: number) =>
+    new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(n)
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -176,6 +229,55 @@ export default async function StudentDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {studentRecord && settings && feeExpected > 0 && (
+          <Card className={`mb-8 ${feeStatus === 'paid' ? 'border-green-200' : feeStatus === 'partial' ? 'border-amber-200' : 'border-red-200'}`} data-testid="card-fee-status">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wallet className="h-5 w-5" />
+                Fee Status — {settings.current_term} Term {settings.current_year}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-3 mb-4">
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Expected</p>
+                  <p className="text-lg font-bold" data-testid="text-fee-expected">{formatAmount(feeExpected)}</p>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Paid</p>
+                  <p className="text-lg font-bold text-green-600" data-testid="text-fee-paid">{formatAmount(feePaid)}</p>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Outstanding</p>
+                  <p className={`text-lg font-bold ${feeOutstanding > 0 ? 'text-red-600' : 'text-green-600'}`} data-testid="text-fee-outstanding">
+                    {formatAmount(feeOutstanding)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {feeStatus === 'paid' && (
+                  <Badge className="bg-green-100 text-green-700 gap-1" data-testid="badge-fee-status">
+                    <CheckCircle className="h-3 w-3" /> Fully Paid
+                  </Badge>
+                )}
+                {feeStatus === 'partial' && (
+                  <Badge className="bg-amber-100 text-amber-700 gap-1" data-testid="badge-fee-status">
+                    <AlertTriangle className="h-3 w-3" /> Partially Paid
+                  </Badge>
+                )}
+                {feeStatus === 'unpaid' && (
+                  <Badge className="bg-red-100 text-red-700 gap-1" data-testid="badge-fee-status">
+                    <AlertTriangle className="h-3 w-3" /> Unpaid
+                  </Badge>
+                )}
+                <span className="text-xs text-muted-foreground ml-2">
+                  Contact your parent/guardian to make payments.
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>

@@ -29,19 +29,37 @@ export async function POST(request: NextRequest) {
     const actualAmount = verifyData.data.amount / 100
     const supabase = createAdminClient()
 
+    const insertData: Record<string, any> = {
+      amount: actualAmount,
+      status: 'success',
+      method: 'paystack',
+      reference,
+      payment_type,
+      payer_name: payer_name || null,
+      payer_email: payer_email || verifyData.data.customer?.email || null,
+      paystack_response: verifyData.data,
+      metadata: metadata || null,
+    }
+
+    if (metadata?.student_id) {
+      insertData.student_id = metadata.student_id
+    }
+
+    if (!insertData.term || !insertData.year) {
+      const { data: settings } = await supabase
+        .from('academic_settings')
+        .select('current_term, current_year')
+        .eq('singleton_key', true)
+        .single()
+      if (settings) {
+        insertData.term = settings.current_term
+        insertData.year = settings.current_year
+      }
+    }
+
     const { data, error } = await supabase
       .from('payments')
-      .insert({
-        amount: actualAmount,
-        status: 'success',
-        method: 'paystack',
-        reference,
-        payment_type,
-        payer_name: payer_name || null,
-        payer_email: payer_email || verifyData.data.customer?.email || null,
-        paystack_response: verifyData.data,
-        metadata: metadata || null,
-      })
+      .insert(insertData)
       .select('id')
       .single()
 
