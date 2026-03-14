@@ -3,6 +3,14 @@
 -- Run this ONCE in your Supabase SQL Editor
 -- Safe to re-run (all statements are idempotent)
 -- ============================================================
+--
+-- PREREQUISITES:
+--   1. setup.sql (or initial migrations) must have been run first
+--   2. migrate_class_teacher.sql must have been run first
+--      (creates class_teacher table used in RLS policies here)
+--   3. The update_updated_at_column() function must exist
+--      (created by setup.sql)
+--
 -- Adds: student lifecycle fields, subject-class mapping,
 --        exam publication control, academic settings,
 --        fee structures, offline payment support,
