@@ -43,12 +43,11 @@ export async function GET(
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
     }
 
+    const PUBLIC_RECEIPT_TYPES = ['application_fee', 'admission_fee', 'donation']
+
     if (!session) {
-      if (isUUID || reference.length < 16) {
+      if (isUUID || !PUBLIC_RECEIPT_TYPES.includes(payment.payment_type) || payment.status !== 'success') {
         return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-      }
-      if (payment.status !== 'success') {
-        return NextResponse.json({ error: 'Receipt not found' }, { status: 404 })
       }
       return NextResponse.json({
         payment: {
