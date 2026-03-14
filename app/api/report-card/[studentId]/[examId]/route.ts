@@ -2,6 +2,40 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+interface ProfileRow {
+  full_name: string
+}
+
+interface StudentRow {
+  id: string
+  admission_number: string
+  class: string
+  department: string | null
+  gender: string | null
+  profiles: ProfileRow | null
+}
+
+interface SubjectRow {
+  id: string
+  name: string
+  code: string
+  applicable_classes: string[] | null
+  applicable_departments: string[] | null
+}
+
+interface ResultRow {
+  id: string
+  score: number
+  ca_score: number | null
+  exam_score: number | null
+  grade: string | null
+  remarks: string | null
+  subject_id: string
+  subjects: { id: string; name: string; code: string } | null
+}
+
+const SSS_CLASSES = new Set(['SSS 1', 'SSS 2', 'SSS 3'])
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ studentId: string; examId: string }> }
@@ -42,15 +76,17 @@ export async function GET(
     return NextResponse.json({ error: 'Exam results not published yet' }, { status: 403 })
   }
 
-  const { data: student } = await adminDb
+  const { data: studentData } = await adminDb
     .from('students')
     .select('id, admission_number, class, department, gender, profiles(full_name)')
     .eq('id', studentId)
     .single()
 
-  if (!student) {
+  if (!studentData) {
     return NextResponse.json({ error: 'Student not found' }, { status: 404 })
   }
+
+  const student = studentData as unknown as StudentRow
 
   if (role === 'student') {
     const { data: myStudent } = await adminDb
@@ -76,25 +112,60 @@ export async function GET(
     }
   }
 
-  const { data: results } = await adminDb
-    .from('student_results')
-    .select('id, score, grade, remarks, subjects(id, name, code)')
-    .eq('student_id', studentId)
-    .eq('exam_id', examId)
-    .order('created_at')
+  const [resultsRes, subjectsRes, settingsRes, commentRes] = await Promise.all([
+    adminDb
+      .from('student_results')
+      .select('id, score, ca_score, exam_score, grade, remarks, subject_id, subjects(id, name, code)')
+      .eq('student_id', studentId)
+      .eq('exam_id', examId)
+      .order('created_at'),
+    adminDb
+      .from('subjects')
+      .select('id, name, code, applicable_classes, applicable_departments')
+      .order('name'),
+    adminDb
+      .from('academic_settings')
+      .select('school_name, principal_name')
+      .eq('singleton_key', true)
+      .single(),
+    adminDb
+      .from('report_card_comments')
+      .select('principal_comment')
+      .eq('student_id', studentId)
+      .eq('exam_id', examId)
+      .single(),
+  ])
 
-  const { data: settings } = await adminDb
-    .from('academic_settings')
-    .select('school_name, principal_name')
-    .eq('singleton_key', true)
-    .single()
+  const results = (resultsRes.data || []) as unknown as ResultRow[]
+  const allSubjects = (subjectsRes.data || []) as SubjectRow[]
+  const settings = settingsRes.data
+  const commentData = commentRes.data
 
-  const { data: comment } = await adminDb
-    .from('report_card_comments')
-    .select('principal_comment')
-    .eq('student_id', studentId)
-    .eq('exam_id', examId)
-    .single()
+  const applicableSubjects = allSubjects.filter(subject => {
+    const classes = subject.applicable_classes || []
+    if (classes.length > 0 && !classes.includes(student.class)) return false
+    if (SSS_CLASSES.has(student.class)) {
+      const depts = subject.applicable_departments || []
+      if (depts.length > 0 && student.department && !depts.includes(student.department)) return false
+    }
+    return true
+  })
+
+  const resultsBySubjectId = new Map(results.map(r => [r.subject_id, r]))
+
+  const assembledResults = applicableSubjects.map(subject => {
+    const result = resultsBySubjectId.get(subject.id)
+    return {
+      id: result?.id || null,
+      subject_name: subject.name,
+      subject_code: subject.code,
+      ca_score: result ? Number(result.ca_score ?? 0) : null,
+      exam_score: result ? Number(result.exam_score ?? 0) : null,
+      score: result ? Number(result.score) : null,
+      grade: result?.grade || null,
+      remarks: result?.remarks || null,
+    }
+  })
 
   return NextResponse.json({
     student: {
@@ -103,7 +174,7 @@ export async function GET(
       class: student.class,
       department: student.department,
       gender: student.gender,
-      full_name: (student as any).profiles?.full_name || 'Unknown',
+      full_name: student.profiles?.full_name || 'Unknown',
     },
     exam: {
       id: exam.id,
@@ -112,17 +183,10 @@ export async function GET(
       year: exam.year,
       published: exam.published,
     },
-    results: (results || []).map((r: any) => ({
-      id: r.id,
-      score: Number(r.score),
-      grade: r.grade,
-      remarks: r.remarks,
-      subject_name: r.subjects?.name || 'Unknown',
-      subject_code: r.subjects?.code || '',
-    })),
+    results: assembledResults,
     school_name: settings?.school_name || 'Elyon Schools',
     principal_name: settings?.principal_name || '',
-    principal_comment: comment?.principal_comment || '',
+    principal_comment: commentData?.principal_comment || '',
     viewer_role: role,
   })
 }

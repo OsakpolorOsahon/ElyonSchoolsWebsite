@@ -9,8 +9,10 @@ import { useToast } from '@/hooks/use-toast'
 import { Loader2, ArrowLeft, Printer, Save } from 'lucide-react'
 
 interface ResultRow {
-  id: string
-  score: number
+  id: string | null
+  score: number | null
+  ca_score: number | null
+  exam_score: number | null
   grade: string | null
   remarks: string | null
   subject_name: string
@@ -67,8 +69,9 @@ export default function ReportCardPage() {
         const d: ReportData = await res.json()
         setData(d)
         setComment(d.principal_comment)
-      } catch (e: any) {
-        setError(e.message)
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : 'Unknown error'
+        setError(msg)
       } finally {
         setLoading(false)
       }
@@ -89,8 +92,9 @@ export default function ReportCardPage() {
         throw new Error(err.error)
       }
       toast({ title: 'Comment saved', description: "Principal's comment has been updated." })
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' })
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Unknown error'
+      toast({ title: 'Error', description: msg, variant: 'destructive' })
     } finally {
       setSavingComment(false)
     }
@@ -114,9 +118,10 @@ export default function ReportCardPage() {
   }
 
   const { student, exam, results, school_name, principal_name, viewer_role } = data
-  const totalScore = results.reduce((s, r) => s + r.score, 0)
-  const average = results.length > 0 ? totalScore / results.length : 0
-  const totalGradePoints = results.reduce((s, r) => s + (gradePoints[r.grade || 'F'] || 0), 0)
+  const scoredResults = results.filter(r => r.score !== null)
+  const totalScore = scoredResults.reduce((s, r) => s + (r.score ?? 0), 0)
+  const average = scoredResults.length > 0 ? totalScore / scoredResults.length : 0
+  const totalGradePoints = scoredResults.reduce((s, r) => s + (gradePoints[r.grade || 'F'] || 0), 0)
 
   const isAdmin = viewer_role === 'admin'
   const SSS_CLASSES = ['SSS 1', 'SSS 2', 'SSS 3']
@@ -164,7 +169,7 @@ export default function ReportCardPage() {
                     {school_name}
                   </h1>
                   <p className="text-sm text-gray-600 mt-1">Excellence in Education Since 1994</p>
-                  <p className="text-xs text-gray-500">Motto: "Training a Child in the Way of the Lord"</p>
+                  <p className="text-xs text-gray-500">Motto: &quot;Training a Child in the Way of the Lord&quot;</p>
                 </div>
                 <div className="h-20 w-20 print:h-16 print:w-16" />
               </div>
@@ -226,77 +231,81 @@ export default function ReportCardPage() {
               </div>
             </div>
 
-            {results.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <p>No results recorded for this exam.</p>
-              </div>
-            ) : (
-              <>
-                <table className="w-full border-collapse mb-6 text-sm" data-testid="table-results">
-                  <thead>
-                    <tr className="bg-green-700 text-white">
-                      <th className="border border-green-800 px-3 py-2 text-left">S/N</th>
-                      <th className="border border-green-800 px-3 py-2 text-left">Subject</th>
-                      <th className="border border-green-800 px-3 py-2 text-center">Code</th>
-                      <th className="border border-green-800 px-3 py-2 text-center">Score</th>
-                      <th className="border border-green-800 px-3 py-2 text-center">Grade</th>
-                      <th className="border border-green-800 px-3 py-2 text-left">Remark</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.map((r, i) => (
-                      <tr key={r.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="border border-gray-300 px-3 py-2">{i + 1}</td>
-                        <td className="border border-gray-300 px-3 py-2 font-medium">{r.subject_name}</td>
-                        <td className="border border-gray-300 px-3 py-2 text-center font-mono text-xs">{r.subject_code}</td>
-                        <td className="border border-gray-300 px-3 py-2 text-center font-semibold">{r.score}</td>
-                        <td className="border border-gray-300 px-3 py-2 text-center">
-                          <span className={`font-bold ${
-                            r.grade === 'A' ? 'text-green-700' :
-                            r.grade === 'B' ? 'text-blue-700' :
-                            r.grade === 'C' ? 'text-yellow-700' :
-                            r.grade === 'D' ? 'text-orange-600' :
-                            'text-red-600'
-                          }`}>
-                            {r.grade || 'F'}
-                          </span>
-                        </td>
-                        <td className="border border-gray-300 px-3 py-2 text-xs text-gray-600 italic">
-                          {r.remarks || '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-green-50 font-semibold">
-                      <td className="border border-gray-300 px-3 py-2" colSpan={3}>
-                        Total ({results.length} subject{results.length !== 1 ? 's' : ''})
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2 text-center">{totalScore}</td>
-                      <td className="border border-gray-300 px-3 py-2 text-center">{totalGradePoints} pts</td>
-                      <td className="border border-gray-300 px-3 py-2"></td>
-                    </tr>
-                    <tr className="bg-green-50 font-semibold">
-                      <td className="border border-gray-300 px-3 py-2" colSpan={3}>
-                        Average Score
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2 text-center text-green-700 text-lg">
-                        {average.toFixed(1)}%
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2" colSpan={2}></td>
-                    </tr>
-                  </tfoot>
-                </table>
+            <table className="w-full border-collapse mb-6 text-sm" data-testid="table-results">
+              <thead>
+                <tr className="bg-green-700 text-white">
+                  <th className="border border-green-800 px-3 py-2 text-left">S/N</th>
+                  <th className="border border-green-800 px-3 py-2 text-left">Subject</th>
+                  <th className="border border-green-800 px-3 py-2 text-center">CA (40)</th>
+                  <th className="border border-green-800 px-3 py-2 text-center">Exam (60)</th>
+                  <th className="border border-green-800 px-3 py-2 text-center">Total (100)</th>
+                  <th className="border border-green-800 px-3 py-2 text-center">Grade</th>
+                  <th className="border border-green-800 px-3 py-2 text-left">Remark</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((r, i) => (
+                  <tr key={r.subject_code + i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="border border-gray-300 px-3 py-2">{i + 1}</td>
+                    <td className="border border-gray-300 px-3 py-2 font-medium">{r.subject_name}</td>
+                    <td className="border border-gray-300 px-3 py-2 text-center">
+                      {r.score !== null ? (r.ca_score ?? '—') : '—'}
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2 text-center">
+                      {r.score !== null ? (r.exam_score ?? '—') : '—'}
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2 text-center font-semibold">
+                      {r.score !== null ? r.score : '—'}
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2 text-center">
+                      {r.grade ? (
+                        <span className={`font-bold ${
+                          r.grade === 'A' ? 'text-green-700' :
+                          r.grade === 'B' ? 'text-blue-700' :
+                          r.grade === 'C' ? 'text-yellow-700' :
+                          r.grade === 'D' ? 'text-orange-600' :
+                          'text-red-600'
+                        }`}>
+                          {r.grade}
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2 text-xs text-gray-600 italic">
+                      {r.remarks || '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              {scoredResults.length > 0 && (
+                <tfoot>
+                  <tr className="bg-green-50 font-semibold">
+                    <td className="border border-gray-300 px-3 py-2" colSpan={4}>
+                      Total ({scoredResults.length} subject{scoredResults.length !== 1 ? 's' : ''} scored)
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2 text-center">{totalScore}</td>
+                    <td className="border border-gray-300 px-3 py-2 text-center">{totalGradePoints} pts</td>
+                    <td className="border border-gray-300 px-3 py-2"></td>
+                  </tr>
+                  <tr className="bg-green-50 font-semibold">
+                    <td className="border border-gray-300 px-3 py-2" colSpan={4}>
+                      Average Score
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2 text-center text-green-700 text-lg">
+                      {average.toFixed(1)}%
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2" colSpan={2}></td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
 
-                <div className="mb-3 text-xs text-gray-500">
-                  <span className="font-semibold">Grading Key:</span> A (70-100) Excellent | B (60-69) Very Good | C (50-59) Good | D (45-49) Fair | E (40-44) Pass | F (0-39) Fail
-                </div>
-              </>
-            )}
+            <div className="mb-3 text-xs text-gray-500">
+              <span className="font-semibold">Grading Key:</span> A (70-100) Excellent | B (60-69) Very Good | C (50-59) Good | D (45-49) Fair | E (40-44) Pass | F (0-39) Fail
+            </div>
 
             <div className="border-t-2 border-green-700 pt-4 mt-6 space-y-4">
               <div>
-                <p className="text-sm font-semibold text-gray-600 mb-1">Principal's Comment:</p>
+                <p className="text-sm font-semibold text-gray-600 mb-1">Principal&apos;s Comment:</p>
                 {isAdmin ? (
                   <div className="print:hidden space-y-2">
                     <Textarea
@@ -326,12 +335,12 @@ export default function ReportCardPage() {
               <div className="grid grid-cols-2 gap-8 pt-4">
                 <div className="text-center">
                   <div className="border-b border-gray-400 mb-1 h-12"></div>
-                  <p className="text-xs text-gray-500">Class Teacher's Signature</p>
+                  <p className="text-xs text-gray-500">Class Teacher&apos;s Signature</p>
                 </div>
                 <div className="text-center">
                   <div className="border-b border-gray-400 mb-1 h-12"></div>
                   <p className="text-xs text-gray-500">
-                    {principal_name ? `${principal_name} — ` : ''}Principal's Signature & School Stamp
+                    {principal_name ? `${principal_name} — ` : ''}Principal&apos;s Signature & School Stamp
                   </p>
                 </div>
               </div>

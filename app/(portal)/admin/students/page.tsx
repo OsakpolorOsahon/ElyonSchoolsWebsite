@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Users, Search, UserPlus, ArrowUpRight, GraduationCap, ChevronUp } from 'lucide-react'
+import { Loader2, ArrowLeft, Users, Search, UserPlus, ArrowUpRight, GraduationCap, ChevronUp, FileText } from 'lucide-react'
 
 interface Student {
   id: string
@@ -33,6 +33,14 @@ interface UserProfile {
   id: string
   full_name: string
   role: string
+}
+
+interface Exam {
+  id: string
+  name: string
+  term: string
+  year: number
+  published: boolean
 }
 
 const ALL_CLASSES = [
@@ -91,6 +99,8 @@ export default function AdminStudentsPage() {
   const [deptTarget, setDeptTarget] = useState<Student | null>(null)
   const [deptForm, setDeptForm] = useState('')
   const [deptSaving, setDeptSaving] = useState(false)
+  const [exams, setExams] = useState<Exam[]>([])
+  const [selectedExam, setSelectedExam] = useState('')
 
   async function fetchStudents() {
     const supabase = createClient()
@@ -108,8 +118,12 @@ export default function AdminStudentsPage() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
-      const { data: p } = await supabase.from('profiles').select('full_name').eq('id', session.user.id).single()
-      setProfile(p)
+      const [profileRes, examsRes] = await Promise.all([
+        supabase.from('profiles').select('full_name').eq('id', session.user.id).single(),
+        supabase.from('exams').select('id, name, term, year, published').order('year', { ascending: false }).order('term'),
+      ])
+      setProfile(profileRes.data)
+      setExams((examsRes.data || []) as Exam[])
       await fetchStudents()
       setLoading(false)
     }
@@ -321,6 +335,24 @@ export default function AdminStudentsPage() {
           </div>
         </div>
 
+        {exams.length > 0 && (
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-sm text-muted-foreground shrink-0">Report cards for:</span>
+            <Select value={selectedExam} onValueChange={setSelectedExam}>
+              <SelectTrigger className="w-72" data-testid="select-exam-report">
+                <SelectValue placeholder="Select exam to view report cards..." />
+              </SelectTrigger>
+              <SelectContent>
+                {exams.map(e => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.name} — {e.term} {e.year} {e.published ? '' : '(Draft)'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2 mb-4">
           {(['all', 'active', 'graduated', 'withdrawn', 'transferred'] as const).map(s => (
             <Button
@@ -428,6 +460,14 @@ export default function AdminStudentsPage() {
                               )}
                             </Button>
                           </>
+                        )}
+                        {selectedExam && (
+                          <Link href={`/report-card/${student.id}/${selectedExam}`}>
+                            <Button variant="outline" size="sm" className="gap-1" data-testid={`button-report-${student.id}`}>
+                              <FileText className="h-3 w-3" />
+                              Report
+                            </Button>
+                          </Link>
                         )}
                         <Button
                           variant="ghost"

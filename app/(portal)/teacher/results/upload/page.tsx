@@ -53,7 +53,8 @@ export default function UploadResultsPage() {
   const [selectedClass, setSelectedClass] = useState(preselectedClass)
   const [selectedExam, setSelectedExam] = useState('')
   const [selectedSubject, setSelectedSubject] = useState('')
-  const [scores, setScores] = useState<Record<string, string>>({})
+  const [caScores, setCaScores] = useState<Record<string, string>>({})
+  const [examScores, setExamScores] = useState<Record<string, string>>({})
   const [remarks, setRemarks] = useState<Record<string, string>>({})
 
   const classStudents = allStudents.filter(s => s.class === selectedClass)
@@ -134,7 +135,8 @@ export default function UploadResultsPage() {
   }, [preselectedClass])
 
   useEffect(() => {
-    setScores({})
+    setCaScores({})
+    setExamScores({})
     setRemarks({})
     setSelectedSubject('')
   }, [selectedClass])
@@ -159,15 +161,16 @@ export default function UploadResultsPage() {
       toast({ title: 'Invalid subject', description: 'The selected subject is not applicable to this class.', variant: 'destructive' })
       return
     }
-    const entries = Object.entries(scores).filter(([, v]) => v !== '')
-    if (entries.length === 0) {
-      toast({ title: 'No scores entered', description: 'Please enter at least one score.', variant: 'destructive' })
+    const studentIds = students.map(s => s.id).filter(id => caScores[id] || examScores[id])
+    if (studentIds.length === 0) {
+      toast({ title: 'No scores entered', description: 'Please enter CA or exam scores for at least one student.', variant: 'destructive' })
       return
     }
-    for (const [, v] of entries) {
-      const n = parseFloat(v)
-      if (isNaN(n) || n < 0 || n > 100) {
-        toast({ title: 'Invalid score', description: 'Scores must be between 0 and 100.', variant: 'destructive' })
+    for (const id of studentIds) {
+      const ca = caScores[id] ? parseFloat(caScores[id]) : 0
+      const ex = examScores[id] ? parseFloat(examScores[id]) : 0
+      if ((caScores[id] && (isNaN(ca) || ca < 0 || ca > 40)) || (examScores[id] && (isNaN(ex) || ex < 0 || ex > 60))) {
+        toast({ title: 'Invalid score', description: 'CA must be 0-40 and Exam must be 0-60.', variant: 'destructive' })
         return
       }
     }
@@ -175,12 +178,16 @@ export default function UploadResultsPage() {
     setIsSubmitting(true)
     try {
       const supabase = createClient()
-      const inserts = entries.map(([studentId, scoreStr]) => {
-        const score = parseFloat(scoreStr)
+      const inserts = studentIds.map(studentId => {
+        const ca = caScores[studentId] ? parseFloat(caScores[studentId]) : 0
+        const ex = examScores[studentId] ? parseFloat(examScores[studentId]) : 0
+        const score = ca + ex
         return {
           student_id: studentId,
           exam_id: selectedExam,
           subject_id: selectedSubject,
+          ca_score: ca,
+          exam_score: ex,
           score,
           grade: getGrade(score),
           remarks: remarks[studentId]?.trim() || null,
@@ -194,8 +201,9 @@ export default function UploadResultsPage() {
 
       if (error) throw error
 
-      toast({ title: 'Results saved!', description: `${entries.length} result${entries.length !== 1 ? 's' : ''} saved successfully.` })
-      setScores({})
+      toast({ title: 'Results saved!', description: `${studentIds.length} result${studentIds.length !== 1 ? 's' : ''} saved successfully.` })
+      setCaScores({})
+      setExamScores({})
       setRemarks({})
     } catch (err: any) {
       toast({ title: 'Error saving results', description: err.message || 'Something went wrong.', variant: 'destructive' })
@@ -301,7 +309,7 @@ export default function UploadResultsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Step 2 — Enter Scores</CardTitle>
+                <CardTitle>Step 2 — Enter CA & Exam Scores</CardTitle>
                 <CardDescription>
                   {selectedClass
                     ? `${students.length} student${students.length !== 1 ? 's' : ''} in ${selectedClass}${
@@ -324,41 +332,63 @@ export default function UploadResultsPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {students.map(student => (
-                      <div key={student.id} className="p-3 bg-muted/30 rounded-lg space-y-2">
-                        <div className="flex items-center gap-4">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{student.profiles?.full_name || 'Unknown'}</p>
-                            <p className="text-sm text-muted-foreground">{student.admission_number}</p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
+                    <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 px-3 text-xs font-semibold text-muted-foreground">
+                      <span>Student</span>
+                      <span className="text-center">CA (0-40)</span>
+                      <span className="text-center">Exam (0-60)</span>
+                      <span className="text-center">Total</span>
+                    </div>
+                    {students.map(student => {
+                      const ca = caScores[student.id] ? parseFloat(caScores[student.id]) : 0
+                      const ex = examScores[student.id] ? parseFloat(examScores[student.id]) : 0
+                      const total = (caScores[student.id] || examScores[student.id]) ? ca + ex : null
+                      return (
+                        <div key={student.id} className="p-3 bg-muted/30 rounded-lg space-y-2">
+                          <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-center">
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{student.profiles?.full_name || 'Unknown'}</p>
+                              <p className="text-xs text-muted-foreground">{student.admission_number}</p>
+                            </div>
                             <Input
                               type="number"
                               min="0"
-                              max="100"
+                              max="40"
                               step="0.5"
-                              className="w-24 text-center"
-                              placeholder="Score"
-                              value={scores[student.id] || ''}
-                              onChange={e => setScores(prev => ({ ...prev, [student.id]: e.target.value }))}
-                              data-testid={`input-score-${student.id}`}
+                              className="text-center h-9"
+                              placeholder="CA"
+                              value={caScores[student.id] || ''}
+                              onChange={e => setCaScores(prev => ({ ...prev, [student.id]: e.target.value }))}
+                              data-testid={`input-ca-${student.id}`}
                             />
-                            {scores[student.id] && (
-                              <span className="text-sm font-bold w-6 text-primary">
-                                {getGrade(parseFloat(scores[student.id]))}
-                              </span>
-                            )}
+                            <Input
+                              type="number"
+                              min="0"
+                              max="60"
+                              step="0.5"
+                              className="text-center h-9"
+                              placeholder="Exam"
+                              value={examScores[student.id] || ''}
+                              onChange={e => setExamScores(prev => ({ ...prev, [student.id]: e.target.value }))}
+                              data-testid={`input-exam-${student.id}`}
+                            />
+                            <div className="text-center">
+                              {total !== null && (
+                                <span className="text-sm font-bold text-primary" data-testid={`text-total-${student.id}`}>
+                                  {total} {getGrade(total)}
+                                </span>
+                              )}
+                            </div>
                           </div>
+                          <Input
+                            placeholder="Remark (optional)"
+                            className="text-sm h-8"
+                            value={remarks[student.id] || ''}
+                            onChange={e => setRemarks(prev => ({ ...prev, [student.id]: e.target.value }))}
+                            data-testid={`input-remark-${student.id}`}
+                          />
                         </div>
-                        <Input
-                          placeholder="Remark (optional)"
-                          className="text-sm h-8"
-                          value={remarks[student.id] || ''}
-                          onChange={e => setRemarks(prev => ({ ...prev, [student.id]: e.target.value }))}
-                          data-testid={`input-remark-${student.id}`}
-                        />
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </CardContent>

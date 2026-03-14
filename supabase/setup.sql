@@ -1014,3 +1014,7 @@ CREATE POLICY "Admins can delete gallery images"
 --   4. Invite your first admin user via Authentication → Users,
 --      then insert their profile row (see instructions at top).
 -- ============================================================
+
+-- Migration: Add CA and Exam score breakdown to student_results
+ALTER TABLE student_results ADD COLUMN IF NOT EXISTS ca_score DECIMAL(5,2) DEFAULT NULL;
+ALTER TABLE student_results ADD COLUMN IF NOT EXISTS exam_score DECIMAL(5,2) DEFAULT NULL;
