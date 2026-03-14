@@ -6,7 +6,6 @@ import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { createClient } from '@/lib/supabase/client'
 import { Loader2, ArrowLeft, CreditCard } from 'lucide-react'
 
 interface Payment {
@@ -37,58 +36,18 @@ const paymentTypeLabels: Record<string, string> = {
 export default function ParentPaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<{ full_name: string } | null>(null)
 
   const formatAmount = (amount: number) =>
     new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount)
 
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-
-      const { data: p } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', session.user.id)
-        .single()
-      setProfile(p)
-
-      const userEmail = session.user.email || ''
-
-      const { data: children } = await supabase
-        .from('students')
-        .select('id')
-        .eq('parent_profile_id', session.user.id)
-      const childIds = (children || []).map((c: { id: string }) => c.id)
-
-      let allPayments: any[] = []
-
-      const { data: directPayments } = await supabase
-        .from('payments')
-        .select('*')
-        .or(`user_id.eq.${session.user.id},payer_email.eq.${userEmail}`)
-        .order('created_at', { ascending: false })
-      allPayments = directPayments || []
-
-      if (childIds.length > 0) {
-        const { data: childPayments } = await supabase
-          .from('payments')
-          .select('*')
-          .in('student_id', childIds)
-          .order('created_at', { ascending: false })
-
-        const existingIds = new Set(allPayments.map((p: any) => p.id))
-        for (const cp of (childPayments || [])) {
-          if (!existingIds.has(cp.id)) {
-            allPayments.push(cp)
-          }
-        }
-        allPayments.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      }
-
-      setPayments(allPayments)
+      const res = await fetch('/api/parent/payments')
+      if (!res.ok) { setLoading(false); return }
+      const data = await res.json()
+      setProfile(data.profile)
+      setPayments((data.payments || []) as Payment[])
       setLoading(false)
     }
     load()

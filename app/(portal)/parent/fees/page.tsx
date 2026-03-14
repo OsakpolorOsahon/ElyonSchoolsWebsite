@@ -91,64 +91,24 @@ function FeesContent() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
-
       setUserEmail(session.user.email || '')
-      const { data: p } = await supabase.from('profiles').select('full_name').eq('id', session.user.id).single()
-      setProfile(p)
 
-      const { data: childrenData } = await supabase
-        .from('students')
-        .select('id, admission_number, class, profiles(full_name)')
-        .eq('parent_profile_id', session.user.id)
-        .eq('status', 'active')
+      const res = await fetch('/api/parent/fees')
+      if (!res.ok) { setLoading(false); return }
+      const data = await res.json()
 
-      const kids = (childrenData || []) as unknown as Child[]
+      setProfile(data.profile)
+      const kids = (data.children || []) as Child[]
       setChildren(kids)
       if (kids.length > 0 && !initialChildId) setSelectedChildId(kids[0].id)
-      else if (initialChildId && kids.some(k => k.id === initialChildId)) setSelectedChildId(initialChildId)
-
-      const { data: settingsData } = await supabase
-        .from('academic_settings')
-        .select('current_term, current_year')
-        .eq('singleton_key', true)
-        .single()
-      setSettings(settingsData)
-
-      if (settingsData) {
-        const { data: fees } = await supabase
-          .from('fee_structures')
-          .select('*')
-          .eq('term', settingsData.current_term)
-          .eq('year', settingsData.current_year)
-        setFeeStructures(fees || [])
-      }
-
-      const childIds = kids.map(c => c.id)
-      if (childIds.length > 0) {
-        const { data: paymentsData } = await supabase
-          .from('payments')
-          .select('*')
-          .in('student_id', childIds)
-          .order('created_at', { ascending: false })
-
-        const { data: directPayments } = await supabase
-          .from('payments')
-          .select('*')
-          .or(`user_id.eq.${session.user.id},payer_email.eq.${session.user.email}`)
-          .order('created_at', { ascending: false })
-
-        const all: Payment[] = [...((paymentsData || []) as Payment[])]
-        const existingIds = new Set(all.map((p: Payment) => p.id))
-        for (const dp of ((directPayments || []) as Payment[])) {
-          if (!existingIds.has(dp.id)) all.push(dp)
-        }
-        setPayments(all)
-      }
-
+      else if (initialChildId && kids.some((k: Child) => k.id === initialChildId)) setSelectedChildId(initialChildId)
+      setSettings(data.settings)
+      setFeeStructures((data.feeStructures || []) as FeeStructure[])
+      setPayments((data.payments || []) as Payment[])
       setLoading(false)
     }
     load()
-  }, [])
+  }, [initialChildId])
 
   const selectedChild = children.find(c => c.id === selectedChildId)
 

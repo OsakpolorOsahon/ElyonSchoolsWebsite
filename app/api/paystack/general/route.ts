@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
@@ -27,9 +28,9 @@ export async function POST(request: NextRequest) {
     }
 
     const actualAmount = verifyData.data.amount / 100
-    const supabase = createAdminClient()
+    const adminDb = createAdminClient()
 
-    const insertData: Record<string, any> = {
+    const insertData: Record<string, unknown> = {
       amount: actualAmount,
       status: 'success',
       method: 'paystack',
@@ -42,22 +43,48 @@ export async function POST(request: NextRequest) {
     }
 
     if (metadata?.student_id) {
-      insertData.student_id = metadata.student_id
-    }
+      const supabase = await createClient()
+      const { data: { session } } = await supabase.auth.getSession()
 
-    if (!insertData.term || !insertData.year) {
-      const { data: settings } = await supabase
-        .from('academic_settings')
-        .select('current_term, current_year')
-        .eq('singleton_key', true)
-        .single()
-      if (settings) {
-        insertData.term = settings.current_term
-        insertData.year = settings.current_year
+      if (!session) {
+        return NextResponse.json({ error: 'Authentication required for student-linked payments' }, { status: 401 })
       }
+
+      const { data: parentProfile } = await adminDb
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single()
+
+      if (parentProfile?.role === 'parent') {
+        const { data: student } = await adminDb
+          .from('students')
+          .select('id, parent_profile_id')
+          .eq('id', metadata.student_id)
+          .single()
+
+        if (!student || student.parent_profile_id !== session.user.id) {
+          return NextResponse.json({ error: 'You can only make payments for your own children' }, { status: 403 })
+        }
+      } else if (parentProfile?.role !== 'admin') {
+        return NextResponse.json({ error: 'Only parents and admins can make student-linked payments' }, { status: 403 })
+      }
+
+      insertData.student_id = metadata.student_id
+      insertData.user_id = session.user.id
     }
 
-    const { data, error } = await supabase
+    const { data: settings } = await adminDb
+      .from('academic_settings')
+      .select('current_term, current_year')
+      .eq('singleton_key', true)
+      .single()
+    if (settings) {
+      insertData.term = settings.current_term
+      insertData.year = settings.current_year
+    }
+
+    const { data, error } = await adminDb
       .from('payments')
       .insert(insertData)
       .select('id')
@@ -76,7 +103,7 @@ export async function POST(request: NextRequest) {
       payment_type,
       payer_name,
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('General payment error:', error)
     return NextResponse.json({ error: 'Payment verification failed' }, { status: 500 })
   }
