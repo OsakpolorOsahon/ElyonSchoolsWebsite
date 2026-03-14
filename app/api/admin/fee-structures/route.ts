@@ -10,7 +10,7 @@ const VALID_CLASSES = [
 ]
 
 const VALID_TERMS = ['First', 'Second', 'Third']
-const VALID_FEE_TYPES = ['tuition', 'pta_levy', 'books', 'uniform', 'technology_fee', 'sports_fee', 'lab_fee', 'exam_fee']
+const KNOWN_FEE_TYPES = ['tuition', 'pta_levy', 'books', 'uniform', 'technology_fee', 'sports_fee', 'lab_fee', 'exam_fee']
 
 async function requireAdmin(request: NextRequest) {
   const supabase = await createClient()
@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
   if (!VALID_TERMS.includes(term)) {
     return NextResponse.json({ error: `Invalid term. Must be one of: ${VALID_TERMS.join(', ')}` }, { status: 400 })
   }
-  if (!VALID_FEE_TYPES.includes(fee_type)) {
-    return NextResponse.json({ error: `Invalid fee type. Must be one of: ${VALID_FEE_TYPES.join(', ')}` }, { status: 400 })
+  if (typeof fee_type !== 'string' || fee_type.trim().length === 0 || fee_type.length > 50) {
+    return NextResponse.json({ error: 'Fee type must be a non-empty string (max 50 characters)' }, { status: 400 })
   }
   if (typeof year !== 'number' || year < 2000 || year > 2100) {
     return NextResponse.json({ error: 'Year must be between 2000 and 2100' }, { status: 400 })

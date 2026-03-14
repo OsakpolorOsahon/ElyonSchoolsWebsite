@@ -454,7 +454,11 @@ export default function AdminPaymentsPage() {
                           </div>
                           {payment.status === 'success' && (
                             <div className="shrink-0">
-                              <PaymentReceiptModal payment={payment} />
+                              <PaymentReceiptModal payment={{
+                                ...payment,
+                                student_name: payment.student_id ? (students.find(s => s.id === payment.student_id)?.profiles?.full_name || payment.payer_name) : payment.payer_name,
+                                admission_number: payment.student_id ? students.find(s => s.id === payment.student_id)?.admission_number : undefined,
+                              }} />
                             </div>
                           )}
                         </div>

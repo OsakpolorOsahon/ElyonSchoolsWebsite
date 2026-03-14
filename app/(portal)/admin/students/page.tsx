@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Users, Search, UserPlus, ArrowUpRight, GraduationCap, ChevronUp, FileText } from 'lucide-react'
+import { Loader2, ArrowLeft, Users, Search, UserPlus, ArrowUpRight, GraduationCap, ChevronUp, FileText, Banknote } from 'lucide-react'
 
 interface Student {
   id: string
@@ -101,6 +101,19 @@ export default function AdminStudentsPage() {
   const [deptSaving, setDeptSaving] = useState(false)
   const [exams, setExams] = useState<Exam[]>([])
   const [selectedExam, setSelectedExam] = useState('')
+
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const [paymentSaving, setPaymentSaving] = useState(false)
+  const [paymentForm, setPaymentForm] = useState({
+    student_id: '',
+    student_name: '',
+    amount: '',
+    payment_type: 'school_fee',
+    method: 'cash',
+    reference: '',
+    notes: '',
+    date: new Date().toISOString().split('T')[0],
+  })
 
   async function fetchStudents() {
     const supabase = createClient()
@@ -293,6 +306,56 @@ export default function AdminStudentsPage() {
     }
   }
 
+  function openPaymentDialog(student: Student) {
+    setPaymentForm({
+      student_id: student.id,
+      student_name: student.profiles?.full_name || student.admission_number,
+      amount: '',
+      payment_type: 'school_fee',
+      method: 'cash',
+      reference: '',
+      notes: '',
+      date: new Date().toISOString().split('T')[0],
+    })
+    setPaymentDialogOpen(true)
+  }
+
+  async function handlePaymentSave() {
+    if (!paymentForm.student_id || !paymentForm.amount) {
+      toast({ title: 'Missing fields', description: 'Amount is required.', variant: 'destructive' })
+      return
+    }
+    const amount = parseFloat(paymentForm.amount)
+    if (isNaN(amount) || amount <= 0) {
+      toast({ title: 'Invalid amount', description: 'Amount must be a positive number.', variant: 'destructive' })
+      return
+    }
+    setPaymentSaving(true)
+    try {
+      const res = await fetch('/api/admin/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_id: paymentForm.student_id,
+          amount,
+          payment_type: paymentForm.payment_type,
+          method: paymentForm.method,
+          reference: paymentForm.reference || undefined,
+          notes: paymentForm.notes || undefined,
+          date: paymentForm.date,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast({ title: 'Payment recorded', description: `Offline payment of ₦${amount.toLocaleString()} recorded for ${paymentForm.student_name}.` })
+      setPaymentDialogOpen(false)
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' })
+    } finally {
+      setPaymentSaving(false)
+    }
+  }
+
   const availableStudentUsers = studentUsers.filter(u => !existingProfileIds.has(u.id))
   const isSSS = (cls: string) => SSS_CLASSES.includes(cls)
   const statusCounts = {
@@ -460,6 +523,18 @@ export default function AdminStudentsPage() {
                               )}
                             </Button>
                           </>
+                        )}
+                        {student.status === 'active' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1"
+                            onClick={() => openPaymentDialog(student)}
+                            data-testid={`button-payment-${student.id}`}
+                          >
+                            <Banknote className="h-3 w-3" />
+                            Payment
+                          </Button>
                         )}
                         {selectedExam && (
                           <Link href={`/report-card/${student.id}/${selectedExam}`}>
@@ -716,6 +791,99 @@ export default function AdminStudentsPage() {
             <Button onClick={handleDeptSave} disabled={deptSaving} data-testid="button-confirm-dept">
               {deptSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Record Offline Payment Dialog */}
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Record Offline Payment</DialogTitle>
+            <DialogDescription>
+              Recording payment for {paymentForm.student_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Amount (₦) *</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="100"
+                  placeholder="e.g. 45000"
+                  value={paymentForm.amount}
+                  onChange={e => setPaymentForm(f => ({ ...f, amount: e.target.value }))}
+                  data-testid="input-payment-amount"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Payment Type *</Label>
+                <Select value={paymentForm.payment_type} onValueChange={v => setPaymentForm(f => ({ ...f, payment_type: v }))}>
+                  <SelectTrigger data-testid="input-payment-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="school_fee">School Fee</SelectItem>
+                    <SelectItem value="tuition">Tuition</SelectItem>
+                    <SelectItem value="pta_levy">PTA Levy</SelectItem>
+                    <SelectItem value="books">Books</SelectItem>
+                    <SelectItem value="uniform">Uniform</SelectItem>
+                    <SelectItem value="exam_fee">Exam Fee</SelectItem>
+                    <SelectItem value="donation">Donation</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Method *</Label>
+                <Select value={paymentForm.method} onValueChange={v => setPaymentForm(f => ({ ...f, method: v }))}>
+                  <SelectTrigger data-testid="input-payment-method">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={paymentForm.date}
+                  onChange={e => setPaymentForm(f => ({ ...f, date: e.target.value }))}
+                  data-testid="input-payment-date"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Receipt/Reference Number</Label>
+              <Input
+                placeholder="Optional reference number"
+                value={paymentForm.reference}
+                onChange={e => setPaymentForm(f => ({ ...f, reference: e.target.value }))}
+                data-testid="input-payment-reference"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea
+                placeholder="Optional notes..."
+                value={paymentForm.notes}
+                onChange={e => setPaymentForm(f => ({ ...f, notes: e.target.value }))}
+                data-testid="input-payment-notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPaymentDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handlePaymentSave} disabled={paymentSaving} data-testid="button-save-payment">
+              {paymentSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Record Payment
             </Button>
           </DialogFooter>
         </DialogContent>

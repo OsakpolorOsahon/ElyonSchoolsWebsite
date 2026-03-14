@@ -25,9 +25,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Amount must be a positive number' }, { status: 400 })
   }
 
-  const VALID_PAYMENT_TYPES = ['school_fee', 'tuition', 'pta_levy', 'books', 'uniform', 'technology_fee', 'sports_fee', 'lab_fee', 'exam_fee', 'donation']
-  if (!VALID_PAYMENT_TYPES.includes(payment_type)) {
-    return NextResponse.json({ error: `Invalid payment type. Must be one of: ${VALID_PAYMENT_TYPES.join(', ')}` }, { status: 400 })
+  if (typeof payment_type !== 'string' || payment_type.trim().length === 0 || payment_type.length > 50) {
+    return NextResponse.json({ error: 'Payment type must be a non-empty string (max 50 characters)' }, { status: 400 })
   }
 
   if (!['cash', 'bank_transfer'].includes(method)) {

@@ -60,6 +60,7 @@ export default function FeeStructuresPage() {
     year: new Date().getFullYear(),
     fee_type: 'tuition',
     amount: '',
+    custom_fee_type: '',
   })
   const [classFilter, setClassFilter] = useState('all')
   const [termFilter, setTermFilter] = useState('all')
@@ -88,24 +89,27 @@ export default function FeeStructuresPage() {
 
   function openAddDialog() {
     setEditId(null)
-    setForm({ class: '', term: 'First', year: new Date().getFullYear(), fee_type: 'tuition', amount: '' })
+    setForm({ class: '', term: 'First', year: new Date().getFullYear(), fee_type: 'tuition', amount: '', custom_fee_type: '' })
     setDialogOpen(true)
   }
 
   function openEditDialog(fs: FeeStructure) {
+    const isKnown = FEE_TYPES.some(t => t.value === fs.fee_type)
     setEditId(fs.id)
     setForm({
       class: fs.class,
       term: fs.term,
       year: fs.year,
-      fee_type: fs.fee_type,
+      fee_type: isKnown ? fs.fee_type : '__custom__',
       amount: String(fs.amount),
+      custom_fee_type: isKnown ? '' : fs.fee_type,
     })
     setDialogOpen(true)
   }
 
   async function handleSave() {
-    if (!form.class || !form.term || !form.year || !form.fee_type || !form.amount) {
+    const resolvedFeeType = form.fee_type === '__custom__' ? form.custom_fee_type.trim().toLowerCase().replace(/\s+/g, '_') : form.fee_type
+    if (!form.class || !form.term || !form.year || !resolvedFeeType || !form.amount) {
       toast({ title: 'Missing fields', description: 'All fields are required.', variant: 'destructive' })
       return
     }
@@ -124,13 +128,14 @@ export default function FeeStructuresPage() {
           class: form.class,
           term: form.term,
           year: form.year,
-          fee_type: form.fee_type,
+          fee_type: resolvedFeeType,
           amount,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      toast({ title: editId ? 'Fee updated' : 'Fee added', description: `${FEE_TYPE_LABELS[form.fee_type] || form.fee_type} fee for ${form.class} saved.` })
+      const displayLabel = FEE_TYPE_LABELS[resolvedFeeType] || resolvedFeeType
+      toast({ title: editId ? 'Fee updated' : 'Fee added', description: `${displayLabel} fee for ${form.class} saved.` })
       setDialogOpen(false)
       await fetchData()
     } catch (e: unknown) {
@@ -329,8 +334,18 @@ export default function FeeStructuresPage() {
                   {FEE_TYPES.map(t => (
                     <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                   ))}
+                  <SelectItem value="__custom__">Other (custom)</SelectItem>
                 </SelectContent>
               </Select>
+              {form.fee_type === '__custom__' && (
+                <Input
+                  placeholder="e.g. Registration Fee"
+                  value={form.custom_fee_type}
+                  onChange={e => setForm(f => ({ ...f, custom_fee_type: e.target.value }))}
+                  className="mt-2"
+                  data-testid="input-custom-fee-type"
+                />
+              )}
             </div>
             <div className="space-y-2">
               <Label>Amount (₦) *</Label>
