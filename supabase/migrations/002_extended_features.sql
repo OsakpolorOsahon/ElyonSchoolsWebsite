@@ -75,6 +75,7 @@ CREATE INDEX IF NOT EXISTS idx_exams_published ON exams(published);
 
 CREATE TABLE IF NOT EXISTS academic_settings (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  singleton_key   BOOLEAN NOT NULL DEFAULT TRUE UNIQUE CHECK (singleton_key = TRUE),
   current_term    TEXT NOT NULL DEFAULT 'First',
   current_year    INTEGER NOT NULL DEFAULT 2025,
   school_name     TEXT NOT NULL DEFAULT 'Elyon Schools',
@@ -83,10 +84,10 @@ CREATE TABLE IF NOT EXISTS academic_settings (
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Insert default row if table is empty
-INSERT INTO academic_settings (current_term, current_year, school_name)
-SELECT 'First', 2025, 'Elyon Schools'
-WHERE NOT EXISTS (SELECT 1 FROM academic_settings);
+-- Insert default row (singleton_key UNIQUE constraint prevents multiple rows)
+INSERT INTO academic_settings (singleton_key, current_term, current_year, school_name)
+VALUES (TRUE, 'First', 2025, 'Elyon Schools')
+ON CONFLICT (singleton_key) DO NOTHING;
 
 -- Trigger for updated_at
 DROP TRIGGER IF EXISTS update_academic_settings_updated_at ON academic_settings;
@@ -130,6 +131,14 @@ ALTER TABLE payments ADD COLUMN IF NOT EXISTS notes TEXT;
 -- Term and year for fee payments
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS term TEXT;
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS year INTEGER;
+
+-- Enforce valid payment methods
+DO $$ BEGIN
+  ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_method_check;
+  ALTER TABLE payments ADD CONSTRAINT payments_method_check
+    CHECK (method IN ('paystack', 'cash', 'bank_transfer'));
+EXCEPTION WHEN others THEN NULL;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_payments_student_id ON payments(student_id);
 CREATE INDEX IF NOT EXISTS idx_payments_term_year ON payments(term, year);
@@ -230,10 +239,6 @@ CREATE POLICY "Authenticated users can view staff profiles"
 CREATE POLICY "Admins can manage staff profiles"
   ON staff_profiles FOR ALL
   USING (get_user_role(auth.uid()) = 'admin');
-
-CREATE POLICY "Teachers can update own staff profile"
-  ON staff_profiles FOR UPDATE
-  USING (profile_id = auth.uid());
 
 
 -- report_card_comments

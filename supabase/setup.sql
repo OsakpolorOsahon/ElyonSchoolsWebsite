@@ -148,7 +148,7 @@ CREATE TABLE IF NOT EXISTS payments (
   student_id       UUID REFERENCES students(id) ON DELETE SET NULL,
   amount           DECIMAL(10, 2) NOT NULL,
   status           payment_status DEFAULT 'pending',
-  method           TEXT DEFAULT 'paystack',
+  method           TEXT DEFAULT 'paystack' CHECK (method IN ('paystack', 'cash', 'bank_transfer')),
   reference        TEXT NOT NULL UNIQUE,
   payment_type     TEXT,
   payer_name       TEXT,
@@ -294,6 +294,7 @@ CREATE TABLE IF NOT EXISTS gallery_items (
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS academic_settings (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  singleton_key   BOOLEAN NOT NULL DEFAULT TRUE UNIQUE CHECK (singleton_key = TRUE),
   current_term    TEXT NOT NULL DEFAULT 'First',
   current_year    INTEGER NOT NULL DEFAULT 2025,
   school_name     TEXT NOT NULL DEFAULT 'Elyon Schools',
@@ -302,9 +303,9 @@ CREATE TABLE IF NOT EXISTS academic_settings (
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
-INSERT INTO academic_settings (current_term, current_year, school_name)
-SELECT 'First', 2025, 'Elyon Schools'
-WHERE NOT EXISTS (SELECT 1 FROM academic_settings);
+INSERT INTO academic_settings (singleton_key, current_term, current_year, school_name)
+VALUES (TRUE, 'First', 2025, 'Elyon Schools')
+ON CONFLICT (singleton_key) DO NOTHING;
 
 -- ----------------------------------------------------------
 -- fee_structures
@@ -893,7 +894,6 @@ CREATE POLICY "Admins can manage fee structures"
 -- ----------------------------------------------------------
 DROP POLICY IF EXISTS "Authenticated users can view staff profiles" ON staff_profiles;
 DROP POLICY IF EXISTS "Admins can manage staff profiles"            ON staff_profiles;
-DROP POLICY IF EXISTS "Teachers can update own staff profile"       ON staff_profiles;
 
 CREATE POLICY "Authenticated users can view staff profiles"
   ON staff_profiles FOR SELECT
@@ -902,10 +902,6 @@ CREATE POLICY "Authenticated users can view staff profiles"
 CREATE POLICY "Admins can manage staff profiles"
   ON staff_profiles FOR ALL
   USING (get_user_role(auth.uid()) = 'admin');
-
-CREATE POLICY "Teachers can update own staff profile"
-  ON staff_profiles FOR UPDATE
-  USING (profile_id = auth.uid());
 
 
 -- ----------------------------------------------------------
