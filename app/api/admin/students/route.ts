@@ -134,6 +134,11 @@ export async function PATCH(request: NextRequest) {
     updateData.graduation_year = new Date().getFullYear()
   }
 
+  if (status === 'active') {
+    if (graduation_year === undefined) updateData.graduation_year = null
+    if (transfer_note === undefined) updateData.transfer_note = null
+  }
+
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
   }
