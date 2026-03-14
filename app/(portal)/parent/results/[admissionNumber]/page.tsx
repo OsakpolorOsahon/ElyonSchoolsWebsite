@@ -42,7 +42,7 @@ export default function ChildResultsPage() {
   const [student, setStudent] = useState<Student | null>(null)
   const [results, setResults] = useState<Result[]>([])
   const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<{ full_name: string } | null>(null)
   const [termFilter, setTermFilter] = useState('all')
 
   useEffect(() => {
@@ -177,7 +177,7 @@ export default function ChildResultsPage() {
                           <Link href={`/report-card/${student.id}/${eId}`}>
                             <Button variant="outline" size="sm" className="gap-1" data-testid={`button-report-card-${eId}`}>
                               <FileText className="h-4 w-4" />
-                              Report Card
+                              View Report Card
                             </Button>
                           </Link>
                         )}

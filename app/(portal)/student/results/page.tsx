@@ -32,7 +32,7 @@ const gradeColors: Record<string, string> = {
 export default function StudentResultsPage() {
   const [results, setResults] = useState<Result[]>([])
   const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<{ full_name: string } | null>(null)
   const [termFilter, setTermFilter] = useState('all')
   const [studentId, setStudentId] = useState<string | null>(null)
 
@@ -162,7 +162,7 @@ export default function StudentResultsPage() {
                           <Link href={`/report-card/${studentId}/${examId}`}>
                             <Button variant="outline" size="sm" className="gap-1" data-testid={`button-report-card-${examId}`}>
                               <FileText className="h-4 w-4" />
-                              Report Card
+                              View / Print Report Card
                             </Button>
                           </Link>
                         )}
