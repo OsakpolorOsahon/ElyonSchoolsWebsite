@@ -198,6 +198,8 @@ CREATE TABLE IF NOT EXISTS student_results (
   student_id  UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
   exam_id     UUID NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
   subject_id  UUID NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+  ca_score    DECIMAL(5, 2) DEFAULT 0 CHECK (ca_score >= 0 AND ca_score <= 40),
+  exam_score  DECIMAL(5, 2) DEFAULT 0 CHECK (exam_score >= 0 AND exam_score <= 60),
   score       DECIMAL(5, 2) NOT NULL CHECK (score >= 0 AND score <= 100),
   grade       TEXT,
   remarks     TEXT,
@@ -1015,6 +1017,6 @@ CREATE POLICY "Admins can delete gallery images"
 --      then insert their profile row (see instructions at top).
 -- ============================================================
 
--- Migration: Add CA and Exam score breakdown to student_results
-ALTER TABLE student_results ADD COLUMN IF NOT EXISTS ca_score DECIMAL(5,2) DEFAULT NULL;
-ALTER TABLE student_results ADD COLUMN IF NOT EXISTS exam_score DECIMAL(5,2) DEFAULT NULL;
+-- Migration: Add CA and Exam score breakdown to student_results (for existing databases)
+ALTER TABLE student_results ADD COLUMN IF NOT EXISTS ca_score DECIMAL(5,2) DEFAULT 0 CHECK (ca_score >= 0 AND ca_score <= 40);
+ALTER TABLE student_results ADD COLUMN IF NOT EXISTS exam_score DECIMAL(5,2) DEFAULT 0 CHECK (exam_score >= 0 AND exam_score <= 60);
