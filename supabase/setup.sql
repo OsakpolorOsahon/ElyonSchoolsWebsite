@@ -116,7 +116,10 @@ CREATE TABLE IF NOT EXISTS students (
   dob               DATE,
   gender            TEXT,
   parent_profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  status            TEXT DEFAULT 'active',
+  status            TEXT DEFAULT 'active' CHECK (status IN ('active', 'graduated', 'withdrawn', 'transferred')),
+  department        TEXT CHECK (department IS NULL OR department IN ('Science', 'Commercial', 'Art')),
+  graduation_year   INTEGER,
+  transfer_note     TEXT,
   created_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -142,6 +145,7 @@ CREATE TABLE IF NOT EXISTS payments (
   id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id          UUID REFERENCES profiles(id) ON DELETE SET NULL,
   admission_id     UUID REFERENCES admissions(id) ON DELETE SET NULL,
+  student_id       UUID REFERENCES students(id) ON DELETE SET NULL,
   amount           DECIMAL(10, 2) NOT NULL,
   status           payment_status DEFAULT 'pending',
   method           TEXT DEFAULT 'paystack',
@@ -152,6 +156,10 @@ CREATE TABLE IF NOT EXISTS payments (
   metadata         JSONB,
   paystack_response JSONB,
   receipt_url      TEXT,
+  recorded_by      UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  notes            TEXT,
+  term             TEXT,
+  year             INTEGER,
   created_at       TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -159,22 +167,26 @@ CREATE TABLE IF NOT EXISTS payments (
 -- subjects
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS subjects (
-  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name       TEXT NOT NULL,
-  code       TEXT NOT NULL UNIQUE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name                    TEXT NOT NULL,
+  code                    TEXT NOT NULL UNIQUE,
+  applicable_classes      TEXT[] DEFAULT '{}',
+  applicable_departments  TEXT[] DEFAULT '{}',
+  created_at              TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ----------------------------------------------------------
 -- exams
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS exams (
-  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name       TEXT NOT NULL,
-  term       TEXT NOT NULL,
-  year       INTEGER NOT NULL,
-  created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  id                   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name                 TEXT NOT NULL,
+  term                 TEXT NOT NULL,
+  year                 INTEGER NOT NULL,
+  published            BOOLEAN DEFAULT FALSE,
+  teacher_remarks_open BOOLEAN DEFAULT TRUE,
+  created_by           UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at           TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ----------------------------------------------------------
@@ -277,6 +289,65 @@ CREATE TABLE IF NOT EXISTS gallery_items (
 );
 
 
+-- ----------------------------------------------------------
+-- academic_settings  (single-row school config)
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS academic_settings (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  current_term    TEXT NOT NULL DEFAULT 'First',
+  current_year    INTEGER NOT NULL DEFAULT 2025,
+  school_name     TEXT NOT NULL DEFAULT 'Elyon Schools',
+  principal_name  TEXT DEFAULT '',
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO academic_settings (current_term, current_year, school_name)
+SELECT 'First', 2025, 'Elyon Schools'
+WHERE NOT EXISTS (SELECT 1 FROM academic_settings);
+
+-- ----------------------------------------------------------
+-- fee_structures
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS fee_structures (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  class      TEXT NOT NULL,
+  term       TEXT NOT NULL,
+  year       INTEGER NOT NULL,
+  fee_type   TEXT NOT NULL DEFAULT 'tuition',
+  amount     DECIMAL(10, 2) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(class, term, year, fee_type)
+);
+
+-- ----------------------------------------------------------
+-- staff_profiles
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS staff_profiles (
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  profile_id        UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE UNIQUE,
+  subject_specialty TEXT,
+  qualification     TEXT,
+  phone             TEXT,
+  bio               TEXT,
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ----------------------------------------------------------
+-- report_card_comments
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS report_card_comments (
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  student_id        UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  exam_id           UUID NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
+  principal_comment TEXT,
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(student_id, exam_id)
+);
+
+
 -- ============================================================
 -- SECTION 4: INDEXES
 -- ============================================================
@@ -328,6 +399,21 @@ CREATE INDEX IF NOT EXISTS idx_announcements_created_at              ON announce
 CREATE INDEX IF NOT EXISTS idx_gallery_items_category                ON gallery_items(category);
 CREATE INDEX IF NOT EXISTS idx_gallery_items_created_at              ON gallery_items(created_at DESC);
 
+CREATE INDEX IF NOT EXISTS idx_students_status                       ON students(status);
+CREATE INDEX IF NOT EXISTS idx_students_department                   ON students(department);
+
+CREATE INDEX IF NOT EXISTS idx_exams_published                       ON exams(published);
+
+CREATE INDEX IF NOT EXISTS idx_fee_structures_class                  ON fee_structures(class);
+CREATE INDEX IF NOT EXISTS idx_fee_structures_term_year              ON fee_structures(term, year);
+
+CREATE INDEX IF NOT EXISTS idx_payments_student_id                   ON payments(student_id);
+CREATE INDEX IF NOT EXISTS idx_payments_term_year                    ON payments(term, year);
+
+CREATE INDEX IF NOT EXISTS idx_staff_profiles_profile_id             ON staff_profiles(profile_id);
+
+CREATE INDEX IF NOT EXISTS idx_report_card_comments_student_exam     ON report_card_comments(student_id, exam_id);
+
 
 -- ============================================================
 -- SECTION 5: FUNCTIONS & TRIGGERS
@@ -367,25 +453,47 @@ CREATE TRIGGER update_news_posts_updated_at
   BEFORE UPDATE ON news_posts
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- Trigger: academic_settings
+DROP TRIGGER IF EXISTS update_academic_settings_updated_at ON academic_settings;
+CREATE TRIGGER update_academic_settings_updated_at
+  BEFORE UPDATE ON academic_settings
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger: staff_profiles
+DROP TRIGGER IF EXISTS update_staff_profiles_updated_at ON staff_profiles;
+CREATE TRIGGER update_staff_profiles_updated_at
+  BEFORE UPDATE ON staff_profiles
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger: report_card_comments
+DROP TRIGGER IF EXISTS update_report_card_comments_updated_at ON report_card_comments;
+CREATE TRIGGER update_report_card_comments_updated_at
+  BEFORE UPDATE ON report_card_comments
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 
 -- ============================================================
 -- SECTION 6: ROW LEVEL SECURITY
 -- ============================================================
 
-ALTER TABLE profiles           ENABLE ROW LEVEL SECURITY;
-ALTER TABLE classes             ENABLE ROW LEVEL SECURITY;
-ALTER TABLE students            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE admissions          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE payments            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE subjects            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE exams               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE student_results     ENABLE ROW LEVEL SECURITY;
-ALTER TABLE events              ENABLE ROW LEVEL SECURITY;
-ALTER TABLE news_posts          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE class_teacher ENABLE ROW LEVEL SECURITY;
-ALTER TABLE contact_submissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE announcements       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE gallery_items       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE classes              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE students             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admissions           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payments             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subjects             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE exams                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE student_results      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE events               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE news_posts           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE class_teacher        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contact_submissions  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE announcements        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gallery_items        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE academic_settings    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fee_structures       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE staff_profiles       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE report_card_comments ENABLE ROW LEVEL SECURITY;
 
 
 -- ============================================================
@@ -748,6 +856,103 @@ CREATE POLICY "Anyone can read gallery items"
   ON gallery_items FOR SELECT
   TO anon, authenticated
   USING (true);
+
+
+-- ----------------------------------------------------------
+-- academic_settings
+-- ----------------------------------------------------------
+DROP POLICY IF EXISTS "Authenticated users can view academic settings" ON academic_settings;
+DROP POLICY IF EXISTS "Admins can manage academic settings"            ON academic_settings;
+
+CREATE POLICY "Authenticated users can view academic settings"
+  ON academic_settings FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "Admins can manage academic settings"
+  ON academic_settings FOR ALL
+  USING (get_user_role(auth.uid()) = 'admin');
+
+
+-- ----------------------------------------------------------
+-- fee_structures
+-- ----------------------------------------------------------
+DROP POLICY IF EXISTS "Authenticated users can view fee structures" ON fee_structures;
+DROP POLICY IF EXISTS "Admins can manage fee structures"            ON fee_structures;
+
+CREATE POLICY "Authenticated users can view fee structures"
+  ON fee_structures FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "Admins can manage fee structures"
+  ON fee_structures FOR ALL
+  USING (get_user_role(auth.uid()) = 'admin');
+
+
+-- ----------------------------------------------------------
+-- staff_profiles
+-- ----------------------------------------------------------
+DROP POLICY IF EXISTS "Authenticated users can view staff profiles" ON staff_profiles;
+DROP POLICY IF EXISTS "Admins can manage staff profiles"            ON staff_profiles;
+DROP POLICY IF EXISTS "Teachers can update own staff profile"       ON staff_profiles;
+
+CREATE POLICY "Authenticated users can view staff profiles"
+  ON staff_profiles FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "Admins can manage staff profiles"
+  ON staff_profiles FOR ALL
+  USING (get_user_role(auth.uid()) = 'admin');
+
+CREATE POLICY "Teachers can update own staff profile"
+  ON staff_profiles FOR UPDATE
+  USING (profile_id = auth.uid());
+
+
+-- ----------------------------------------------------------
+-- report_card_comments
+-- ----------------------------------------------------------
+DROP POLICY IF EXISTS "Students can view own report card comments"    ON report_card_comments;
+DROP POLICY IF EXISTS "Parents can view children report card comments" ON report_card_comments;
+DROP POLICY IF EXISTS "Teachers can view class report card comments"   ON report_card_comments;
+DROP POLICY IF EXISTS "Admins can manage report card comments"         ON report_card_comments;
+
+CREATE POLICY "Students can view own report card comments"
+  ON report_card_comments FOR SELECT
+  USING (
+    student_id IN (SELECT id FROM students WHERE profile_id = auth.uid())
+  );
+
+CREATE POLICY "Parents can view children report card comments"
+  ON report_card_comments FOR SELECT
+  USING (
+    student_id IN (SELECT id FROM students WHERE parent_profile_id = auth.uid())
+  );
+
+CREATE POLICY "Teachers can view class report card comments"
+  ON report_card_comments FOR SELECT
+  USING (
+    student_id IN (
+      SELECT s.id FROM students s
+      INNER JOIN class_teacher ct ON ct.class = s.class
+      WHERE ct.teacher_profile_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Admins can manage report card comments"
+  ON report_card_comments FOR ALL
+  USING (get_user_role(auth.uid()) = 'admin');
+
+
+-- ----------------------------------------------------------
+-- payments (additional: parents can view child payments)
+-- ----------------------------------------------------------
+DROP POLICY IF EXISTS "Parents can view child payments" ON payments;
+
+CREATE POLICY "Parents can view child payments"
+  ON payments FOR SELECT
+  USING (
+    student_id IN (SELECT id FROM students WHERE parent_profile_id = auth.uid())
+  );
 
 
 -- ============================================================

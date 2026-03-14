@@ -47,25 +47,34 @@ Preferred communication style: Simple, everyday language.
 
 ## Database Schema (Supabase)
 
-Run the migration files in `supabase/migrations/` in order:
+The complete schema is in `supabase/setup.sql`. For existing installations, run migration files in `supabase/migrations/` in order:
 1. `20240101000001_initial_schema.sql` — Core tables
 2. `20240101000002_rls_policies.sql` — RLS policies for core tables
 3. `20240102000001_new_features.sql` — New tables + payment columns
+4. `002_extended_features.sql` — Student lifecycle, subjects mapping, fees, report cards, staff profiles
 
-Key tables:
+### Core Tables
 - `profiles` — User profiles with `role` (admin | teacher | parent | student)
-- `students` — Student records linked to profiles and parent
+- `students` — Student records with `status` (active | graduated | withdrawn | transferred), `department` (Science | Commercial | Art, for SSS only), `graduation_year`, `transfer_note`
+- `class_teacher` — Links one teacher to one class (14 classes: Nursery 1–2, Primary 1–6, JSS 1–3, SSS 1–3)
 - `admissions` — Admission applications (`student_data` JSONB, `guardian_data` JSONB, `status`, `amount`)
-- `payments` — Payment records (+ new columns: `payment_type`, `payer_name`, `payer_email`, `metadata`, `paystack_response`)
-- `announcements` — School announcements with `target_audience` (all | parents | students | teachers), `is_published`
+- `payments` — Payment records with `student_id` FK, `recorded_by` (admin for offline), `notes`, `term`, `year`, `method` (paystack | cash | bank_transfer)
+- `subjects` — Subject records with `applicable_classes` TEXT[] and `applicable_departments` TEXT[] (empty = applies to all)
+- `exams` — Exam records with `published` BOOLEAN and `teacher_remarks_open` BOOLEAN
+- `student_results` — Results linked to student, exam, subject with `remarks` for teacher comments
+
+### New Feature Tables
+- `academic_settings` — Single-row config: `current_term`, `current_year`, `school_name`, `principal_name`
+- `fee_structures` — Fee definitions per class/term/year/type with `amount`
+- `staff_profiles` — Teacher profiles: `subject_specialty`, `qualification`, `phone`, `bio`
+- `report_card_comments` — Principal's comments per student per exam
+
+### Other Tables
+- `announcements` — School announcements with `target_audience`, `is_published`
 - `gallery_items` — Gallery photos with `storage_path` and `public_url` from Supabase Storage
 - `contact_submissions` — Contact form submissions
 - `news_posts` — News articles with `status` (draft | published)
 - `events` — School events with `start_ts`, `end_ts`, `category`
-- `exams` — Exam records (name, term, year)
-- `subjects` — Subject records
-- `student_results` — Results linked to student, exam, subject
-- `teacher_assignments` — Links teachers to students
 
 ### Supabase Storage
 
