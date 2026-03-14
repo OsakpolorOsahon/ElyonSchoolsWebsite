@@ -57,13 +57,39 @@ export default function ParentPaymentsPage() {
       setProfile(p)
 
       const userEmail = session.user.email || ''
-      const { data } = await supabase
+
+      const { data: children } = await supabase
+        .from('students')
+        .select('id')
+        .eq('parent_profile_id', session.user.id)
+      const childIds = (children || []).map((c: { id: string }) => c.id)
+
+      let allPayments: any[] = []
+
+      const { data: directPayments } = await supabase
         .from('payments')
         .select('*')
         .or(`user_id.eq.${session.user.id},payer_email.eq.${userEmail}`)
         .order('created_at', { ascending: false })
+      allPayments = directPayments || []
 
-      setPayments(data || [])
+      if (childIds.length > 0) {
+        const { data: childPayments } = await supabase
+          .from('payments')
+          .select('*')
+          .in('student_id', childIds)
+          .order('created_at', { ascending: false })
+
+        const existingIds = new Set(allPayments.map((p: any) => p.id))
+        for (const cp of (childPayments || [])) {
+          if (!existingIds.has(cp.id)) {
+            allPayments.push(cp)
+          }
+        }
+        allPayments.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      }
+
+      setPayments(allPayments)
       setLoading(false)
     }
     load()

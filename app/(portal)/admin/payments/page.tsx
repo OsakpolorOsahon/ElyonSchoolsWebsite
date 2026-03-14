@@ -203,10 +203,11 @@ export default function AdminPaymentsPage() {
       const paid = paidByStudent[student.id] || 0
       const balance = expected - paid
       let status: 'paid' | 'partial' | 'unpaid' = 'unpaid'
-      if (expected > 0 && balance <= 0) status = 'paid'
-      else if (paid > 0 && balance > 0) status = 'partial'
+      if (expected === 0) status = paid > 0 ? 'paid' : 'unpaid'
+      else if (balance <= 0) status = 'paid'
+      else if (paid > 0) status = 'partial'
       return { student, expected, paid, balance: Math.max(0, balance), status }
-    }).filter(r => r.expected > 0)
+    })
   }, [students, feeStructures, payments, settings])
 
   const filteredOutstanding = useMemo(() => {
