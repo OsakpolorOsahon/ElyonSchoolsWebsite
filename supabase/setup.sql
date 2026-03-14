@@ -227,14 +227,13 @@ CREATE TABLE IF NOT EXISTS news_posts (
 );
 
 -- ----------------------------------------------------------
--- teacher_assignments
+-- class_teacher
 -- ----------------------------------------------------------
-CREATE TABLE IF NOT EXISTS teacher_assignments (
-  id                 UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  teacher_profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  student_id         UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-  created_at         TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(teacher_profile_id, student_id)
+CREATE TABLE IF NOT EXISTS class_teacher (
+  id                 UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
+  class              TEXT        NOT NULL UNIQUE,
+  teacher_profile_id UUID        REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at         TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ----------------------------------------------------------
@@ -318,8 +317,7 @@ CREATE INDEX IF NOT EXISTS idx_news_posts_status                     ON news_pos
 CREATE INDEX IF NOT EXISTS idx_news_posts_author_id                  ON news_posts(author_id);
 CREATE INDEX IF NOT EXISTS idx_news_posts_published_at               ON news_posts(published_at);
 
-CREATE INDEX IF NOT EXISTS idx_teacher_assignments_teacher_profile_id ON teacher_assignments(teacher_profile_id);
-CREATE INDEX IF NOT EXISTS idx_teacher_assignments_student_id         ON teacher_assignments(student_id);
+CREATE INDEX IF NOT EXISTS idx_class_teacher_teacher_profile_id ON class_teacher(teacher_profile_id);
 
 CREATE INDEX IF NOT EXISTS idx_contact_submissions_created_at        ON contact_submissions(created_at);
 
@@ -384,7 +382,7 @@ ALTER TABLE exams               ENABLE ROW LEVEL SECURITY;
 ALTER TABLE student_results     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE events              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE news_posts          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE teacher_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE class_teacher ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE announcements       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gallery_items       ENABLE ROW LEVEL SECURITY;
@@ -464,13 +462,12 @@ CREATE POLICY "Parents can view own children"
   ON students FOR SELECT
   USING (parent_profile_id = auth.uid());
 
-CREATE POLICY "Teachers can view assigned students"
+CREATE POLICY "Teachers can view class students"
   ON students FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1 FROM teacher_assignments
-      WHERE teacher_assignments.student_id = students.id
-        AND teacher_assignments.teacher_profile_id = auth.uid()
+    class IN (
+      SELECT class FROM class_teacher
+      WHERE teacher_profile_id = auth.uid()
     )
   );
 
@@ -599,9 +596,12 @@ CREATE POLICY "Admins can manage exams"
 -- ----------------------------------------------------------
 DROP POLICY IF EXISTS "Students can view own results"                    ON student_results;
 DROP POLICY IF EXISTS "Parents can view children results"               ON student_results;
-DROP POLICY IF EXISTS "Teachers can view assigned students results"     ON student_results;
+DROP POLICY IF EXISTS "Teachers can view assigned students results"       ON student_results;
 DROP POLICY IF EXISTS "Teachers can insert results for assigned students" ON student_results;
 DROP POLICY IF EXISTS "Teachers can update results for assigned students" ON student_results;
+DROP POLICY IF EXISTS "Teachers can view class results"                   ON student_results;
+DROP POLICY IF EXISTS "Teachers can insert class results"                 ON student_results;
+DROP POLICY IF EXISTS "Teachers can update class results"                 ON student_results;
 DROP POLICY IF EXISTS "Admins can manage all results"                   ON student_results;
 
 CREATE POLICY "Students can view own results"
@@ -616,32 +616,33 @@ CREATE POLICY "Parents can view children results"
     student_id IN (SELECT id FROM students WHERE parent_profile_id = auth.uid())
   );
 
-CREATE POLICY "Teachers can view assigned students results"
+CREATE POLICY "Teachers can view class results"
   ON student_results FOR SELECT
   USING (
     student_id IN (
-      SELECT student_id FROM teacher_assignments
-      WHERE teacher_profile_id = auth.uid()
+      SELECT s.id FROM students s
+      INNER JOIN class_teacher ct ON ct.class = s.class
+      WHERE ct.teacher_profile_id = auth.uid()
     )
   );
 
-CREATE POLICY "Teachers can insert results for assigned students"
+CREATE POLICY "Teachers can insert class results"
   ON student_results FOR INSERT
   WITH CHECK (
-    get_user_role(auth.uid()) = 'teacher'
-    AND student_id IN (
-      SELECT student_id FROM teacher_assignments
-      WHERE teacher_profile_id = auth.uid()
+    student_id IN (
+      SELECT s.id FROM students s
+      INNER JOIN class_teacher ct ON ct.class = s.class
+      WHERE ct.teacher_profile_id = auth.uid()
     )
   );
 
-CREATE POLICY "Teachers can update results for assigned students"
+CREATE POLICY "Teachers can update class results"
   ON student_results FOR UPDATE
   USING (
-    get_user_role(auth.uid()) = 'teacher'
-    AND student_id IN (
-      SELECT student_id FROM teacher_assignments
-      WHERE teacher_profile_id = auth.uid()
+    student_id IN (
+      SELECT s.id FROM students s
+      INNER JOIN class_teacher ct ON ct.class = s.class
+      WHERE ct.teacher_profile_id = auth.uid()
     )
   );
 
@@ -681,17 +682,17 @@ CREATE POLICY "Admins can manage news posts"
 
 
 -- ----------------------------------------------------------
--- teacher_assignments
+-- class_teacher
 -- ----------------------------------------------------------
-DROP POLICY IF EXISTS "Teachers can view own assignments"        ON teacher_assignments;
-DROP POLICY IF EXISTS "Admins can manage teacher assignments"    ON teacher_assignments;
+DROP POLICY IF EXISTS "Teachers can view own class assignment" ON class_teacher;
+DROP POLICY IF EXISTS "Admins can manage class teachers"       ON class_teacher;
 
-CREATE POLICY "Teachers can view own assignments"
-  ON teacher_assignments FOR SELECT
+CREATE POLICY "Teachers can view own class assignment"
+  ON class_teacher FOR SELECT
   USING (teacher_profile_id = auth.uid());
 
-CREATE POLICY "Admins can manage teacher assignments"
-  ON teacher_assignments FOR ALL
+CREATE POLICY "Admins can manage class teachers"
+  ON class_teacher FOR ALL
   USING (get_user_role(auth.uid()) = 'admin');
 
 

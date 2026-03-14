@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -34,23 +35,28 @@ interface Subject {
 
 export default function UploadResultsPage() {
   const { toast } = useToast()
+  const searchParams = useSearchParams()
+  const preselectedClass = searchParams.get('class') || ''
+
   const [profile, setProfile] = useState<any>(null)
-  const [students, setStudents] = useState<Student[]>([])
+  const [assignedClasses, setAssignedClasses] = useState<string[]>([])
+  const [allStudents, setAllStudents] = useState<Student[]>([])
   const [exams, setExams] = useState<Exam[]>([])
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedClass, setSelectedClass] = useState(preselectedClass)
   const [selectedExam, setSelectedExam] = useState('')
   const [selectedSubject, setSelectedSubject] = useState('')
   const [scores, setScores] = useState<Record<string, string>>({})
-  const [userId, setUserId] = useState('')
+
+  const students = allStudents.filter(s => s.class === selectedClass)
 
   useEffect(() => {
     const load = async () => {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
-      setUserId(session.user.id)
 
       const { data: p } = await supabase
         .from('profiles')
@@ -59,26 +65,45 @@ export default function UploadResultsPage() {
         .single()
       setProfile(p)
 
-      const [assignmentsRes, examsRes, subjectsRes] = await Promise.all([
+      const [classRes, examsRes, subjectsRes] = await Promise.all([
         supabase
-          .from('teacher_assignments')
-          .select('students(id, admission_number, class, profiles(full_name))')
+          .from('class_teacher')
+          .select('class')
           .eq('teacher_profile_id', session.user.id),
         supabase.from('exams').select('*').order('year', { ascending: false }),
         supabase.from('subjects').select('*').order('name'),
       ])
 
-      const assignedStudents: Student[] = (assignmentsRes.data || [])
-        .map((a: any) => a.students)
-        .filter(Boolean)
-        .flat()
-      setStudents(assignedStudents)
+      const classes = (classRes.data || []).map((c: any) => c.class)
+      setAssignedClasses(classes)
+
+      if (classes.length > 0) {
+        const { data: studs } = await supabase
+          .from('students')
+          .select('id, admission_number, class, profiles(full_name)')
+          .in('class', classes)
+          .eq('status', 'active')
+          .order('admission_number')
+        setAllStudents((studs || []) as unknown as Student[])
+      }
+
       setExams(examsRes.data || [])
       setSubjects(subjectsRes.data || [])
+
+      if (preselectedClass && classes.includes(preselectedClass)) {
+        setSelectedClass(preselectedClass)
+      } else if (classes.length === 1) {
+        setSelectedClass(classes[0])
+      }
+
       setLoading(false)
     }
     load()
-  }, [])
+  }, [preselectedClass])
+
+  useEffect(() => {
+    setScores({})
+  }, [selectedClass])
 
   const getGrade = (score: number): string => {
     if (score >= 70) return 'A'
@@ -91,8 +116,8 @@ export default function UploadResultsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedExam || !selectedSubject) {
-      toast({ title: 'Missing selection', description: 'Please select an exam and subject.', variant: 'destructive' })
+    if (!selectedClass || !selectedExam || !selectedSubject) {
+      toast({ title: 'Missing selection', description: 'Please select a class, exam and subject.', variant: 'destructive' })
       return
     }
     const entries = Object.entries(scores).filter(([, v]) => v !== '')
@@ -119,7 +144,7 @@ export default function UploadResultsPage() {
           subject_id: selectedSubject,
           score,
           grade: getGrade(score),
-          uploaded_by: userId,
+          uploaded_by: null,
         }
       })
 
@@ -129,10 +154,10 @@ export default function UploadResultsPage() {
 
       if (error) throw error
 
-      toast({ title: 'Results saved!', description: `${inserts.length} results have been uploaded.` })
+      toast({ title: 'Results saved!', description: `${entries.length} result${entries.length !== 1 ? 's' : ''} saved successfully.` })
       setScores({})
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message || 'Failed to save results', variant: 'destructive' })
+    } catch (err: any) {
+      toast({ title: 'Error saving results', description: err.message || 'Something went wrong.', variant: 'destructive' })
     } finally {
       setIsSubmitting(false)
     }
@@ -146,7 +171,7 @@ export default function UploadResultsPage() {
         role="teacher"
       />
 
-      <main className="mx-auto max-w-4xl px-6 py-8">
+      <main className="mx-auto max-w-3xl px-6 py-8">
         <div className="flex items-center gap-4 mb-6">
           <Link href="/teacher">
             <Button variant="ghost" size="sm" className="gap-1">
@@ -160,39 +185,61 @@ export default function UploadResultsPage() {
           <div className="flex justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
+        ) : assignedClasses.length === 0 ? (
+          <Card>
+            <CardContent className="py-16 text-center text-muted-foreground">
+              <Upload className="h-12 w-12 mx-auto mb-4 opacity-30" />
+              <p>No classes assigned to you yet. Contact admin.</p>
+            </CardContent>
+          </Card>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Select Exam & Subject</CardTitle>
-                <CardDescription>Choose the exam and subject you are uploading results for</CardDescription>
+                <CardTitle>Step 1 — Select Class, Exam & Subject</CardTitle>
+                <CardDescription>Choose what you are uploading results for</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Exam *</Label>
-                  <Select value={selectedExam} onValueChange={setSelectedExam}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select exam" />
+                  <Label>Class</Label>
+                  <Select value={selectedClass} onValueChange={setSelectedClass}>
+                    <SelectTrigger data-testid="select-class">
+                      <SelectValue placeholder="Select class..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {exams.map(exam => (
-                        <SelectItem key={exam.id} value={exam.id}>
-                          {exam.name} — {exam.term} {exam.year}
+                      {assignedClasses.map(cls => (
+                        <SelectItem key={cls} value={cls}>{cls}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Exam</Label>
+                  <Select value={selectedExam} onValueChange={setSelectedExam}>
+                    <SelectTrigger data-testid="select-exam">
+                      <SelectValue placeholder="Select exam..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {exams.map(e => (
+                        <SelectItem key={e.id} value={e.id}>
+                          {e.name} — {e.term} {e.year}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+
                 <div className="space-y-2">
-                  <Label>Subject *</Label>
+                  <Label>Subject</Label>
                   <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select subject" />
+                    <SelectTrigger data-testid="select-subject">
+                      <SelectValue placeholder="Select subject..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {subjects.map(subject => (
-                        <SelectItem key={subject.id} value={subject.id}>
-                          {subject.name} ({subject.code})
+                      {subjects.map(s => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name} ({s.code})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -203,28 +250,32 @@ export default function UploadResultsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Enter Scores</CardTitle>
+                <CardTitle>Step 2 — Enter Scores</CardTitle>
                 <CardDescription>
-                  {students.length === 0
-                    ? 'No students assigned to you yet. Contact admin to assign students.'
-                    : `Enter scores (0-100) for your ${students.length} assigned student(s). Leave blank to skip.`}
+                  {selectedClass
+                    ? `${students.length} student${students.length !== 1 ? 's' : ''} in ${selectedClass}`
+                    : 'Select a class above to see students'}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {students.length === 0 ? (
+                {!selectedClass ? (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    Select a class to see the student list
+                  </div>
+                ) : students.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Upload className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                    <p>No students assigned yet</p>
+                    <p>No students enrolled in {selectedClass} yet</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {students.map(student => (
                       <div key={student.id} className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg">
-                        <div className="flex-1">
-                          <p className="font-medium">{student.profiles?.full_name || 'Unknown'}</p>
-                          <p className="text-sm text-muted-foreground">{student.admission_number} · {student.class}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{student.profiles?.full_name || 'Unknown'}</p>
+                          <p className="text-sm text-muted-foreground">{student.admission_number}</p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
                           <Input
                             type="number"
                             min="0"
@@ -234,6 +285,7 @@ export default function UploadResultsPage() {
                             placeholder="Score"
                             value={scores[student.id] || ''}
                             onChange={e => setScores(prev => ({ ...prev, [student.id]: e.target.value }))}
+                            data-testid={`input-score-${student.id}`}
                           />
                           {scores[student.id] && (
                             <span className="text-sm font-bold w-6 text-primary">
@@ -249,7 +301,7 @@ export default function UploadResultsPage() {
             </Card>
 
             {students.length > 0 && (
-              <Button type="submit" disabled={isSubmitting} className="gap-2 w-full sm:w-auto">
+              <Button type="submit" disabled={isSubmitting} className="gap-2 w-full sm:w-auto" data-testid="button-save-results">
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {isSubmitting ? 'Saving Results...' : 'Save Results'}
               </Button>

@@ -4,13 +4,13 @@ import Link from 'next/link'
 import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { 
-  Users, 
-  Upload, 
+import {
+  Users,
+  Upload,
   Calendar,
   BookOpen,
   ArrowRight,
-  Clock
+  Clock,
 } from 'lucide-react'
 
 export const metadata = {
@@ -30,21 +30,26 @@ export default async function TeacherDashboard() {
 
   if (profile?.role !== 'teacher') redirect('/')
 
-  const { data: assignments } = await supabase
-    .from('teacher_assignments')
-    .select('students(id, admission_number, class, profiles(full_name))')
+  const { data: classAssignments } = await supabase
+    .from('class_teacher')
+    .select('class')
     .eq('teacher_profile_id', session.user.id)
 
-  const students = (assignments || []).map((a: any) => a.students).filter(Boolean).flat()
+  const assignedClasses = (classAssignments || []).map((a: any) => a.class)
 
-  const classCounts = students.reduce((acc: Record<string, number>, s: any) => {
-    acc[s.class] = (acc[s.class] || 0) + 1
-    return acc
-  }, {})
+  let students: any[] = []
+  if (assignedClasses.length > 0) {
+    const { data } = await supabase
+      .from('students')
+      .select('id, admission_number, class, profiles(full_name)')
+      .in('class', assignedClasses)
+      .eq('status', 'active')
+    students = data || []
+  }
 
-  const assignedClasses = Object.entries(classCounts).map(([name, count]) => ({
-    name,
-    students: count,
+  const classCounts = assignedClasses.map(cls => ({
+    name: cls,
+    students: students.filter(s => s.class === cls).length,
   }))
 
   const { data: upcomingEventsData } = await supabase
@@ -71,7 +76,7 @@ export default async function TeacherDashboard() {
                   <div>
                     <p className="text-lg font-semibold">Upload Student Results</p>
                     <p className="text-sm text-primary-foreground/80">
-                      Upload grades for your assigned students
+                      Upload grades for students in your class
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -84,28 +89,30 @@ export default async function TeacherDashboard() {
           </Link>
         </div>
 
-        {assignedClasses.length > 0 && (
+        {classCounts.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">My Classes</h2>
             <div className="grid gap-6 lg:grid-cols-3">
-              {assignedClasses.map((cls) => (
+              {classCounts.map((cls) => (
                 <Card key={cls.name} className="hover-elevate">
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                         <BookOpen className="h-6 w-6 text-primary" />
                       </div>
-                      <span className="text-sm font-medium text-muted-foreground">{cls.students} student{cls.students !== 1 ? 's' : ''}</span>
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {cls.students} student{cls.students !== 1 ? 's' : ''}
+                      </span>
                     </div>
                     <h3 className="text-xl font-bold text-foreground">{cls.name}</h3>
                     <div className="mt-4 flex gap-2">
                       <Button size="sm" variant="outline" className="flex-1" asChild>
-                        <Link href={`/teacher/classes/${cls.name.toLowerCase().replace(/\s+/g, '-')}`}>
+                        <Link href={`/teacher/classes/${encodeURIComponent(cls.name)}`}>
                           View Students
                         </Link>
                       </Button>
                       <Button size="sm" className="flex-1" asChild>
-                        <Link href={`/teacher/results/upload?class=${cls.name}`}>
+                        <Link href={`/teacher/results/upload?class=${encodeURIComponent(cls.name)}`}>
                           Upload Results
                         </Link>
                       </Button>
@@ -129,7 +136,7 @@ export default async function TeacherDashboard() {
               {students.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No students assigned yet. Contact admin.</p>
+                  <p>No classes assigned yet. Contact admin.</p>
                 </div>
               ) : (
                 <div className="space-y-2">

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { PortalHeader } from '@/components/portal/PortalHeader'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, ArrowLeft, User, GraduationCap } from 'lucide-react'
@@ -19,9 +19,10 @@ interface Student {
 
 export default function ClassStudentsPage() {
   const params = useParams()
-  const className = decodeURIComponent(params.class as string).replace(/-/g, ' ').toUpperCase()
+  const className = decodeURIComponent(params.class as string)
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
+  const [authorized, setAuthorized] = useState(true)
   const [profile, setProfile] = useState<any>(null)
 
   useEffect(() => {
@@ -37,18 +38,27 @@ export default function ClassStudentsPage() {
         .single()
       setProfile(p)
 
-      const { data } = await supabase
-        .from('teacher_assignments')
-        .select('students(id, admission_number, class, gender, profiles(full_name))')
+      const { data: assignment } = await supabase
+        .from('class_teacher')
+        .select('class')
         .eq('teacher_profile_id', session.user.id)
+        .eq('class', className)
+        .single()
 
-      const assignedStudents: Student[] = (data || [])
-        .map((a: any) => a.students)
-        .filter(Boolean)
-        .flat()
-        .filter((s: Student) => s.class.toUpperCase() === className)
+      if (!assignment) {
+        setAuthorized(false)
+        setLoading(false)
+        return
+      }
 
-      setStudents(assignedStudents)
+      const { data } = await supabase
+        .from('students')
+        .select('id, admission_number, class, gender, profiles(full_name)')
+        .eq('class', className)
+        .eq('status', 'active')
+        .order('admission_number')
+
+      setStudents((data || []) as unknown as Student[])
       setLoading(false)
     }
     load()
@@ -69,24 +79,33 @@ export default function ClassStudentsPage() {
               <ArrowLeft className="h-4 w-4" /> Dashboard
             </Button>
           </Link>
-          <h2 className="text-xl font-semibold">Students in {className} ({students.length})</h2>
+          <h2 className="text-xl font-semibold">
+            {loading ? className : `${className} — ${students.length} student${students.length !== 1 ? 's' : ''}`}
+          </h2>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
+        ) : !authorized ? (
+          <Card>
+            <CardContent className="py-16 text-center text-muted-foreground">
+              <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-30" />
+              <p>You are not assigned to this class.</p>
+            </CardContent>
+          </Card>
         ) : students.length === 0 ? (
           <Card>
             <CardContent className="py-16 text-center text-muted-foreground">
               <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-30" />
-              <p>No students assigned to you in this class</p>
+              <p>No active students in {className} yet.</p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {students.map(student => (
-              <Card key={student.id}>
+              <Card key={student.id} data-testid={`card-student-${student.id}`}>
                 <CardContent className="py-4">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">

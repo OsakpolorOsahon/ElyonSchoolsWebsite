@@ -20,6 +20,7 @@ import {
   Megaphone,
   Camera,
   UserCog,
+  BookOpen,
 } from 'lucide-react'
 
 export const metadata = {
@@ -35,7 +36,8 @@ const quickActions = [
   { name: 'Post News', icon: Newspaper, href: '/admin/news/new', description: 'Publish news article' },
   { name: 'Create Event', icon: Calendar, href: '/admin/events/new', description: 'Add new school event' },
   { name: 'Manage Users', icon: UserCog, href: '/admin/users', description: 'Roles & invitations' },
-  { name: 'All Students', icon: Users, href: '/admin/students', description: 'View enrolled students' },
+  { name: 'All Students', icon: Users, href: '/admin/students', description: 'View & enrol students' },
+  { name: 'Class Teachers', icon: BookOpen, href: '/admin/class-teachers', description: 'Assign teachers to classes' },
 ]
 
 export default async function AdminDashboard() {
