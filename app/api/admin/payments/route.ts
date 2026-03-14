@@ -46,6 +46,20 @@ export async function POST(request: NextRequest) {
   const studentTyped = student as unknown as { id: string; admission_number: string; profiles: { full_name: string } | null }
   const paymentRef = reference || `OFFLINE-${randomUUID().slice(0, 8).toUpperCase()}`
 
+  let resolvedTerm = term || null
+  let resolvedYear = year || null
+  if (!resolvedTerm || !resolvedYear) {
+    const { data: settings } = await adminDb
+      .from('academic_settings')
+      .select('current_term, current_year')
+      .eq('singleton_key', true)
+      .single()
+    if (settings) {
+      resolvedTerm = resolvedTerm || settings.current_term
+      resolvedYear = resolvedYear || settings.current_year
+    }
+  }
+
   const { error } = await adminDb.from('payments').insert({
     student_id,
     amount,
@@ -56,8 +70,8 @@ export async function POST(request: NextRequest) {
     payer_name: studentTyped.profiles?.full_name || studentTyped.admission_number,
     recorded_by: session.user.id,
     notes: notes?.trim() || null,
-    term: term || null,
-    year: year || null,
+    term: resolvedTerm,
+    year: resolvedYear,
     created_at: date ? new Date(date).toISOString() : new Date().toISOString(),
   })
 
