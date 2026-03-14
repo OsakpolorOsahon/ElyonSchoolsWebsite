@@ -81,7 +81,7 @@ function ChildCard({ child }: { child: Child }) {
             </Link>
           </Button>
           <Button size="sm" variant="outline" className="flex-1" asChild>
-            <Link href="/parent/fees">
+            <Link href={`/parent/fees?child=${child.id}`}>
               <Wallet className="h-4 w-4 mr-1" />
               Fees
             </Link>

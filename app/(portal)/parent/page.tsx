@@ -124,7 +124,7 @@ export default async function ParentDashboard() {
                         </Link>
                       </Button>
                       <Button size="sm" variant="outline" className="flex-1" asChild>
-                        <Link href="/parent/fees">
+                        <Link href={`/parent/fees?child=${children[0].id}`}>
                           <Wallet className="h-4 w-4 mr-1" />
                           Fees
                         </Link>

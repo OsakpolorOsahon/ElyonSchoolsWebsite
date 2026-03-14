@@ -44,8 +44,11 @@ export async function GET(
     }
 
     if (!session) {
-      if (isUUID) {
+      if (isUUID || reference.length < 16) {
         return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      }
+      if (payment.status !== 'success') {
+        return NextResponse.json({ error: 'Receipt not found' }, { status: 404 })
       }
       return NextResponse.json({
         payment: {

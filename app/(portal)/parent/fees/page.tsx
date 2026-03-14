@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -68,12 +69,14 @@ const paymentTypeLabels: Record<string, string> = {
   donation: 'Donation',
 }
 
-export default function ParentFeesPage() {
+function FeesContent() {
+  const searchParams = useSearchParams()
+  const initialChildId = searchParams.get('child') || ''
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<{ full_name: string } | null>(null)
   const [children, setChildren] = useState<Child[]>([])
-  const [selectedChildId, setSelectedChildId] = useState<string>('')
+  const [selectedChildId, setSelectedChildId] = useState<string>(initialChildId)
   const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
   const [settings, setSettings] = useState<{ current_term: string; current_year: number } | null>(null)
@@ -101,7 +104,8 @@ export default function ParentFeesPage() {
 
       const kids = (childrenData || []) as unknown as Child[]
       setChildren(kids)
-      if (kids.length > 0) setSelectedChildId(kids[0].id)
+      if (kids.length > 0 && !initialChildId) setSelectedChildId(kids[0].id)
+      else if (initialChildId && kids.some(k => k.id === initialChildId)) setSelectedChildId(initialChildId)
 
       const { data: settingsData } = await supabase
         .from('academic_settings')
@@ -125,19 +129,17 @@ export default function ParentFeesPage() {
           .from('payments')
           .select('*')
           .in('student_id', childIds)
-          .eq('status', 'success')
           .order('created_at', { ascending: false })
 
         const { data: directPayments } = await supabase
           .from('payments')
           .select('*')
           .or(`user_id.eq.${session.user.id},payer_email.eq.${session.user.email}`)
-          .eq('status', 'success')
           .order('created_at', { ascending: false })
 
-        const all = [...(paymentsData || [])]
-        const existingIds = new Set(all.map((p: any) => p.id))
-        for (const dp of (directPayments || [])) {
+        const all: Payment[] = [...((paymentsData || []) as Payment[])]
+        const existingIds = new Set(all.map((p: Payment) => p.id))
+        for (const dp of ((directPayments || []) as Payment[])) {
           if (!existingIds.has(dp.id)) all.push(dp)
         }
         setPayments(all)
@@ -160,6 +162,7 @@ export default function ParentFeesPage() {
   const childPayments = useMemo(() => {
     if (!selectedChild || !settings) return []
     return payments.filter(p =>
+      p.status === 'success' &&
       p.student_id === selectedChildId &&
       p.term === settings.current_term &&
       p.year === settings.current_year &&
@@ -199,7 +202,7 @@ export default function ParentFeesPage() {
     setProcessing(true)
 
     const loadPaystack = () => {
-      const handler = (window as any).PaystackPop.setup({
+      const handler = window.PaystackPop!.setup({
         key: paystackKey,
         email,
         amount: outstanding * 100,
@@ -250,7 +253,7 @@ export default function ParentFeesPage() {
       handler.openIframe()
     }
 
-    if ((window as any).PaystackPop) {
+    if (window.PaystackPop) {
       loadPaystack()
     } else {
       const script = document.createElement('script')
@@ -460,5 +463,25 @@ export default function ParentFeesPage() {
         )}
       </main>
     </div>
+  )
+}
+
+declare global {
+  interface Window {
+    PaystackPop?: {
+      setup: (config: Record<string, unknown>) => { openIframe: () => void }
+    }
+  }
+}
+
+export default function ParentFeesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-muted/30">
+        <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+      </div>
+    }>
+      <FeesContent />
+    </Suspense>
   )
 }
