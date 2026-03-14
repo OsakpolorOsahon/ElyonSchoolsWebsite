@@ -101,6 +101,8 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - `POST /api/paystack/verify` — Verify Paystack admission payment + update admission status
 - `POST /api/paystack/general` — Verify general Paystack payments (school fees, donations) + record to DB
 - `GET/PATCH /api/admin/admissions` — Admin: list/update admissions (role-protected)
+- `POST/PATCH /api/admin/students` — Admin: create student record (POST), update status/class/department (PATCH). Validates class against ALL_CLASSES whitelist, department restricted to SSS classes, graduation_year 1994-2100, transfer_note max 500 chars
+- `POST /api/admin/students/promote` — Admin: bulk end-of-year promotion. Moves each active student to next class (SSS 3 → graduated). Accepts `skipIds` for repeating students. Returns per-student error details for unknown classes
 - `GET/POST /api/admin/news` — Admin: manage news posts
 - `GET/POST /api/admin/events` — Admin: manage events
 - `GET/POST/PATCH/DELETE /api/admin/announcements` — Admin: manage announcements
@@ -111,7 +113,8 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - Dashboard with live stats + **new payments notification badge** + "New" badges on recent payments
 - **Quick Actions**: Process Admission, Upload Results, Announcements, Gallery, Post News, Create Event, Manage Users
 - Admissions list with Accept/Reject actions
-- Students list with search
+- **Students** (`/admin/students`) — Full lifecycle management: filter by status (active/graduated/withdrawn/transferred), search, add new students, change status, promote/graduate individual students, set SSS department. Buttons for individual promote/graduate and link to bulk promotion
+- **End-of-Year Promotion** (`/admin/promotion`) — Bulk promotion page: preview all active students grouped by class level, mark individual students as "Repeating" to skip, confirm to promote all to next class (SSS 3 → graduated). Shows error details on partial failure
 - **Announcements** (`/admin/announcements`) — list, publish/unpublish, delete
 - **Announcements create** (`/admin/announcements/new`) — title, body, target audience, publish toggle
 - **Gallery** (`/admin/gallery`) — grid view with delete; image upload to Supabase Storage
