@@ -42,7 +42,7 @@ function ReceiptContent() {
         if (!res.ok) {
           setError(data.error || 'Receipt not found.')
         } else {
-          setReceipt(data)
+          setReceipt(data.payment || data)
         }
       })
       .catch(() => setError('Failed to load receipt. Please try again.'))

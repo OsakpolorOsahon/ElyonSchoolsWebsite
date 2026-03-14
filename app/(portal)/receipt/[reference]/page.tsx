@@ -61,7 +61,7 @@ export default function ReceiptPage() {
       }
     }
     load()
-  }, [paymentId])
+  }, [reference])
 
   if (loading) {
     return (

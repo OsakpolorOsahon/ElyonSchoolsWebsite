@@ -43,26 +43,43 @@ export async function GET(
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
     }
 
-    if (session) {
-      const { data: profile } = await adminDb.from('profiles').select('role').eq('id', session.user.id).single()
-
-      if (profile?.role !== 'admin') {
-        const isOwner = payment.user_id === session.user.id
-        const isPayerEmail = payment.payer_email === session.user.email
-
-        let isParentOfStudent = false
-        if (payment.student_id) {
-          const { data: student } = await adminDb
-            .from('students')
-            .select('parent_profile_id')
-            .eq('id', payment.student_id)
-            .single()
-          if (student?.parent_profile_id === session.user.id) isParentOfStudent = true
+    if (!session) {
+      if (isUUID) {
+        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      }
+      return NextResponse.json({
+        payment: {
+          id: payment.id,
+          amount: payment.amount,
+          status: payment.status,
+          payment_type: payment.payment_type,
+          payer_name: payment.payer_name,
+          payer_email: payment.payer_email,
+          reference: payment.reference,
+          created_at: payment.created_at,
+          method: payment.method,
         }
+      })
+    }
 
-        if (!isOwner && !isPayerEmail && !isParentOfStudent) {
-          return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-        }
+    const { data: profile } = await adminDb.from('profiles').select('role').eq('id', session.user.id).single()
+
+    if (profile?.role !== 'admin') {
+      const isOwner = payment.user_id === session.user.id
+      const isPayerEmail = payment.payer_email === session.user.email
+
+      let isParentOfStudent = false
+      if (payment.student_id) {
+        const { data: student } = await adminDb
+          .from('students')
+          .select('parent_profile_id')
+          .eq('id', payment.student_id)
+          .single()
+        if (student?.parent_profile_id === session.user.id) isParentOfStudent = true
+      }
+
+      if (!isOwner && !isPayerEmail && !isParentOfStudent) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     }
 
