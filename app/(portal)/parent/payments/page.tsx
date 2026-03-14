@@ -6,7 +6,6 @@ import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { PaymentReceiptModal } from '@/components/portal/PaymentReceiptModal'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, ArrowLeft, CreditCard } from 'lucide-react'
 
@@ -160,7 +159,11 @@ export default function ParentPaymentsPage() {
                       </div>
                       {payment.status === 'success' && (
                         <div className="shrink-0">
-                          <PaymentReceiptModal payment={payment} />
+                          <Link href={`/receipt/${payment.id}`}>
+                            <Button size="sm" variant="outline" className="gap-1" data-testid={`button-receipt-${payment.id}`}>
+                              <CreditCard className="h-3 w-3" /> Receipt
+                            </Button>
+                          </Link>
                         </div>
                       )}
                     </div>

@@ -11,7 +11,6 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { PaymentReceiptModal } from '@/components/portal/PaymentReceiptModal'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, ArrowLeft, CreditCard, TrendingUp, Plus, Download, Search, Banknote } from 'lucide-react'
@@ -455,11 +454,11 @@ export default function AdminPaymentsPage() {
                           </div>
                           {payment.status === 'success' && (
                             <div className="shrink-0">
-                              <PaymentReceiptModal payment={{
-                                ...payment,
-                                student_name: payment.student_id ? (students.find(s => s.id === payment.student_id)?.profiles?.full_name || payment.payer_name) : payment.payer_name,
-                                admission_number: payment.student_id ? students.find(s => s.id === payment.student_id)?.admission_number : undefined,
-                              }} />
+                              <Link href={`/receipt/${payment.id}`}>
+                                <Button size="sm" variant="outline" className="gap-1" data-testid={`button-receipt-${payment.id}`}>
+                                  <CreditCard className="h-3 w-3" /> Receipt
+                                </Button>
+                              </Link>
                             </div>
                           )}
                         </div>

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ reference: string }> }
 ) {
   try {
@@ -12,31 +13,93 @@ export async function GET(
       return NextResponse.json({ error: 'Reference required' }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    const supabase = await createClient()
+    const { data: { session } } = await supabase.auth.getSession()
 
-    const { data, error } = await supabase
-      .from('payments')
-      .select('id, amount, status, payment_type, payer_name, payer_email, reference, created_at, method')
-      .eq('reference', reference)
-      .single()
+    const adminDb = createAdminClient()
 
-    if (error || !data) {
-      return NextResponse.json({ error: 'Receipt not found' }, { status: 404 })
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reference)
+    let payment: any = null
+
+    if (isUUID) {
+      const { data } = await adminDb
+        .from('payments')
+        .select('*')
+        .eq('id', reference)
+        .single()
+      payment = data
     }
 
-    if (data.status !== 'success') {
-      return NextResponse.json({ error: 'Payment was not successful' }, { status: 404 })
+    if (!payment) {
+      const { data } = await adminDb
+        .from('payments')
+        .select('*')
+        .eq('reference', reference)
+        .single()
+      payment = data
+    }
+
+    if (!payment) {
+      return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
+    }
+
+    if (session) {
+      const { data: profile } = await adminDb.from('profiles').select('role').eq('id', session.user.id).single()
+
+      if (profile?.role !== 'admin') {
+        const isOwner = payment.user_id === session.user.id
+        const isPayerEmail = payment.payer_email === session.user.email
+
+        let isParentOfStudent = false
+        if (payment.student_id) {
+          const { data: student } = await adminDb
+            .from('students')
+            .select('parent_profile_id')
+            .eq('id', payment.student_id)
+            .single()
+          if (student?.parent_profile_id === session.user.id) isParentOfStudent = true
+        }
+
+        if (!isOwner && !isPayerEmail && !isParentOfStudent) {
+          return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+        }
+      }
+    }
+
+    let student_name: string | null = null
+    let admission_number: string | null = null
+
+    if (payment.student_id) {
+      const { data: student } = await adminDb
+        .from('students')
+        .select('admission_number, profiles(full_name)')
+        .eq('id', payment.student_id)
+        .single()
+
+      if (student) {
+        const s = student as unknown as { admission_number: string; profiles: { full_name: string } | null }
+        student_name = s.profiles?.full_name || null
+        admission_number = s.admission_number || null
+      }
     }
 
     return NextResponse.json({
-      id: data.id,
-      amount: data.amount,
-      payment_type: data.payment_type,
-      payer_name: data.payer_name,
-      payer_email: data.payer_email,
-      reference: data.reference,
-      created_at: data.created_at,
-      method: data.method,
+      payment: {
+        id: payment.id,
+        amount: payment.amount,
+        status: payment.status,
+        payment_type: payment.payment_type,
+        payer_name: payment.payer_name,
+        payer_email: payment.payer_email,
+        reference: payment.reference,
+        created_at: payment.created_at,
+        method: payment.method,
+        notes: payment.notes,
+        term: payment.term,
+        year: payment.year,
+        student_name: student_name || payment.payer_name,
+        admission_number,
+      }
     })
   } catch (error) {
     console.error('Payment lookup error:', error)
