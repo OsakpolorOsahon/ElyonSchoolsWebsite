@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Users, Search, UserPlus, ArrowUpRight, GraduationCap, ChevronUp, FileText, Banknote } from 'lucide-react'
+import { Loader2, ArrowLeft, Users, Search, UserPlus, ArrowUpRight, GraduationCap, ChevronUp, FileText, Banknote, History } from 'lucide-react'
 
 interface Student {
   id: string
@@ -71,7 +71,7 @@ export default function AdminStudentsPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [filtered, setFiltered] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<{ full_name: string } | null>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('active')
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -102,6 +102,21 @@ export default function AdminStudentsPage() {
   const [exams, setExams] = useState<Exam[]>([])
   const [selectedExam, setSelectedExam] = useState('')
 
+  interface ExamResultGroup {
+    exam_id: string
+    exam_name: string
+    term: string
+    year: number
+    published: boolean
+    results: { subject: string; code: string; score: number; ca_score: number; exam_score: number; grade: string; remarks: string | null }[]
+    average: number
+  }
+
+  const [resultsDialogOpen, setResultsDialogOpen] = useState(false)
+  const [resultsTarget, setResultsTarget] = useState<Student | null>(null)
+  const [resultsLoading, setResultsLoading] = useState(false)
+  const [cumulativeResults, setCumulativeResults] = useState<ExamResultGroup[]>([])
+
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
   const [paymentSaving, setPaymentSaving] = useState(false)
   const [paymentForm, setPaymentForm] = useState({
@@ -121,7 +136,7 @@ export default function AdminStudentsPage() {
       .from('students')
       .select('id, admission_number, class, gender, status, department, graduation_year, transfer_note, repeating, profile_id, profiles(full_name)')
       .order('created_at', { ascending: false })
-    const list = (data || []) as unknown as Student[]
+    const list = (data || []) as Student[]
     setStudents(list)
     setExistingProfileIds(new Set(list.map(s => s.profile_id).filter(Boolean)))
   }
@@ -184,8 +199,9 @@ export default function AdminStudentsPage() {
       toast({ title: 'Student added', description: 'Student record created successfully.' })
       setDialogOpen(false)
       await fetchStudents()
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save'
+      toast({ title: 'Error', description: message, variant: 'destructive' })
     } finally {
       setSaving(false)
     }
@@ -201,7 +217,7 @@ export default function AdminStudentsPage() {
     if (!statusTarget || !statusForm.status) return
     setStatusSaving(true)
     try {
-      const payload: Record<string, any> = { id: statusTarget.id, status: statusForm.status }
+      const payload: Record<string, string> = { id: statusTarget.id, status: statusForm.status }
       if (statusForm.status === 'transferred') {
         payload.transfer_note = statusForm.transfer_note
       }
@@ -215,8 +231,9 @@ export default function AdminStudentsPage() {
       toast({ title: 'Status updated', description: `Student marked as ${statusForm.status}.` })
       setStatusDialogOpen(false)
       await fetchStudents()
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update status'
+      toast({ title: 'Error', description: message, variant: 'destructive' })
     } finally {
       setStatusSaving(false)
     }
@@ -231,7 +248,7 @@ export default function AdminStudentsPage() {
     setPromoteSaving(true)
     const nextClass = getNextClass(promoteTarget.class)
     try {
-      const payload: Record<string, any> = { id: promoteTarget.id }
+      const payload: Record<string, string> = { id: promoteTarget.id }
       if (nextClass) {
         payload.class = nextClass
       } else {
@@ -252,8 +269,9 @@ export default function AdminStudentsPage() {
       })
       setPromoteTarget(null)
       await fetchStudents()
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to promote'
+      toast({ title: 'Error', description: message, variant: 'destructive' })
     } finally {
       setPromoteSaving(false)
     }
@@ -278,8 +296,9 @@ export default function AdminStudentsPage() {
       toast({ title: 'Department updated', description: `Department set to ${deptForm || 'none'}.` })
       setDeptTarget(null)
       await fetchStudents()
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update department'
+      toast({ title: 'Error', description: message, variant: 'destructive' })
     } finally {
       setDeptSaving(false)
     }
@@ -301,8 +320,27 @@ export default function AdminStudentsPage() {
           : `${student.profiles?.full_name || 'Student'} will stay in ${student.class} during promotion.`,
       })
       await fetchStudents()
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update'
+      toast({ title: 'Error', description: message, variant: 'destructive' })
+    }
+  }
+
+  async function openResultsDialog(student: Student) {
+    setResultsTarget(student)
+    setResultsLoading(true)
+    setCumulativeResults([])
+    setResultsDialogOpen(true)
+    try {
+      const res = await fetch(`/api/admin/student-results?studentId=${student.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setCumulativeResults(data.exams || [])
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to load results', variant: 'destructive' })
+    } finally {
+      setResultsLoading(false)
     }
   }
 
@@ -349,8 +387,9 @@ export default function AdminStudentsPage() {
       if (!res.ok) throw new Error(data.error)
       toast({ title: 'Payment recorded', description: `Offline payment of ₦${amount.toLocaleString()} recorded for ${paymentForm.student_name}.` })
       setPaymentDialogOpen(false)
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to record payment'
+      toast({ title: 'Error', description: message, variant: 'destructive' })
     } finally {
       setPaymentSaving(false)
     }
@@ -544,6 +583,16 @@ export default function AdminStudentsPage() {
                             </Button>
                           </Link>
                         )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1"
+                          onClick={() => openResultsDialog(student)}
+                          data-testid={`button-results-history-${student.id}`}
+                        >
+                          <History className="h-3 w-3" />
+                          Results
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -886,6 +935,86 @@ export default function AdminStudentsPage() {
               Record Payment
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={resultsDialogOpen} onOpenChange={setResultsDialogOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Results History — {resultsTarget?.profiles?.full_name || 'Student'}
+            </DialogTitle>
+            <DialogDescription>
+              {resultsTarget?.admission_number} · {resultsTarget?.class}
+            </DialogDescription>
+          </DialogHeader>
+          {resultsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : cumulativeResults.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-4 opacity-30" />
+              <p>No results recorded for this student yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-6" data-testid="cumulative-results">
+              {cumulativeResults.map(group => (
+                <div key={group.exam_id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h4 className="font-semibold text-sm">{group.exam_name}</h4>
+                      <p className="text-xs text-muted-foreground">{group.term} Term {group.year}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={group.published ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                        {group.published ? 'Published' : 'Draft'}
+                      </Badge>
+                      <span className="text-sm font-medium">Avg: {group.average}%</span>
+                    </div>
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left">
+                        <th className="py-1.5 text-xs font-medium text-muted-foreground">Subject</th>
+                        <th className="py-1.5 text-xs font-medium text-muted-foreground text-center">CA</th>
+                        <th className="py-1.5 text-xs font-medium text-muted-foreground text-center">Exam</th>
+                        <th className="py-1.5 text-xs font-medium text-muted-foreground text-center">Total</th>
+                        <th className="py-1.5 text-xs font-medium text-muted-foreground text-center">Grade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.results.map((r, i) => (
+                        <tr key={i} className="border-b last:border-0">
+                          <td className="py-1.5">{r.subject}</td>
+                          <td className="py-1.5 text-center">{r.ca_score}</td>
+                          <td className="py-1.5 text-center">{r.exam_score}</td>
+                          <td className="py-1.5 text-center font-medium">{r.score}</td>
+                          <td className="py-1.5 text-center">
+                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+                              r.grade === 'A' ? 'bg-green-100 text-green-700' :
+                              r.grade === 'B' ? 'bg-blue-100 text-blue-700' :
+                              r.grade === 'C' ? 'bg-cyan-100 text-cyan-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            }`}>{r.grade}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {resultsTarget && (
+                    <div className="mt-3 text-right">
+                      <Link href={`/report-card/${resultsTarget.id}/${group.exam_id}`}>
+                        <Button variant="outline" size="sm" className="gap-1" data-testid={`button-view-report-${group.exam_id}`}>
+                          <FileText className="h-3 w-3" /> View Report Card
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

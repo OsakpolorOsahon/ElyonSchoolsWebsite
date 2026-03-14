@@ -48,27 +48,12 @@ You need one account for each role. Create them in this order:
 
 Before testing Teacher, Parent, and Student features, the admin must set up this data:
 
-1. **Create at least 2 Subjects** — Admin Dashboard → Subjects → Add (e.g. "Mathematics" / `MATH`, "English Language" / `ENG`)
-2. **Create at least 1 Exam** — Admin Dashboard → Exams → New Exam (e.g. "First Term Examination", First Term, 2025)
-3. **Create a Student Record** linked to the student user — this requires the admin to go to Supabase SQL Editor and insert a row:
-   ```sql
-   INSERT INTO students (profile_id, admission_number, class, status, parent_profile_id)
-   VALUES (
-     'STUDENT-USER-UUID',   -- replace with student's auth UUID
-     'ELY/2025/001',        -- any admission number
-     'JSS 1',               -- any class
-     'active',
-     'PARENT-USER-UUID'     -- replace with parent's auth UUID
-   );
-   ```
-4. **Assign the Teacher to the Student** — Supabase SQL Editor:
-   ```sql
-   INSERT INTO teacher_assignments (teacher_profile_id, student_id)
-   VALUES (
-     'TEACHER-USER-UUID',   -- teacher's auth UUID
-     (SELECT id FROM students WHERE admission_number = 'ELY/2025/001')
-   );
-   ```
+1. **Academic Settings** — Admin Dashboard → Settings → Set current term (e.g. "First") and year (e.g. 2025)
+2. **Create at least 2 Subjects** — Admin Dashboard → Subjects → Add (e.g. "Mathematics" / `MATH`, "English Language" / `ENG`). Set applicable classes to include your test class.
+3. **Create at least 1 Exam** — Admin Dashboard → Exams → New Exam (e.g. "First Term Examination", First Term, 2025)
+4. **Create a Student Record** — Admin Dashboard → Students → Add Student → select the student user account, set admission number (e.g. `ELY/2025/001`), class (e.g. `JSS 1`), gender, and link to the parent user account.
+5. **Assign Class Teacher** — Admin Dashboard → Class Teachers → Assign the teacher account to the student's class (e.g. JSS 1).
+6. **Create Fee Structures** — Admin Dashboard → Fee Structures → Add fees for the student's class and current term/year (e.g. tuition: ₦50,000).
 
 ### 0.3 — Paystack Test Card Details
 
@@ -335,7 +320,6 @@ Go to the root of your website (e.g. `https://elyon-schools.vercel.app`).
 - [ ] Type a valid email address and click **"Send Reset Link"** (or similar)
 - [ ] A success message appears (e.g. "Check your email for a password reset link")
 - [ ] Check the email inbox — a password reset email arrives
-  *(If not, check Spam. If still not there, check that your Supabase Auth URL Configuration is set correctly.)*
 
 ---
 
@@ -400,12 +384,7 @@ The form has **4 steps**. Test each step.
 - [ ] The applicant's email is shown
 - [ ] A **"Pay Now"** button is present
 - [ ] Click **"Pay Now"** — the Paystack payment popup appears
-- [ ] Enter the test card details from Section 0.3:
-  - Card: `4084 0840 8408 4081`
-  - Expiry: `12/26`
-  - CVV: `408`
-  - PIN: `0000`
-  - OTP: `123456`
+- [ ] Enter the test card details from Section 0.3
 - [ ] Payment completes successfully
 - [ ] You are redirected to the receipt page (`/payments/receipt?ref=...`)
 
@@ -484,221 +463,268 @@ The form has **4 steps**. Test each step.
 
 - [ ] Page loads — you see "Admin Dashboard" at the top
 - [ ] Your name appears in the welcome message
-- [ ] **5 statistics cards** are visible:
+- [ ] **4 statistics cards** are visible:
   - [ ] Pending Admissions — shows a number
-  - [ ] Total Students — shows a number
+  - [ ] Active Students — shows a number
   - [ ] Total Revenue — shows a Naira amount
   - [ ] Upcoming Events — shows a number
-  - [ ] New Payments Today — shows a number
-- [ ] **Quick Actions grid** shows 9 buttons: Process Admissions, Manage Exams, Manage Subjects, Announcements, Gallery, Post News, Create Event, Manage Users, All Students
+- [ ] **Quick Actions grid** shows buttons including: Process Admissions, Manage Exams, Manage Subjects, Announcements, Gallery, Post News, Create Event, Manage Users, All Students, Fee Structures, Staff Profiles, Class Teachers, Settings
 - [ ] Each Quick Action button navigates to the correct page when clicked (test each one)
+- [ ] **Recent Activity** section shows recent admission applications
+- [ ] **Pending Admissions** section shows recent applications with Review buttons
 - [ ] **Recent Payments** table shows the last few payments (or "no payments" if none yet)
 - [ ] Clicking the school logo or a "Visit Site" link opens the public homepage
+
+**Results Submission Status Widget**
+- [ ] A "Results Submission Status" section appears at the bottom
+- [ ] It shows the name and term/year of the most recent exam
+- [ ] All 14 classes are displayed in a grid (Nursery 1 through SSS 3)
+- [ ] Classes with at least one result uploaded show a green check icon
+- [ ] Classes without results show a grey X icon
+- [ ] Clicking a class cell navigates to the students page
 
 ---
 
 ### 5.2 — Admin Users Page ( /admin/users )
 
-- [ ] Page loads — you see "Users" heading
-- [ ] The table shows all users with columns: Name, Email, Role badge, Date Joined
-- [ ] Role badges are colour-coded: Admin (red), Teacher (blue), Parent (purple), Student (green)
-- [ ] The **search box** works — type a name or email, the table filters in real-time
-- [ ] Clearing the search box shows all users again
+- [ ] Page loads with a list of all user accounts
+- [ ] Each row shows: Name, Email, Role (with coloured badge), Joined date
+- [ ] A search bar is present — searching filters the list in real-time
+- [ ] Each user has a "Change Role" dropdown
 
 **Test: Change a user's role**
-- [ ] Find the test Teacher account in the list
-- [ ] Click the Role dropdown next to their name
-- [ ] Change it to "Parent"
-- [ ] A success toast/message appears
-- [ ] The badge on that row changes immediately to purple "Parent"
-- [ ] Change it back to "Teacher" — confirm it reverts correctly
+- [ ] Select a different role from the dropdown for one user
+- [ ] The role badge updates immediately
+- [ ] A success toast appears
 
 **Test: Invite a new user**
-- [ ] Click the **"Invite User"** button
-- [ ] A dialog/popup appears with fields: Full Name, Email, Role (dropdown)
-- [ ] Fill in a new unique email address, a name, and select "Parent" as the role
-- [ ] Click **"Send Invitation"**
-- [ ] A success toast appears
-- [ ] The dialog closes
-- [ ] The new user appears in the table after refreshing
+- [ ] Click **"Invite User"** — a dialog opens
+- [ ] Fields present: Full Name, Email Address, Role (dropdown)
+- [ ] Fill in all fields and click **"Send Invitation"**
+- [ ] A success toast appears with the invite confirmation
+- [ ] The new user appears in the list (might need to refresh)
 
 ---
 
 ### 5.3 — Admin Students Page ( /admin/students )
 
-- [ ] Page loads — "Students" heading visible
-- [ ] A table of students is visible showing: Name, Admission Number, Class, Status
-- [ ] If the test student record was created, it appears here
-- [ ] Data in the table is readable
+- [ ] Page loads with a list of all students
+- [ ] Header shows total count of filtered students
+- [ ] **Status filter tabs** are visible: All, Active, Graduated, Withdrawn, Transferred — each shows a count
+- [ ] Clicking a tab filters the student list
+- [ ] **Search bar** works — search by name, admission number, or class
+- [ ] **"End-of-Year Promotion"** button is visible
+- [ ] **"Add Student"** button is visible
+
+**Test: Add a new student**
+- [ ] Click **"Add Student"** — a dialog opens
+- [ ] Fields: Student Account (dropdown), Admission Number, Class, Gender, Parent Account (dropdown), Department (for SSS only)
+- [ ] Only student accounts without an existing record are available in the dropdown
+- [ ] Fill in all required fields → click **"Save"**
+- [ ] A success toast appears
+- [ ] The new student appears in the list
+
+**Test: Student actions (for each active student)**
+- [ ] **Repeat button** — clicking toggles repeating status, badge appears/disappears
+- [ ] **Set Dept button** (SSS classes only) — opens department dialog with Science/Commercial/Art options
+- [ ] **Promote button** — opens confirmation dialog showing current and next class; confirming promotes the student
+- [ ] **Graduate button** (SSS 3 only) — opens confirmation; confirming marks the student as graduated
+- [ ] **Payment button** — opens offline payment dialog (tested below)
+- [ ] **Report button** (when an exam is selected) — navigates to printable report card
+- [ ] **Results button** — opens cumulative results history dialog (see 5.3.1)
+- [ ] **Status badge** — clicking opens status change dialog (active/graduated/withdrawn/transferred)
+
+**Test: Change student status**
+- [ ] Click the status badge of a student → dialog opens
+- [ ] Change to "withdrawn" → Save → the student now shows in the Withdrawn tab
+- [ ] Change to "transferred" → a "Transfer Note" text area appears → fill it in → Save
+- [ ] The transfer note shows beneath the student's name
+
+**Test: Offline payment recording**
+- [ ] Click **"Payment"** on an active student — a dialog opens
+- [ ] Fields: Amount, Payment Type (dropdown with tuition/books/uniform etc.), Method (cash/bank transfer), Date, Reference, Notes
+- [ ] Enter amount ₦25,000, type school_fee, method cash → click "Record Payment"
+- [ ] Success toast appears
+- [ ] The payment appears in Admin Payments page
 
 ---
 
-### 5.4 — Admin Admissions Page ( /admin/admissions )
+#### 5.3.1 — Cumulative Results View
 
-- [ ] Page loads — "Admissions" heading visible
-- [ ] All application records appear in the list
-- [ ] Each card/row shows: student name, class applied, status badge, date submitted, guardian details
-
-**Test: Filter tabs**
-- [ ] Click **"All"** — all applications are shown
-- [ ] Click **"Pending Payment"** — only pending_payment applications show
-- [ ] Click **"Processing"** — only processing applications show
-- [ ] Click **"Accepted"** — only accepted show
-- [ ] Click **"Rejected"** — only rejected show
-- [ ] Filter correctly hides applications of other statuses
-
-**Test: Approve an application**
-- [ ] Find your test application (it should be in "Processing" after payment was made)
-- [ ] Click the **green "Accept"** button
-- [ ] A success message appears
-- [ ] The status badge on that application changes to "Accepted" (green)
-
-**Test: Reject an application** *(use a second test application, or reset the accepted one)*
-- [ ] Find an application in "Processing" status
-- [ ] Click the **red "Reject"** button
-- [ ] A success message appears
-- [ ] The status badge changes to "Rejected" (red)
+- [ ] Click the **"Results"** button on any student card
+- [ ] A dialog opens showing "Results History — [Student Name]"
+- [ ] The dialog shows all exams the student has results for, grouped by term and year
+- [ ] Each exam group shows: exam name, term, year, published/draft badge, and average score
+- [ ] Each exam group has a table with: Subject, CA score, Exam score, Total, Grade
+- [ ] Each exam group has a "View Report Card" link that navigates to `/report-card/[studentId]/[examId]`
+- [ ] If a student has no results, a "No results recorded" message appears
 
 ---
 
-### 5.5 — Admin Payments Page ( /admin/payments )
+### 5.4 — Admin Exams Page ( /admin/exams )
 
-- [ ] Page loads — "Payments" heading visible
-- [ ] All payment records appear in a table or list
-- [ ] Each payment shows: payer name, amount (₦), type badge, status badge, date
-- [ ] Type badges appear in correct colours (blue for Application Fee, green for School Fee, etc.)
-- [ ] Status badges appear: Paid (green), Pending (yellow), Failed (red)
+- [ ] Page loads with a list of exams
+- [ ] Each exam shows: name, term, year, published status badge, teacher-remarks toggle
+- [ ] **"Create Exam"** button is present
 
-**Test: Filter tabs**
-- [ ] Click each filter tab — the list updates to show only that payment type
-- [ ] "All" tab shows everything
+**Test: Create an exam**
+- [ ] Click "Create Exam" → fields: Name, Term (dropdown), Year
+- [ ] Fill in and submit → the new exam appears in the list
+
+**Test: Publish/unpublish**
+- [ ] Click the "Publish" toggle on an exam → status changes to Published (green badge)
+- [ ] Click again → status changes back to Draft
+
+**Test: Toggle teacher remarks**
+- [ ] Click the teacher-remarks toggle → changes the "Remarks Open" status
 
 ---
 
-### 5.6 — Admin News ( /admin/news and /admin/news/new )
+### 5.5 — Admin Subjects Page ( /admin/subjects )
 
-**News List Page ( /admin/news )**
-- [ ] Page loads — shows list of news posts with title and status (Published / Draft)
-- [ ] **"New Post"** button is visible → click it → goes to `/admin/news/new`
+- [ ] Page loads with a list of subjects
+- [ ] Each subject shows: name, code, applicable classes, applicable departments
+- [ ] **"Add Subject"** button is present
+
+**Test: Create a subject**
+- [ ] Click "Add Subject" → fields: Name, Code, Applicable Classes (multi-select), Applicable Departments (multi-select)
+- [ ] Fill in name "Physics", code "PHY", classes "SSS 1, SSS 2, SSS 3", department "Science"
+- [ ] Submit → the subject appears in the list
+
+**Test: Subject-department mapping**
+- [ ] Confirm that subjects with department restrictions only show those departments
+- [ ] Confirm that subjects with no department restrictions are available to all departments
+- [ ] Subjects with class restrictions only apply to those classes
+
+---
+
+### 5.6 — Admin Admissions Page ( /admin/admissions )
+
+- [ ] Page loads with all admission applications
+- [ ] Each application shows: applicant name, class applied, status, date
+- [ ] **Accept** and **Reject** buttons are present for applications in "processing" status
+- [ ] Clicking **Accept** changes status to "accepted"
+- [ ] Clicking **Reject** changes status to "rejected"
+
+---
+
+### 5.7 — Admin Payments Page ( /admin/payments )
+
+- [ ] Page loads with a table of all payments
+- [ ] Tab filters: All, Success, Pending, Failed
+- [ ] Each row shows: payer name, amount, type, status badge, method, reference, date
+- [ ] Clicking a payment reference or row navigates to the receipt page
+
+---
+
+### 5.8 — Fee Structures ( /admin/fee-structures )
+
+- [ ] Page loads with fee structure records grouped by class
+- [ ] **"Add Fee"** button is present
+
+**Test: Create a fee structure**
+- [ ] Click "Add Fee" → fields: Class (dropdown with all 14 classes), Term, Year, Fee Type (dropdown), Amount
+- [ ] Fee Type dropdown includes: tuition, pta_levy, books, uniform, technology_fee, sports_fee, lab_fee, exam_fee, and custom
+- [ ] Fill in: JSS 1, First, 2025, tuition, ₦50,000 → Save
+- [ ] The fee appears in the list
+
+**Test: Outstanding fees calculation**
+- [ ] Go to the Outstanding Fees tab (if present)
+- [ ] All active students should be listed with their expected fees for the current term
+- [ ] Expected amount should match the sum of fee structures for their class
+- [ ] Paid amount should reflect successful payments (fee-relevant types only)
+- [ ] Outstanding = Expected - Paid
+
+---
+
+### 5.9 — Admin Announcements Page ( /admin/announcements )
+
+- [ ] Page loads with existing announcements (or empty state)
+- [ ] **"New Announcement"** button navigates to creation form
+- [ ] Create a new announcement with title, body, and target audience (all/parents/teachers/students)
+- [ ] The announcement appears in the list after creation
+- [ ] Toggle published/unpublished status
+
+---
+
+### 5.10 — Admin News, Events & Gallery
 
 **Create News Post ( /admin/news/new )**
-- [ ] Page loads with a form
-- [ ] Fields present: Title, Slug, Summary, Body (text area), Featured Image URL (optional), Status (dropdown: Draft/Published)
-- [ ] Fill in all required fields:
-  - Title: `Test News Article`
-  - Slug: `test-news-article`
-  - Summary: `This is a test`
-  - Body: `This is the full content of the test article.`
-  - Status: `Published`
-- [ ] Click **"Save"** or **"Publish"**
-- [ ] A success message appears
-- [ ] You are redirected back to the news list (or see the post in the list)
-- [ ] Go to the public website `/news` page — the new article appears there
-
----
-
-### 5.7 — Admin Events ( /admin/events and /admin/events/new )
-
-**Events List Page ( /admin/events )**
-- [ ] Page loads — all events listed with title, category, date, location
-- [ ] **"New Event"** button navigates to `/admin/events/new`
+- [ ] Form with title, summary, body, featured image URL
+- [ ] Submit → the post appears on the public news page
 
 **Create Event ( /admin/events/new )**
-- [ ] Page loads with a form
-- [ ] Fields present: Title, Description, Start Date & Time, End Date & Time, Location, Category (dropdown: Academic/Sports/Cultural/Other)
-- [ ] Fill in all fields:
-  - Title: `Test Sports Day`
-  - Start: pick any future date and time
-  - End: pick a time after the start time
-  - Location: `School Grounds`
-  - Category: `Sports`
-- [ ] Click **"Create Event"** or **"Save"**
-- [ ] A success message appears
-- [ ] Go to the public `/events` page — the new event appears in "Upcoming Events"
+- [ ] Form with title, description, start/end dates, location, category
+- [ ] Submit → the event appears on the public events page
 
-**Test: Invalid end time**
-- [ ] Try setting the End time to be BEFORE the Start time
-- [ ] Click Save — a validation error appears, form does not submit
+**Gallery Upload ( /admin/gallery/upload )**
+- [ ] Upload form with title, description, category, image file
+- [ ] Submit → the image appears in the public gallery
 
 ---
 
-### 5.8 — Admin Announcements ( /admin/announcements and /admin/announcements/new )
+### 5.11 — Admin Class Teachers ( /admin/class-teachers )
 
-**Announcements List ( /admin/announcements )**
-- [ ] Page loads — all announcements listed with title, target audience badge, published/draft badge
-- [ ] **"New Announcement"** button navigates to `/admin/announcements/new`
-
-**Test: Publish toggle**
-- [ ] Find a published announcement — its badge says "Published" (green)
-- [ ] Click the toggle/button to unpublish it — badge changes to "Draft" (yellow)
-- [ ] Click it again — it goes back to "Published"
-
-**Test: Delete**
-- [ ] Find an announcement you can delete (use the test one)
-- [ ] Click the **Delete** button (bin icon)
-- [ ] A confirmation prompt appears — click Confirm/OK
-- [ ] The announcement disappears from the list
-
-**Create Announcement ( /admin/announcements/new )**
-- [ ] Page loads with a form
-- [ ] Fields present: Title, Body (text area), Target Audience (dropdown: All/Parents/Students/Teachers), Publish toggle
-- [ ] Fill in:
-  - Title: `Important Notice`
-  - Body: `This is a test announcement for parents.`
-  - Audience: `Parents`
-  - Published: ON
-- [ ] Click **"Create"** or **"Save"**
-- [ ] Success message appears
-- [ ] Log in as a Parent — the announcement appears on the Parent Dashboard ✓
-- [ ] Log in as a Student — the announcement does NOT appear (it was set to Parents only)
+- [ ] Page loads with a list of all 14 classes
+- [ ] Each class shows the currently assigned teacher (or "Not assigned")
+- [ ] **"Assign"** or **"Change"** button for each class
+- [ ] Select a teacher from the dropdown → Save → the assignment updates
 
 ---
 
-### 5.9 — Admin Gallery ( /admin/gallery and /admin/gallery/upload )
+### 5.12 — Admin Settings ( /admin/settings )
 
-**Gallery List ( /admin/gallery )**
-- [ ] Page loads — image grid visible (empty or with images)
-- [ ] **"Upload Image"** button navigates to `/admin/gallery/upload`
-
-**Upload Image ( /admin/gallery/upload )**
-- [ ] Page loads with an upload form
-- [ ] A file picker area is present (click or drag-and-drop)
-- [ ] Select a valid image file from your computer (JPG or PNG, under 5MB)
-- [ ] A preview of the image appears after selection
-- [ ] Fields present: Title, Description (optional), Category (dropdown)
-- [ ] Fill in: Title: `Test School Photo`, Category: `Campus`
-- [ ] Click **"Upload"**
-- [ ] A success message/toast appears
-- [ ] Go back to `/admin/gallery` — the new image appears in the grid
-- [ ] Go to the public `/gallery` page — the image appears there too (it may take a moment to refresh)
-
-**Test: Delete a photo**
-- [ ] On the admin gallery page, hover over the test photo
-- [ ] A **"Delete"** button appears on top of the image
-- [ ] Click it → a confirmation prompt appears
-- [ ] Click Confirm — the image disappears from the grid
+- [ ] Page loads with current academic settings
+- [ ] Fields: Current Term (dropdown: First/Second/Third), Current Year, School Name, Principal Name
+- [ ] Change the term → Save → the value persists after refresh
+- [ ] Change the year → Save → verify it updates
 
 ---
 
-### 5.10 — Admin Exams ( /admin/exams )
+### 5.13 — Admin Bulk Promotion ( /admin/promotion )
 
-- [ ] Page loads — exam list visible
-- [ ] **"New Exam"** form is visible with fields: Name, Term (dropdown: First/Second/Third), Year (number)
-- [ ] Fill in: Name: `Mid-Term Test`, Term: `First`, Year: `2025`
-- [ ] Click **"Create"** or **"Add"**
-- [ ] The new exam appears in the list
-- [ ] Each exam has a **Delete** button → click it → the exam is removed
+- [ ] Page loads with promotion controls
+- [ ] Shows a class-by-class breakdown of active students
+- [ ] **"Promote All"** or **"Run End-of-Year Promotion"** button is present
+- [ ] Clicking promote:
+  - [ ] Students in Nursery 1 → Nursery 2, Primary 1 → Primary 2, etc.
+  - [ ] Students in SSS 3 → marked as graduated
+  - [ ] Students marked as "Repeating" stay in their current class
+- [ ] A summary shows how many students were promoted, graduated, and held back
 
 ---
 
-### 5.11 — Admin Subjects ( /admin/subjects )
+### 5.14 — Admin Staff Profiles ( /admin/staff )
 
-- [ ] Page loads — subject list visible with Name and Code columns
-- [ ] **"New Subject"** form is visible with fields: Name, Code (short abbreviation)
-- [ ] Fill in: Name: `Physics`, Code: `PHY`
-- [ ] Click **"Add"** or **"Create"**
-- [ ] The new subject appears in the list
-- [ ] Each subject has a **Delete** button → click it → the subject is removed
+- [ ] Page loads with a list of all users with the "teacher" role
+- [ ] Each teacher is shown as a card
+- [ ] Teachers with a staff profile show: subject specialty, qualification, phone, bio
+- [ ] Teachers without a profile show a **"Profile Set"** / **"No Profile"** badge
+- [ ] Search bar filters by name, email, or specialty
+
+**Test: Add a staff profile**
+- [ ] Click **"Add Profile"** on a teacher without a profile — a dialog opens
+- [ ] Fields: Subject Specialty, Qualification, Phone Number, Bio
+- [ ] Fill in all fields → click "Save Profile"
+- [ ] Success toast appears; the card now shows the profile details
+
+**Test: Edit a staff profile**
+- [ ] Click **"Edit Profile"** on a teacher with an existing profile
+- [ ] The dialog opens with pre-filled values
+- [ ] Change the specialty → Save → the card updates with the new value
+
+---
+
+### 5.15 — Report Cards ( /report-card/[studentId]/[examId] )
+
+- [ ] Navigate from Admin Students page (select an exam, click "Report" on a student)
+- [ ] The report card shows the school name, student name, class, admission number
+- [ ] A table of subjects with CA score (0-40), Exam score (0-60), Total (0-100), and Grade
+- [ ] Grading scale: A≥70, B≥60, C≥50, D≥45, E≥40, F<40
+- [ ] Total and average are calculated correctly
+- [ ] Principal comment section shows if a comment has been added
+- [ ] **"Print Report Card"** button opens the browser print dialog
+- [ ] The printed version is properly formatted (no navigation bars, clean layout)
 
 ---
 
@@ -706,61 +732,47 @@ The form has **4 steps**. Test each step.
 
 ## Section 6 — Teacher Portal
 
-**Log out from Admin, then log in as the Teacher account.**
+**First:** Log in with your Teacher account. You should be on the Teacher Dashboard at `/teacher`.
 
 ---
 
 ### 6.1 — Teacher Dashboard ( /teacher )
 
-- [ ] Page loads — "Teacher Dashboard" heading with teacher's name in the welcome message
-- [ ] **Summary cards** appear:
-  - [ ] Assigned Students — shows the number of students assigned to this teacher
-  - [ ] Classes — shows how many classes
-- [ ] **Large green "Upload Student Results" button** is visible at the top
-- [ ] **Class cards** appear below (e.g. "JSS 1 — 1 Student") — one card for each class in the assignment
-- [ ] **Upcoming Events** section shows school events at the bottom
+- [ ] Page loads — "Teacher Dashboard" at the top with your name
+- [ ] Your assigned class(es) are displayed
+- [ ] Quick links: Upload Results, My Classes
+- [ ] School announcements targeting "teachers" or "all" are shown
+- [ ] Upcoming events are shown
 
 ---
 
-### 6.2 — View Class Students ( /teacher/classes/[class] )
+### 6.2 — Teacher Classes ( /teacher/classes/[class] )
 
-- [ ] Click on a class card from the Teacher Dashboard
-- [ ] A page loads showing the class name in the heading
-- [ ] A table of students shows: Name, Admission Number, Class, Gender
-- [ ] The test student `ELY/2025/001` appears in the list
-- [ ] **"Back"** button returns to the Teacher Dashboard
+- [ ] Navigate from the dashboard to your assigned class
+- [ ] A list of students in that class is displayed
+- [ ] Each student shows: name, admission number, gender, department (for SSS)
 
 ---
 
-### 6.3 — Upload Results ( /teacher/results/upload )
+### 6.3 — Teacher Results Upload ( /teacher/results/upload )
 
-- [ ] Page loads — "Upload Student Results" heading
-- [ ] **Exam dropdown** is present — it shows exams created by the Admin
-- [ ] **Subject dropdown** is present — it shows subjects created by the Admin
-- [ ] When NEITHER is selected, no student table is shown yet
+- [ ] Page loads with exam selection dropdown
+- [ ] Select an exam where teacher remarks are open
+- [ ] Subject dropdown shows subjects applicable to your assigned class(es)
+- [ ] Student list for the selected class is displayed
 
-**Test: Select exam and subject**
-- [ ] Select the exam you created (e.g. "First Term Examination 2025")
-- [ ] Select a subject (e.g. "Mathematics")
-- [ ] A table appears below with your assigned students (the test student should be listed)
+**Test: Upload results**
+- [ ] For each student, enter CA score (0-40) and Exam score (0-60)
+- [ ] Total is automatically calculated (CA + Exam)
+- [ ] Grade is automatically assigned based on the total score
+- [ ] Click **"Save Results"** or **"Submit"**
+- [ ] Success toast appears
+- [ ] Results persist after page refresh
 
-**Test: Enter a score**
-- [ ] In the score box next to the test student, type `75`
-- [ ] Click **"Save Results"**
-- [ ] A success toast/message appears: "Results saved successfully" or similar
-- [ ] The page stays open (you can now switch to a different subject)
-
-**Test: Update existing score**
-- [ ] Keep the same exam and subject selected
-- [ ] Change the score from `75` to `80`
-- [ ] Click **"Save Results"**
-- [ ] A success message appears (no error about duplicate)
-- [ ] Later when the parent/student views results, the score shows as `80`
-
-**Test: Enter invalid score**
-- [ ] Type `150` in a score box (above 100)
-- [ ] Click **"Save Results"**
-- [ ] A validation error appears — form does NOT submit
+**Test: Validation**
+- [ ] Enter CA score > 40 — validation error appears
+- [ ] Enter Exam score > 60 — validation error appears
+- [ ] Enter negative scores — validation error appears
 
 ---
 
@@ -768,48 +780,80 @@ The form has **4 steps**. Test each step.
 
 ## Section 7 — Parent Portal
 
-**Log out from Teacher, then log in as the Parent account.**
+**First:** Log in with your Parent account. You should be on the Parent Dashboard at `/parent`.
 
 ---
 
 ### 7.1 — Parent Dashboard ( /parent )
 
-- [ ] Page loads — "Parent Dashboard" with parent's name
-- [ ] **Announcements banner** appears at the top if any announcements targeted "Parents" or "All" have been published
-  - The test announcement from Section 5.8 ("Important Notice" for Parents) should appear here
-- [ ] **Children cards** appear — the linked student should appear with:
-  - [ ] Student name
-  - [ ] Class (e.g. JSS 1)
-  - [ ] Admission number (e.g. ELY/2025/001)
-  - [ ] **"View Results"** button
-- [ ] **Upcoming Events** section at the bottom shows school events
+- [ ] Page loads — "Parent Dashboard" at the top with your name
+- [ ] School announcements targeting "parents" or "all" are shown
+- [ ] **"My Children"** section shows all children linked to this parent
 
-> **NOTE:** If no children appear, the student record was not linked to this parent account. Go back to Section 0.2 and re-run the SQL to link the student.
+**Multi-child selector**
+- [ ] If you have 2–3 children, tabs appear for each child
+- [ ] If you have 4+ children, a dropdown selector appears instead
+- [ ] Selecting a child updates the dashboard content for that child
 
----
-
-### 7.2 — View Child Results ( /parent/results/[admissionNumber] )
-
-- [ ] Click **"View Results"** on the child's card
-- [ ] A page loads showing the child's name, class, and admission number at the top
-- [ ] A results table is visible with columns: Exam, Term, Year, Subject, Score, Grade
-- [ ] The result entered by the teacher (score: 80, subject: Mathematics, exam: First Term Examination) appears
-- [ ] Grade is shown as a coloured badge (e.g. "A" in green for scores 70+)
-- [ ] **"Back"** button returns to the Parent Dashboard
+**Per-child actions**
+- [ ] Each child card shows: name, class, admission number
+- [ ] **"View Results"** button navigates to `/parent/results/[admissionNumber]`
+- [ ] **"View Fees"** button navigates to `/parent/fees?child=[studentId]`
+- [ ] **"View Payments"** button navigates to `/parent/payments`
+- [ ] Upcoming events section is visible
 
 ---
 
-### 7.3 — Payment History ( /parent/payments )
+### 7.2 — Parent Results ( /parent/results/[admissionNumber] )
 
-- [ ] Navigate to Payments from the Parent Dashboard (look for a "Payment History" link or button)
-- [ ] Page loads — "Payment History" heading
-- [ ] All payments associated with this parent's email appear
-  - The admission application fee payment should appear here
-- [ ] Each row shows: Amount, Type, Status (Paid/Pending/Failed), Date
-- [ ] Click on any payment row — a **receipt popup/modal** appears
-- [ ] The modal shows: reference number, amount, payment date, status
-- [ ] Click the **close button (X)** on the modal — it closes
-- [ ] The payment list is still visible
+- [ ] Page loads with the child's results
+- [ ] Only **published** exam results are shown (unpublished/draft exams are hidden)
+- [ ] Results are grouped by exam (term/year)
+- [ ] A term/year filter is available
+- [ ] Each exam group shows subjects with scores and grades
+- [ ] **"View Report Card"** button per exam navigates to the printable report card
+- [ ] The report card can be printed from the report card page
+
+---
+
+### 7.3 — Parent Fees Page ( /parent/fees )
+
+- [ ] Page loads with the selected child's fee information
+- [ ] If arriving from dashboard with `?child=` parameter, the correct child is pre-selected
+- [ ] **Child selector** at the top (tabs or dropdown depending on count)
+
+**Fee Summary**
+- [ ] Shows **Expected** total for the current term (sum of fee structures for the child's class)
+- [ ] Shows **Paid** total (successful payments for fee-relevant types)
+- [ ] Shows **Outstanding** amount (Expected - Paid)
+- [ ] If fully paid, a green "Paid" badge appears
+- [ ] If partially paid, a yellow "Partial" badge appears
+- [ ] If nothing paid, a red "Unpaid" badge appears
+
+**Fee Breakdown**
+- [ ] Individual fee types are listed with their amounts (tuition, books, uniform, etc.)
+
+**Pay Now button**
+- [ ] If outstanding amount > 0, a **"Pay Now"** button is visible
+- [ ] Clicking it opens the Paystack payment popup
+- [ ] The amount pre-filled is the outstanding balance
+- [ ] Complete payment with test card → success toast appears
+- [ ] Outstanding amount updates after payment
+
+**Payment History**
+- [ ] A list of all payment transactions is shown (all statuses: success, pending, failed)
+- [ ] Each payment shows: amount, type, method, status badge, date, reference
+- [ ] Successful payments have a "View Receipt" link
+- [ ] The list includes payments made by the parent AND payments recorded against the child by admin
+
+---
+
+### 7.4 — Parent Payments ( /parent/payments )
+
+- [ ] Page loads with a list of all payment transactions
+- [ ] Includes both direct payments (by parent user_id/email) and child-linked payments (by student_id)
+- [ ] Each payment shows: amount, type, status, method, date
+- [ ] Successful payments have a receipt link
 
 ---
 
@@ -817,33 +861,38 @@ The form has **4 steps**. Test each step.
 
 ## Section 8 — Student Portal
 
-**Log out from Parent, then log in as the Student account.**
+**First:** Log in with your Student account. You should be on the Student Dashboard at `/student`.
 
 ---
 
 ### 8.1 — Student Dashboard ( /student )
 
-- [ ] Page loads — "Student Dashboard" with student's name
-- [ ] **Student info** is visible: Class (e.g. JSS 1) and Admission Number (e.g. ELY/2025/001)
-- [ ] **Recent Results** section shows up to 6 most recent results
-  - The Mathematics result from the teacher upload should appear here
-  - Shows: Subject, Exam name, Score, Grade badge
-- [ ] **Average Score card** shows the student's calculated average
-- [ ] **Upcoming Events** section at the bottom shows school events
-- [ ] **School Announcements** — any announcement for "Students" or "All" appears here
-- [ ] **"View All Results"** button is visible
+- [ ] Page loads — "Student Dashboard" at the top with your name
+- [ ] Profile info visible: name, class, admission number, gender
+- [ ] School announcements targeting "students" or "all" are shown
+- [ ] Upcoming events are shown
+
+**Fee Status Card**
+- [ ] A "Fee Status" card is displayed
+- [ ] Shows **Expected**, **Paid**, **Outstanding** amounts
+- [ ] Status badge: Paid (green), Partial (yellow), Unpaid (red), or No fees (grey)
+- [ ] Amounts match the fee structures for the student's class and current term
+
+**Recent Results**
+- [ ] If published results exist, recent subject scores are shown
+- [ ] Grade badges with colour coding (A=green, B=blue, etc.)
+- [ ] Progress bar showing score percentage
+- [ ] Average score is calculated from all displayed results
 
 ---
 
-### 8.2 — All Results ( /student/results )
+### 8.2 — Student Results ( /student/results )
 
-- [ ] Click **"View All Results"** from the Student Dashboard
-- [ ] Page loads — "My Results" or similar heading
-- [ ] Full results table visible with columns: Exam, Term, Year, Subject, Score (out of 100), Grade, Remarks
-- [ ] The test result (Mathematics, 80, Grade A or B) appears
-- [ ] Grade badges are colour-coded correctly
-- [ ] If teacher added remarks, they show in the Remarks column
-- [ ] **"Back"** button returns to the Student Dashboard
+- [ ] Page loads with the student's exam results
+- [ ] Only **published** exam results are shown
+- [ ] Results are grouped by exam with a term/year filter
+- [ ] Each exam group shows subjects, scores, and grades
+- [ ] **"View / Print Report Card"** button per exam navigates to the printable report card
 
 ---
 
@@ -851,41 +900,32 @@ The form has **4 steps**. Test each step.
 
 ## Section 9 — Security & Access Control
 
-These tests make sure users cannot access pages they are not supposed to.
+### 9.1 — Role-Based Access
 
-**Test: Unauthenticated access (log out first)**
-- [ ] While logged out, manually go to `https://your-website/admin` → redirected to `/login`
-- [ ] While logged out, manually go to `https://your-website/teacher` → redirected to `/login`
-- [ ] While logged out, manually go to `https://your-website/parent` → redirected to `/login`
-- [ ] While logged out, manually go to `https://your-website/student` → redirected to `/login`
+- [ ] **Admin** can access `/admin` and all `/admin/*` pages
+- [ ] **Teacher** can access `/teacher` and all `/teacher/*` pages
+- [ ] **Parent** can access `/parent` and all `/parent/*` pages
+- [ ] **Student** can access `/student` and all `/student/*` pages
+- [ ] **Admin** CANNOT access `/teacher`, `/parent`, or `/student`
+- [ ] **Teacher** CANNOT access `/admin`, `/parent`, or `/student`
+- [ ] **Parent** CANNOT access `/admin`, `/teacher`, or `/student`
+- [ ] **Student** CANNOT access `/admin`, `/teacher`, or `/parent`
+- [ ] **Unauthenticated user** is redirected to `/login` when trying to access any portal page
 
-**Test: Cross-role access (log in as Teacher, then try other portals)**
-- [ ] Log in as Teacher
-- [ ] Manually go to `https://your-website/admin` → you should NOT see the Admin Dashboard (redirected away or shown a "not authorised" page)
-- [ ] Manually go to `https://your-website/parent` → should NOT see Parent Dashboard
-- [ ] Manually go to `https://your-website/student` → should NOT see Student Dashboard
+### 9.2 — Payment Security
 
-**Test: Cross-role access (log in as Parent, then try other portals)**
-- [ ] Log in as Parent
-- [ ] Manually go to `https://your-website/admin` → redirected away
-- [ ] Manually go to `https://your-website/teacher` → redirected away
-- [ ] Manually go to `https://your-website/student` → redirected away
+- [ ] Paystack payments are verified server-side before being recorded
+- [ ] Student-linked payments require authentication and parent-child ownership verification
+- [ ] Receipt page for fee payments requires authentication
+- [ ] Receipt page for application/donation payments shows limited (masked) info without auth
+- [ ] UUID-based receipt lookups always require authentication
 
-**Test: Cross-role access (log in as Student, then try other portals)**
-- [ ] Log in as Student
-- [ ] Manually go to `https://your-website/admin` → redirected away
-- [ ] Manually go to `https://your-website/teacher` → redirected away
-- [ ] Manually go to `https://your-website/parent` → redirected away
+### 9.3 — Data Isolation
 
-**Test: Fake receipt page**
-- [ ] While logged out (or in), go to: `https://your-website/payments/receipt?ref=TOTALLYINVALIDREF`
-- [ ] The page shows a **"Receipt Not Found"** or error message
-- [ ] The page does NOT show a blank white screen or a system error
-
-**Test: Parent cannot see another parent's child results**
-- [ ] While logged in as Parent, manually go to: `https://your-website/parent/results/SOMEOTHER-ADMISSION-NUMBER`
-  (use an admission number that belongs to a different parent's child)
-- [ ] The page should show an error or no results — not the other child's data
+- [ ] Parents can only see their own children's results and fees
+- [ ] Students can only see their own results
+- [ ] Teachers can only upload results for classes they are assigned to
+- [ ] Admin has full access to all data
 
 ---
 
@@ -893,45 +933,13 @@ These tests make sure users cannot access pages they are not supposed to.
 
 ## Section 10 — Navigation & Links
 
-Check that every navigation element works correctly across the whole site.
-
-**Public website header (check from each page)**
-- [ ] Logo → goes to homepage
-- [ ] Home → homepage
-- [ ] About → `/about`
-- [ ] Academics → `/academics`
-- [ ] Admissions → `/admissions`
-- [ ] News → `/news`
-- [ ] Events → `/events`
-- [ ] Gallery → `/gallery`
-- [ ] Contact → `/contact`
-- [ ] Login button → `/login`
-
-**Footer links**
-- [ ] All Quick Links in footer navigate correctly
-- [ ] Privacy Policy → `/privacy`
-- [ ] Terms of Service → `/terms`
-- [ ] Parent Portal / Login → `/login`
-- [ ] Student Portal → `/login`
-
-**Admin portal navigation**
-- [ ] Every Quick Action from the Admin Dashboard navigates to the correct page
-- [ ] "Back to Dashboard" button on every sub-page returns to `/admin`
-- [ ] "Dashboard" breadcrumb link returns to `/admin`
-
-**Teacher portal navigation**
-- [ ] Teacher Dashboard "Upload Results" button → `/teacher/results/upload`
-- [ ] Class cards → `/teacher/classes/[class]`
-- [ ] "Back" buttons on all pages → Teacher Dashboard
-
-**Parent portal navigation**
-- [ ] "View Results" button → child results page
-- [ ] "Payment History" → `/parent/payments`
-- [ ] "Back" buttons → Parent Dashboard
-
-**Student portal navigation**
-- [ ] "View All Results" → `/student/results`
-- [ ] "Back" button → Student Dashboard
+- [ ] All "Back to Dashboard" links work from every portal sub-page
+- [ ] All navigation links in the public site header work
+- [ ] All navigation links in the public site footer work
+- [ ] The portal header shows the correct role name and user name
+- [ ] The "Log Out" button works from every portal page
+- [ ] After logging out, the user is redirected to the login page
+- [ ] Clicking the browser back button works correctly throughout the app
 
 ---
 
@@ -939,33 +947,16 @@ Check that every navigation element works correctly across the whole site.
 
 ## Section 11 — Mobile Responsiveness
 
-Resize your browser window to simulate a mobile phone screen (approximately 375 pixels wide).
-You can also press `F12` in Chrome → click the mobile device icon at the top of developer tools.
+Test the following on a mobile phone (or use Chrome DevTools → mobile mode):
 
-**Homepage on mobile**
-- [ ] The page is readable — text is not cut off
-- [ ] A **hamburger menu** (three horizontal lines ☰) appears in the header instead of the full navigation
-- [ ] Clicking the hamburger menu opens a mobile navigation drawer
-- [ ] All navigation links are accessible in the mobile menu
-- [ ] Clicking a link in the mobile menu closes the menu and navigates correctly
-
-**Login page on mobile**
-- [ ] The login form fits on screen without horizontal scrolling
-- [ ] Email and password fields are usable
-- [ ] Sign In button is tappable
-
-**Contact form on mobile**
-- [ ] All form fields are visible and usable
-- [ ] No fields are cut off or overlapping
-- [ ] Submit button is visible and tappable
-
-**Admissions form on mobile**
-- [ ] All 4 steps are navigable
-- [ ] Form fields are usable on a small screen
-
-**Admin Dashboard on tablet (768px width)**
-- [ ] Stats cards are readable (may stack into two columns)
-- [ ] Quick actions grid is accessible
+- [ ] Public homepage is readable and scrollable on mobile
+- [ ] Navigation menu collapses into a hamburger menu on mobile
+- [ ] The admissions form is usable on mobile (fields stack vertically)
+- [ ] Admin dashboard cards stack vertically on mobile
+- [ ] Student list is scrollable on mobile
+- [ ] Payment dialogs are usable on mobile
+- [ ] Report card can be viewed (and printed) from mobile
+- [ ] Parent child selector tabs/dropdown work on mobile
 
 ---
 
@@ -973,38 +964,31 @@ You can also press `F12` in Chrome → click the mobile device icon at the top o
 
 ## Section 12 — Edge Cases & Validation
 
-Test what happens when users make mistakes or try to break the system.
+### 12.1 — Empty States
 
-**Contact Form**
-- [ ] Submit the contact form with ALL fields empty → validation errors appear, form does not send
-- [ ] Submit with only the name filled in → validation errors appear for the remaining required fields
-- [ ] Submit with an invalid email format (e.g. `notanemail`) → email validation error appears
+- [ ] Admin Students page with no students → shows "No students enrolled yet"
+- [ ] Admin Payments page with no payments → shows empty state
+- [ ] Parent with no children linked → shows appropriate message
+- [ ] Student with no results → shows "No results" message
+- [ ] Gallery with no images → shows placeholder or "no images" message
+- [ ] News page with no posts → shows "no news" message
 
-**Admissions Form**
-- [ ] On Step 1, click "Next" without filling anything → red error messages appear for each required field
-- [ ] On Step 2, try to proceed without a guardian email → validation error appears
-- [ ] On Step 3, try to proceed without selecting a class → validation error appears
+### 12.2 — Form Validation
 
-**Results Upload (Teacher)**
-- [ ] Try typing `150` in a score field (above 100) → error appears, cannot save
-- [ ] Try typing `-5` (negative number) → error appears, cannot save
-- [ ] Try typing `abc` (letters) in a score field → field rejects non-numeric input or shows an error
+- [ ] Admissions form — all required fields validated before proceeding
+- [ ] Contact form — email field requires valid email format
+- [ ] Result upload — CA score max 40, Exam score max 60 enforced
+- [ ] Fee structure — amount must be positive number
+- [ ] Offline payment — amount must be positive number
+- [ ] Student record — admission number, class are required
 
-**User Invitation (Admin)**
-- [ ] Try to invite a user with an email address already in the system → an error message appears (not a crash)
-- [ ] Try to invite with the Email field empty → validation error, form does not submit
+### 12.3 — Data Integrity
 
-**Gallery Upload (Admin)**
-- [ ] Try uploading a non-image file (e.g. a `.pdf` or `.docx` file) → an error appears: "Invalid file type" or similar
-- [ ] Try uploading an image larger than 5MB → an error appears: "File too large" or similar
-- [ ] Try to upload without selecting any file → the Upload button shows an error or is disabled
-
-**Exam Deletion**
-- [ ] Try deleting an exam that has NO results uploaded yet → exam is deleted cleanly, no error
-- [ ] (Optional — do not do this if you want to keep your test data) Try deleting an exam that HAS results → check that it is handled gracefully
-
-**Subject Code Uniqueness**
-- [ ] Try creating a subject with the same code as an existing one (e.g. `MATH` again) → an error appears saying the code already exists
+- [ ] Duplicate admission numbers are rejected
+- [ ] Duplicate subject codes are rejected
+- [ ] Payment references are unique
+- [ ] Fee structures have unique (class, term, year, fee_type) combinations
+- [ ] Result entries have unique (student_id, exam_id, subject_id) combinations
 
 ---
 
@@ -1012,52 +996,10 @@ Test what happens when users make mistakes or try to break the system.
 
 ## What To Do When a Test Fails
 
-If any test above does not produce the expected result, follow these steps:
-
-### Step 1 — Identify the Problem
-
-- Read the error message carefully — it usually tells you what went wrong
-- Check if a red toast/notification appeared with more details
-- Open your browser's developer console: press `F12` → click **"Console"** — look for red error messages
-
-### Step 2 — Check the Most Common Causes
-
-| Symptom | Most likely cause | Fix |
-|---|---|---|
-| Page is blank or shows 500 error | Missing/wrong environment variable in Vercel | Check Vercel → Settings → Environment Variables |
-| Login works but wrong dashboard appears | User's profile role is wrong | Supabase → SQL Editor: `UPDATE profiles SET role = 'admin' WHERE id = '...';` |
-| Payment button does nothing | Paystack key missing or wrong | Check `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` in Vercel |
-| Receipt page shows "not found" for a real payment | Payment was not saved to database | Check Supabase → Table Editor → payments table |
-| Gallery upload fails | Storage bucket missing or not public | Check Supabase → Storage → gallery bucket exists and is public |
-| Announcement not showing for parent | Announcement audience is wrong | Admin → Announcements → check target audience is "Parents" or "All" |
-| Teacher cannot see assigned students | Teacher assignment not created | Run the INSERT INTO teacher_assignments SQL from Section 0.2 |
-| Parent cannot see child | Student not linked to parent | Run the INSERT INTO students SQL with the correct parent_profile_id |
-
-### Step 3 — Fix and Re-Test
-
-1. Apply the fix
-2. If you changed environment variables in Vercel: **redeploy** (Vercel → Deployments → Redeploy)
-3. Go back to the failing test and run it again
-4. Tick the checkbox only when it fully passes
-
----
-
-## Testing Summary
-
-| Section | Number of Tests |
-|---|---|
-| Section 1 — Public Pages | ~60 checks |
-| Section 2 — Auth Pages | ~15 checks |
-| Section 3 — Admissions Flow | ~20 checks |
-| Section 4 — Public Payments | ~8 checks |
-| Section 5 — Admin Portal | ~55 checks |
-| Section 6 — Teacher Portal | ~15 checks |
-| Section 7 — Parent Portal | ~12 checks |
-| Section 8 — Student Portal | ~10 checks |
-| Section 9 — Security Tests | ~12 checks |
-| Section 10 — Navigation | ~25 checks |
-| Section 11 — Mobile | ~8 checks |
-| Section 12 — Edge Cases | ~15 checks |
-| **TOTAL** | **~255 checks** |
-
-When all 255 checkboxes are ticked, your application is fully tested and ready for real users.
+1. **Note which checkbox failed** — write down the section number and the test description
+2. **Take a screenshot** showing what went wrong
+3. **Check the browser console** — right-click → Inspect → Console tab → look for red error messages
+4. **Check the page URL** — make sure you're on the correct page
+5. **Try refreshing the page** — some errors are temporary
+6. **Try logging out and back in** — session issues can cause unexpected behaviour
+7. **Report the issue** with: (a) which test failed, (b) what you expected to happen, (c) what actually happened, (d) the screenshot, (e) any console errors

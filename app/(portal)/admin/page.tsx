@@ -23,6 +23,9 @@ import {
   BookOpen,
   Settings,
   Banknote,
+  CheckCircle,
+  XCircle,
+  ClipboardList,
 } from 'lucide-react'
 
 export const metadata = {
@@ -40,6 +43,7 @@ const quickActions = [
   { name: 'Manage Users', icon: UserCog, href: '/admin/users', description: 'Roles & invitations' },
   { name: 'All Students', icon: Users, href: '/admin/students', description: 'View & enrol students' },
   { name: 'Fee Structures', icon: Banknote, href: '/admin/fee-structures', description: 'Manage term fees by class' },
+  { name: 'Staff Profiles', icon: UserCog, href: '/admin/staff', description: 'Teacher bios & qualifications' },
   { name: 'Class Teachers', icon: BookOpen, href: '/admin/class-teachers', description: 'Assign teachers to classes' },
   { name: 'Settings', icon: Settings, href: '/admin/settings', description: 'Academic term & school config' },
 ]
@@ -69,6 +73,8 @@ export default async function AdminDashboard() {
     { count: upcomingEventsCount },
     { count: newPaymentsCount },
     { data: recentPaymentsList },
+    latestExamResult,
+    resultsDataResult,
   ] = await Promise.all([
     adminDb.from('admissions').select('*', { count: 'exact', head: true }).eq('status', 'processing'),
     adminDb.from('students').select('*', { count: 'exact', head: true }).eq('status', 'active'),
@@ -79,7 +85,33 @@ export default async function AdminDashboard() {
       .select('id, amount, status, created_at, reference, payment_type, payer_name, admissions(student_data)')
       .order('created_at', { ascending: false })
       .limit(5),
+    adminDb.from('exams').select('id, name, term, year').order('year', { ascending: false }).order('created_at', { ascending: false }).limit(1).single(),
+    adminDb.from('student_results').select('student_id, students!inner(class)'),
   ])
+
+  const ALL_CLASSES = [
+    'Nursery 1', 'Nursery 2',
+    'Primary 1', 'Primary 2', 'Primary 3', 'Primary 4', 'Primary 5', 'Primary 6',
+    'JSS 1', 'JSS 2', 'JSS 3',
+    'SSS 1', 'SSS 2', 'SSS 3',
+  ]
+
+  let latestExam: { id: string; name: string; term: string; year: number } | null = latestExamResult.data
+  let classStatuses: { class: string; hasResults: boolean }[] = []
+
+  if (latestExam) {
+    const { data: examResults } = await adminDb
+      .from('student_results')
+      .select('student_id, students!inner(class)')
+      .eq('exam_id', latestExam.id)
+
+    const classesWithResults = new Set<string>()
+    for (const r of (examResults || [])) {
+      const studentClass = (r as { student_id: string; students: { class: string } }).students?.class
+      if (studentClass) classesWithResults.add(studentClass)
+    }
+    classStatuses = ALL_CLASSES.map(cls => ({ class: cls, hasResults: classesWithResults.has(cls) }))
+  }
 
   const totalRevenue = allPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0
   const formatAmount = (n: number) =>
@@ -166,7 +198,7 @@ export default async function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {(recentAdmissions || []).map((admission: any) => {
+                {(recentAdmissions || []).map((admission: { id: string; student_data: Record<string, string> | null; class_applied: string; status: string; created_at: string }) => {
                   const name = `${admission.student_data?.firstName || ''} ${admission.student_data?.lastName || ''}`.trim()
                   return (
                     <div key={admission.id} className="flex items-start gap-3">
@@ -199,7 +231,7 @@ export default async function AdminDashboard() {
             <CardContent>
               {recentAdmissions && recentAdmissions.length > 0 ? (
                 <div className="space-y-3">
-                  {recentAdmissions.map((a: any) => {
+                  {recentAdmissions.map((a: { id: string; student_data: Record<string, string> | null; class_applied: string; status: string; created_at: string }) => {
                     const name = `${a.student_data?.firstName || ''} ${a.student_data?.lastName || ''}`.trim()
                     return (
                       <div key={a.id} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
@@ -240,7 +272,7 @@ export default async function AdminDashboard() {
             <CardContent>
               {recentPaymentsList && recentPaymentsList.length > 0 ? (
                 <div className="space-y-3">
-                  {recentPaymentsList.map((p: any) => {
+                  {recentPaymentsList.map((p: { id: string; amount: number; status: string; created_at: string; reference: string; payment_type: string; payer_name: string | null; admissions: { student_data: Record<string, string> | null } | null }) => {
                     const isNew = new Date(p.created_at) > new Date(yesterday)
                     const studentName = p.payer_name
                       || (p.admissions?.student_data
@@ -280,6 +312,48 @@ export default async function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+        {latestExam && classStatuses.length > 0 && (
+          <Card className="mt-8">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5" />
+                  Results Submission Status
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {latestExam.name} — {latestExam.term} Term {latestExam.year}
+                </p>
+              </div>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1"><CheckCircle className="h-4 w-4 text-green-500" /> Submitted</span>
+                <span className="flex items-center gap-1"><XCircle className="h-4 w-4 text-gray-300" /> Pending</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-7 gap-3" data-testid="grid-results-status">
+                {classStatuses.map(cs => (
+                  <Link key={cs.class} href={`/admin/students?class=${encodeURIComponent(cs.class)}`}>
+                    <div
+                      className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center transition-colors cursor-pointer ${
+                        cs.hasResults
+                          ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                          : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                      }`}
+                      data-testid={`cell-results-${cs.class.replace(/\s/g, '-')}`}
+                    >
+                      {cs.hasResults ? (
+                        <CheckCircle className="h-5 w-5 text-green-500 mb-1" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-gray-300 mb-1" />
+                      )}
+                      <span className="text-xs font-medium">{cs.class}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   )

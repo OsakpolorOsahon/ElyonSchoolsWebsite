@@ -34,7 +34,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserRecord[]>([])
   const [filtered, setFiltered] = useState<UserRecord[]>([])
   const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<{ full_name: string } | null>(null)
   const [search, setSearch] = useState('')
   const [updatingRole, setUpdatingRole] = useState<string | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -102,8 +102,9 @@ export default function AdminUsersPage() {
       setInviteOpen(false)
       setInvite({ email: '', full_name: '', role: 'parent' })
       await fetchUsers()
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message || 'Failed to send invite', variant: 'destructive' })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to send invite'
+      toast({ title: 'Error', description: message, variant: 'destructive' })
     } finally {
       setInviting(false)
     }
