@@ -82,7 +82,7 @@ export default async function StudentDashboard() {
   const settings = settingsResult.data
 
   const average = results && results.length > 0
-    ? results.reduce((sum: number, r: any) => sum + r.score, 0) / results.length
+    ? results.reduce((sum: number, r: { score: number }) => sum + r.score, 0) / results.length
     : null
 
   let feeExpected = 0
@@ -97,7 +97,7 @@ export default async function StudentDashboard() {
       .eq('term', settings.current_term)
       .eq('year', settings.current_year)
 
-    feeExpected = (fees || []).reduce((s: number, f: any) => s + Number(f.amount), 0)
+    feeExpected = (fees || []).reduce((s: number, f: { amount: number }) => s + Number(f.amount), 0)
 
     const { data: payments } = await adminDb
       .from('payments')
@@ -107,8 +107,8 @@ export default async function StudentDashboard() {
       .eq('term', settings.current_term)
       .eq('year', settings.current_year)
 
-    const feePayments = (payments || []).filter((p: any) => FEE_RELEVANT_TYPES.includes(p.payment_type || ''))
-    feePaid = feePayments.reduce((s: number, p: any) => s + Number(p.amount), 0)
+    const feePayments = (payments || []).filter((p: { amount: number; payment_type: string }) => FEE_RELEVANT_TYPES.includes(p.payment_type || ''))
+    feePaid = feePayments.reduce((s: number, p: { amount: number; payment_type: string }) => s + Number(p.amount), 0)
 
     if (feeExpected === 0) {
       feeStatus = feePaid > 0 ? 'paid' : 'none'
@@ -144,7 +144,7 @@ export default async function StudentDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 pt-0">
-              {announcements.map((ann: any) => (
+              {announcements.map((ann: { id: string; title: string; body: string; created_at: string }) => (
                 <div key={ann.id} className="border-l-4 border-primary pl-3">
                   <p className="font-medium text-sm">{ann.title}</p>
                   <p className="text-sm text-muted-foreground line-clamp-2">{ann.body}</p>
@@ -201,7 +201,7 @@ export default async function StudentDashboard() {
             <CardContent>
               {results && results.length > 0 ? (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {results.map((result: any, index: number) => (
+                  {results.map((result: { score: number; grade: string; subjects: { name: string } | null }, index: number) => (
                     <div key={index} className="p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">{result.subjects?.name || 'Subject'}</span>
@@ -289,7 +289,7 @@ export default async function StudentDashboard() {
           <CardContent>
             {upcomingEvents && upcomingEvents.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-3">
-                {upcomingEvents.map((event: any, index: number) => (
+                {upcomingEvents.map((event: { title: string; start_ts: string; category: string }, index: number) => (
                   <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
                       <Calendar className="h-5 w-5 text-primary" />

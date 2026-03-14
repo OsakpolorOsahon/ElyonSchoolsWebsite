@@ -56,12 +56,13 @@ export default async function ParentDashboard() {
       .limit(3),
   ])
 
-  const children = (childrenResult.data || []) as unknown as Array<{
+  interface ChildRecord {
     id: string
     admission_number: string
     class: string
     profiles: { full_name: string } | null
-  }>
+  }
+  const children = (childrenResult.data || []) as ChildRecord[]
   const upcomingEvents = upcomingEventsResult.data
   const announcements = announcementsResult.data
 
@@ -83,7 +84,7 @@ export default async function ParentDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 pt-0">
-              {announcements.map((ann: any) => (
+              {announcements.map((ann: { id: string; title: string; body: string; created_at: string }) => (
                 <div key={ann.id} className="border-l-4 border-primary pl-3">
                   <p className="font-medium text-sm">{ann.title}</p>
                   <p className="text-sm text-muted-foreground line-clamp-2">{ann.body}</p>
@@ -182,7 +183,7 @@ export default async function ParentDashboard() {
             <CardContent>
               {upcomingEvents && upcomingEvents.length > 0 ? (
                 <div className="space-y-4">
-                  {upcomingEvents.map((event: any, index: number) => (
+                  {upcomingEvents.map((event: { title: string; start_ts: string; category: string }, index: number) => (
                     <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
                         <Bell className="h-4 w-4 text-primary" />

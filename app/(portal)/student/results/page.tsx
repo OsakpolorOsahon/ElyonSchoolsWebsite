@@ -68,7 +68,7 @@ export default function StudentResultsPage() {
         .eq('exams.published', true)
         .order('created_at', { ascending: false })
 
-      setResults((data || []) as unknown as Result[])
+      setResults((data || []) as Result[])
       setLoading(false)
     }
     load()

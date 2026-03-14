@@ -175,7 +175,7 @@ function FeesContent() {
           admission_number: selectedChild.admission_number,
           payer_name: profile?.full_name,
         },
-        callback: async (response: any) => {
+        callback: async (response: { reference: string }) => {
           try {
             const res = await fetch('/api/paystack/general', {
               method: 'POST',

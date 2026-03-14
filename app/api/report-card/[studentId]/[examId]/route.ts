@@ -86,7 +86,7 @@ export async function GET(
     return NextResponse.json({ error: 'Student not found' }, { status: 404 })
   }
 
-  const student = studentData as unknown as StudentRow
+  const student = studentData as StudentRow
 
   if (role === 'student') {
     const { data: myStudent } = await adminDb
@@ -147,7 +147,7 @@ export async function GET(
       .single(),
   ])
 
-  const results = (resultsRes.data || []) as unknown as ResultRow[]
+  const results = (resultsRes.data || []) as ResultRow[]
   const allSubjects = (subjectsRes.data || []) as SubjectRow[]
   const settings = settingsRes.data
   const commentData = commentRes.data

@@ -65,7 +65,7 @@ export default function ChildResultsPage() {
         setLoading(false)
         return
       }
-      setStudent(studentData as unknown as Student)
+      setStudent(studentData as Student)
 
       const { data: resultsData } = await supabase
         .from('student_results')
@@ -74,7 +74,7 @@ export default function ChildResultsPage() {
         .eq('exams.published', true)
         .order('created_at', { ascending: false })
 
-      setResults((resultsData || []) as unknown as Result[])
+      setResults((resultsData || []) as Result[])
       setLoading(false)
     }
     load()

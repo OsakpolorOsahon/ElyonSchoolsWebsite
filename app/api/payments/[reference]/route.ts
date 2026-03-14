@@ -19,7 +19,14 @@ export async function GET(
     const adminDb = createAdminClient()
 
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reference)
-    let payment: any = null
+    interface PaymentRecord {
+      id: string; amount: number; status: string; method: string; reference: string;
+      created_at: string; payment_type: string; payer_name: string | null;
+      payer_email: string | null; user_id: string | null; student_id: string | null;
+      notes: string | null; term: string | null; year: number | null;
+      paystack_response: Record<string, unknown> | null; metadata: Record<string, unknown> | null;
+    }
+    let payment: PaymentRecord | null = null
 
     if (isUUID) {
       const { data } = await adminDb
@@ -95,7 +102,7 @@ export async function GET(
         .single()
 
       if (student) {
-        const s = student as unknown as { admission_number: string; profiles: { full_name: string } | null }
+        const s = student as { admission_number: string; profiles: { full_name: string } | null }
         student_name = s.profiles?.full_name || null
         admission_number = s.admission_number || null
       }
