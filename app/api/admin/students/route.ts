@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { id, status, class: cls, department, transfer_note, graduation_year } = body
+  const { id, status, class: cls, department, transfer_note, graduation_year, repeating } = body
 
   if (!id || typeof id !== 'string') {
     return NextResponse.json({ error: 'Student id is required' }, { status: 400 })
@@ -118,12 +118,17 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
+  if (repeating !== undefined && typeof repeating !== 'boolean') {
+    return NextResponse.json({ error: 'Repeating must be a boolean' }, { status: 400 })
+  }
+
   const updateData: Record<string, any> = {}
   if (status) updateData.status = status
   if (cls) updateData.class = cls
   if (department !== undefined) updateData.department = department || null
   if (transfer_note !== undefined) updateData.transfer_note = transfer_note
   if (graduation_year !== undefined) updateData.graduation_year = graduation_year
+  if (repeating !== undefined) updateData.repeating = repeating
 
   if (status === 'graduated' && !graduation_year) {
     updateData.graduation_year = new Date().getFullYear()

@@ -18,6 +18,7 @@ interface Student {
   class: string
   gender: string | null
   department: string | null
+  repeating: boolean
   profiles: { full_name: string } | null
 }
 
@@ -62,12 +63,15 @@ export default function BulkPromotionPage() {
 
       const { data } = await supabase
         .from('students')
-        .select('id, admission_number, class, gender, department, profiles(full_name)')
+        .select('id, admission_number, class, gender, department, repeating, profiles(full_name)')
         .eq('status', 'active')
         .order('class')
         .order('admission_number')
 
-      setStudents((data || []) as unknown as Student[])
+      const studentList = (data || []) as unknown as Student[]
+      setStudents(studentList)
+      const preSkip = new Set(studentList.filter(s => s.repeating).map(s => s.id))
+      setSkipIds(preSkip)
       setLoading(false)
     }
     load()
@@ -259,7 +263,9 @@ export default function BulkPromotionPage() {
                                     </p>
                                   </div>
                                   {skipIds.has(student.id) && (
-                                    <Badge className="bg-amber-100 text-amber-700 text-xs">Repeating</Badge>
+                                    <Badge className="bg-amber-100 text-amber-700 text-xs">
+                                      {student.repeating ? 'Flagged repeating' : 'Repeating'}
+                                    </Badge>
                                   )}
                                 </div>
                               ))}

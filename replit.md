@@ -55,7 +55,7 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 
 ### Core Tables
 - `profiles` — User profiles with `role` (admin | teacher | parent | student)
-- `students` — Student records with `status` (active | graduated | withdrawn | transferred), `department` (Science | Commercial | Art, for SSS only), `graduation_year`, `transfer_note`
+- `students` — Student records with `status` (active | graduated | withdrawn | transferred), `department` (Science | Commercial | Art, for SSS only), `graduation_year`, `transfer_note`, `repeating` (boolean, default false — when true, student stays in current class during bulk promotion and flag auto-clears after promotion run)
 - `class_teacher` — Links one teacher to one class (14 classes: Nursery 1–2, Primary 1–6, JSS 1–3, SSS 1–3)
 - `admissions` — Admission applications (`student_data` JSONB, `guardian_data` JSONB, `status`, `amount`)
 - `payments` — Payment records with `student_id` FK, `recorded_by` (admin for offline), `notes`, `term`, `year`, `method` (paystack | cash | bank_transfer)

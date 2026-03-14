@@ -44,6 +44,9 @@ ALTER TABLE students DROP CONSTRAINT IF EXISTS students_department_check;
 ALTER TABLE students ADD CONSTRAINT students_department_check
   CHECK (department IS NULL OR department IN ('Science', 'Commercial', 'Art'));
 
+-- Repeating flag — keeps student in same class during bulk promotion
+ALTER TABLE students ADD COLUMN IF NOT EXISTS repeating BOOLEAN DEFAULT FALSE;
+
 -- Index for status filtering
 CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
 CREATE INDEX IF NOT EXISTS idx_students_department ON students(department);

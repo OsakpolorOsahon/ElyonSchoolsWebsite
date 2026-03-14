@@ -120,6 +120,7 @@ CREATE TABLE IF NOT EXISTS students (
   department        TEXT CHECK (department IS NULL OR department IN ('Science', 'Commercial', 'Art')),
   graduation_year   INTEGER,
   transfer_note     TEXT,
+  repeating         BOOLEAN DEFAULT FALSE,
   created_at        TIMESTAMPTZ DEFAULT NOW()
 );
 

@@ -24,6 +24,7 @@ interface Student {
   department: string | null
   graduation_year: number | null
   transfer_note: string | null
+  repeating: boolean
   profile_id: string
   profiles: { full_name: string } | null
 }
@@ -95,7 +96,7 @@ export default function AdminStudentsPage() {
     const supabase = createClient()
     const { data } = await supabase
       .from('students')
-      .select('id, admission_number, class, gender, status, department, graduation_year, transfer_note, profile_id, profiles(full_name)')
+      .select('id, admission_number, class, gender, status, department, graduation_year, transfer_note, repeating, profile_id, profiles(full_name)')
       .order('created_at', { ascending: false })
     const list = (data || []) as unknown as Student[]
     setStudents(list)
@@ -257,6 +258,27 @@ export default function AdminStudentsPage() {
     }
   }
 
+  async function toggleRepeating(student: Student) {
+    try {
+      const res = await fetch('/api/admin/students', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: student.id, repeating: !student.repeating }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast({
+        title: student.repeating ? 'Repeating cleared' : 'Marked as repeating',
+        description: student.repeating
+          ? `${student.profiles?.full_name || 'Student'} will be promoted normally.`
+          : `${student.profiles?.full_name || 'Student'} will stay in ${student.class} during promotion.`,
+      })
+      await fetchStudents()
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' })
+    }
+  }
+
   const availableStudentUsers = studentUsers.filter(u => !existingProfileIds.has(u.id))
   const isSSS = (cls: string) => SSS_CLASSES.includes(cls)
   const statusCounts = {
@@ -365,11 +387,23 @@ export default function AdminStudentsPage() {
                           {student.status === 'transferred' && student.transfer_note && (
                             <p className="text-xs text-muted-foreground">Transfer: {student.transfer_note}</p>
                           )}
+                          {student.repeating && student.status === 'active' && (
+                            <Badge className="bg-amber-100 text-amber-700 text-xs mt-0.5">Repeating</Badge>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap shrink-0">
                         {student.status === 'active' && (
                           <>
+                            <Button
+                              variant={student.repeating ? 'default' : 'outline'}
+                              size="sm"
+                              className={student.repeating ? 'bg-amber-500 hover:bg-amber-600 text-white' : ''}
+                              onClick={() => toggleRepeating(student)}
+                              data-testid={`button-repeat-${student.id}`}
+                            >
+                              {student.repeating ? 'Repeating' : 'Repeat'}
+                            </Button>
                             {isSSS(student.class) && (
                               <Button
                                 variant="outline"

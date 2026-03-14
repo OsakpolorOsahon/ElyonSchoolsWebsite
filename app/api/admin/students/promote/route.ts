@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
   const query = supabase
     .from('students')
-    .select('id, class, status')
+    .select('id, class, status, repeating')
     .eq('status', 'active')
 
   if (studentIds && studentIds.length > 0) {
@@ -63,8 +63,14 @@ export async function POST(request: NextRequest) {
   const currentYear = new Date().getFullYear()
 
   for (const student of students) {
-    if (skipSet.has(student.id)) {
+    if (skipSet.has(student.id) || student.repeating) {
       results.skipped++
+      if (student.repeating && !skipSet.has(student.id)) {
+        await supabase
+          .from('students')
+          .update({ repeating: false })
+          .eq('id', student.id)
+      }
       continue
     }
 
