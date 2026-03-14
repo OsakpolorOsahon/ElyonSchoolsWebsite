@@ -188,7 +188,7 @@ export default function AdminPaymentsPage() {
     const feePayments = payments.filter(p =>
       p.status === 'success' &&
       p.student_id &&
-      FEE_RELEVANT_TYPES.includes(p.payment_type || '')
+      (FEE_RELEVANT_TYPES.includes(p.payment_type || '') || feeStructures.some(fs => fs.fee_type === p.payment_type))
     )
     const paidByStudent: Record<string, number> = {}
     for (const p of feePayments) {
