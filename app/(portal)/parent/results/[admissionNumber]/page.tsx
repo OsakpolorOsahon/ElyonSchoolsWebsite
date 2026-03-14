@@ -69,13 +69,12 @@ export default function ChildResultsPage() {
 
       const { data: resultsData } = await supabase
         .from('student_results')
-        .select('id, score, grade, exam_id, exams(id, name, term, year, published), subjects(name, code)')
+        .select('id, score, grade, exam_id, exams!inner(id, name, term, year, published), subjects(name, code)')
         .eq('student_id', studentData.id)
+        .eq('exams.published', true)
         .order('created_at', { ascending: false })
 
-      const allResults = (resultsData || []) as unknown as Result[]
-      const publishedResults = allResults.filter(r => r.exams?.published === true)
-      setResults(publishedResults)
+      setResults((resultsData || []) as unknown as Result[])
       setLoading(false)
     }
     load()
