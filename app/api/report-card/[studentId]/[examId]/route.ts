@@ -112,6 +112,17 @@ export async function GET(
     }
   }
 
+  if (role === 'teacher') {
+    const { data: teacherClasses } = await adminDb
+      .from('class_teacher')
+      .select('class')
+      .eq('teacher_profile_id', session.user.id)
+    const assignedClasses = (teacherClasses || []).map(c => c.class as string)
+    if (!assignedClasses.includes(student.class)) {
+      return NextResponse.json({ error: 'Access denied — you are not assigned to this student\'s class' }, { status: 403 })
+    }
+  }
+
   const [resultsRes, subjectsRes, settingsRes, commentRes] = await Promise.all([
     adminDb
       .from('student_results')
