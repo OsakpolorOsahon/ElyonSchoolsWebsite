@@ -76,11 +76,9 @@ export default function ReceiptPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-lg text-destructive mb-4">{error || 'Payment not found'}</p>
-          <Link href="/admin/payments">
-            <Button variant="outline" className="gap-2">
-              <ArrowLeft className="h-4 w-4" /> Back to Payments
-            </Button>
-          </Link>
+          <Button variant="outline" className="gap-2" onClick={() => window.history.back()}>
+            <ArrowLeft className="h-4 w-4" /> Go Back
+          </Button>
         </div>
       </div>
     )
