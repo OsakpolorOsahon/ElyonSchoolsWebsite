@@ -23,22 +23,18 @@ ALTER TABLE students ADD COLUMN IF NOT EXISTS graduation_year INTEGER;
 -- Transfer note (reason/destination when student transfers)
 ALTER TABLE students ADD COLUMN IF NOT EXISTS transfer_note TEXT;
 
--- Add CHECK constraint for valid status values
--- (Drop first if it exists to make re-run safe)
-DO $$ BEGIN
-  ALTER TABLE students DROP CONSTRAINT IF EXISTS students_status_check;
-  ALTER TABLE students ADD CONSTRAINT students_status_check
-    CHECK (status IN ('active', 'graduated', 'withdrawn', 'transferred'));
-EXCEPTION WHEN others THEN NULL;
-END $$;
+-- Normalize any existing status values before adding constraint
+UPDATE students SET status = 'active' WHERE status IS NULL OR status NOT IN ('active', 'graduated', 'withdrawn', 'transferred');
 
--- Add CHECK constraint for valid department values
-DO $$ BEGIN
-  ALTER TABLE students DROP CONSTRAINT IF EXISTS students_department_check;
-  ALTER TABLE students ADD CONSTRAINT students_department_check
-    CHECK (department IS NULL OR department IN ('Science', 'Commercial', 'Art'));
-EXCEPTION WHEN others THEN NULL;
-END $$;
+-- Add CHECK constraint for valid status values (drop first to make re-run safe)
+ALTER TABLE students DROP CONSTRAINT IF EXISTS students_status_check;
+ALTER TABLE students ADD CONSTRAINT students_status_check
+  CHECK (status IN ('active', 'graduated', 'withdrawn', 'transferred'));
+
+-- Add CHECK constraint for valid department values (drop first to make re-run safe)
+ALTER TABLE students DROP CONSTRAINT IF EXISTS students_department_check;
+ALTER TABLE students ADD CONSTRAINT students_department_check
+  CHECK (department IS NULL OR department IN ('Science', 'Commercial', 'Art'));
 
 -- Index for status filtering
 CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
@@ -132,13 +128,13 @@ ALTER TABLE payments ADD COLUMN IF NOT EXISTS notes TEXT;
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS term TEXT;
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS year INTEGER;
 
--- Enforce valid payment methods
-DO $$ BEGIN
-  ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_method_check;
-  ALTER TABLE payments ADD CONSTRAINT payments_method_check
-    CHECK (method IN ('paystack', 'cash', 'bank_transfer'));
-EXCEPTION WHEN others THEN NULL;
-END $$;
+-- Normalize any existing method values before adding constraint
+UPDATE payments SET method = 'paystack' WHERE method IS NULL OR method NOT IN ('paystack', 'cash', 'bank_transfer');
+
+-- Enforce valid payment methods (drop first to make re-run safe)
+ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_method_check;
+ALTER TABLE payments ADD CONSTRAINT payments_method_check
+  CHECK (method IN ('paystack', 'cash', 'bank_transfer'));
 
 CREATE INDEX IF NOT EXISTS idx_payments_student_id ON payments(student_id);
 CREATE INDEX IF NOT EXISTS idx_payments_term_year ON payments(term, year);
