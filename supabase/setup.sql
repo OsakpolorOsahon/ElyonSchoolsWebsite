@@ -717,12 +717,14 @@ CREATE POLICY "Students can view own results"
   ON student_results FOR SELECT
   USING (
     student_id IN (SELECT id FROM students WHERE profile_id = auth.uid())
+    AND exam_id IN (SELECT id FROM exams WHERE published = true)
   );
 
 CREATE POLICY "Parents can view children results"
   ON student_results FOR SELECT
   USING (
     student_id IN (SELECT id FROM students WHERE parent_profile_id = auth.uid())
+    AND exam_id IN (SELECT id FROM exams WHERE published = true)
   );
 
 CREATE POLICY "Teachers can view class results"

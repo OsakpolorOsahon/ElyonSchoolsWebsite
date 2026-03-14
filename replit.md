@@ -60,7 +60,7 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - `admissions` — Admission applications (`student_data` JSONB, `guardian_data` JSONB, `status`, `amount`)
 - `payments` — Payment records with `student_id` FK, `recorded_by` (admin for offline), `notes`, `term`, `year`, `method` (paystack | cash | bank_transfer)
 - `subjects` — Subject records with `applicable_classes` TEXT[] and `applicable_departments` TEXT[] (empty = applies to all)
-- `exams` — Exam records with `published` BOOLEAN and `teacher_remarks_open` BOOLEAN
+- `exams` — Exam records with `published` BOOLEAN and `teacher_remarks_open` BOOLEAN. Publication is enforced by RLS: students and parents can only see results for published exams; teachers and admins see all.
 - `student_results` — Results linked to student, exam, subject with `remarks` for teacher comments
 
 ### New Feature Tables

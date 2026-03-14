@@ -273,7 +273,30 @@ CREATE POLICY "Admins can manage report card comments"
 
 
 -- ============================================================
--- 10. ADDITIONAL PAYMENT RLS (parents can view payments by student)
+-- 10. UPDATE STUDENT_RESULTS RLS FOR PUBLICATION GATING
+-- ============================================================
+-- Students and parents can only see results for published exams.
+-- Teachers and admins retain full access regardless of publication status.
+
+DROP POLICY IF EXISTS "Students can view own results" ON student_results;
+CREATE POLICY "Students can view own results"
+  ON student_results FOR SELECT
+  USING (
+    student_id IN (SELECT id FROM students WHERE profile_id = auth.uid())
+    AND exam_id IN (SELECT id FROM exams WHERE published = true)
+  );
+
+DROP POLICY IF EXISTS "Parents can view children results" ON student_results;
+CREATE POLICY "Parents can view children results"
+  ON student_results FOR SELECT
+  USING (
+    student_id IN (SELECT id FROM students WHERE parent_profile_id = auth.uid())
+    AND exam_id IN (SELECT id FROM exams WHERE published = true)
+  );
+
+
+-- ============================================================
+-- 11. ADDITIONAL PAYMENT RLS (parents can view payments by student)
 -- ============================================================
 
 DROP POLICY IF EXISTS "Parents can view child payments" ON payments;
