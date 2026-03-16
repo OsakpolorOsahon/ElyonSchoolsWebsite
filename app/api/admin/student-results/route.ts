@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     remarks: string | null
     exam_id: string
     subject_id: string
-    exams: { id: string; name: string; term: string; year: number; published: boolean } | null
-    subjects: { name: string; code: string } | null
+    exams: { id: string; name: string; term: string; year: number; published: boolean }[] | null
+    subjects: { name: string; code: string }[] | null
   }
 
   const typedResults = (results || []) as ResultRow[]
@@ -47,21 +47,22 @@ export async function GET(request: NextRequest) {
 
   const grouped: Record<string, GroupedExam> = {}
   for (const r of typedResults) {
-    if (!r.exams) continue
+    const exam = r.exams?.[0]
+    if (!exam) continue
     if (!grouped[r.exam_id]) {
       grouped[r.exam_id] = {
         exam_id: r.exam_id,
-        exam_name: r.exams.name,
-        term: r.exams.term,
-        year: r.exams.year,
-        published: r.exams.published,
+        exam_name: exam.name,
+        term: exam.term,
+        year: exam.year,
+        published: exam.published,
         results: [],
         average: 0,
       }
     }
     grouped[r.exam_id].results.push({
-      subject: r.subjects?.name || 'Unknown',
-      code: r.subjects?.code || '',
+      subject: r.subjects?.[0]?.name || 'Unknown',
+      code: r.subjects?.[0]?.code || '',
       score: r.score,
       ca_score: r.ca_score,
       exam_score: r.exam_score,

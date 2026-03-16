@@ -16,8 +16,8 @@ interface Result {
   score: number
   grade: string | null
   exam_id: string
-  exams: { id: string; name: string; term: string; year: number; published: boolean } | null
-  subjects: { name: string; code: string } | null
+  exams: { id: string; name: string; term: string; year: number; published: boolean }[] | null
+  subjects: { name: string; code: string }[] | null
 }
 
 interface Student {
@@ -83,19 +83,21 @@ export default function ChildResultsPage() {
   const termOptions = useMemo(() => {
     const terms = new Set<string>()
     results.forEach(r => {
-      if (r.exams) terms.add(`${r.exams.term} ${r.exams.year}`)
+      const exam = r.exams?.[0]
+      if (exam) terms.add(`${exam.term} ${exam.year}`)
     })
     return Array.from(terms).sort().reverse()
   }, [results])
 
   const filteredResults = useMemo(() => {
     if (termFilter === 'all') return results
-    return results.filter(r => r.exams && `${r.exams.term} ${r.exams.year}` === termFilter)
+    return results.filter(r => { const exam = r.exams?.[0]; return exam && `${exam.term} ${exam.year}` === termFilter })
   }, [results, termFilter])
 
   const groupedByExam = filteredResults.reduce((acc, result) => {
-    const eId = result.exams?.id || 'unknown'
-    const examKey = result.exams ? `${result.exams.term} ${result.exams.year} — ${result.exams.name}` : 'Unknown Exam'
+    const exam = result.exams?.[0]
+    const eId = exam?.id || 'unknown'
+    const examKey = exam ? `${exam.term} ${exam.year} — ${exam.name}` : 'Unknown Exam'
     if (!acc[eId]) acc[eId] = { label: examKey, results: [] }
     acc[eId].results.push(result)
     return acc
@@ -193,7 +195,7 @@ export default function ChildResultsPage() {
                       {examResults.map(result => (
                         <div key={result.id} className="p-3 bg-muted/40 rounded-lg" data-testid={`result-${result.id}`}>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-sm">{result.subjects?.name}</span>
+                            <span className="font-medium text-sm">{result.subjects?.[0]?.name}</span>
                             <Badge className={gradeColors[result.grade || 'F'] || gradeColors.F}>
                               {result.grade || 'F'}
                             </Badge>
