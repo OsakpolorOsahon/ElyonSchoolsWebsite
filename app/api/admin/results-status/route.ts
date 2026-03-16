@@ -37,7 +37,7 @@ export async function GET() {
 
   const classesWithResults = new Set<string>()
   for (const r of (results || [])) {
-    const studentClass = (r as { student_id: string; students: { class: string } }).students?.class
+    const studentClass = (r as unknown as { student_id: string; students: { class: string }[] }).students?.[0]?.class
     if (studentClass) classesWithResults.add(studentClass)
   }
 
