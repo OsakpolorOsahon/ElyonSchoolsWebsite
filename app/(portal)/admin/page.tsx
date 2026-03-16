@@ -272,11 +272,12 @@ export default async function AdminDashboard() {
             <CardContent>
               {recentPaymentsList && recentPaymentsList.length > 0 ? (
                 <div className="space-y-3">
-                  {recentPaymentsList.map((p: { id: string; amount: number; status: string; created_at: string; reference: string; payment_type: string; payer_name: string | null; admissions: { student_data: Record<string, string> | null } | null }) => {
+                  {recentPaymentsList.map((p: { id: string; amount: number; status: string; created_at: string; reference: string; payment_type: string; payer_name: string | null; admissions: { student_data: Record<string, string> | null }[] | null }) => {
                     const isNew = new Date(p.created_at) > new Date(yesterday)
+                    const admission = p.admissions?.[0]
                     const studentName = p.payer_name
-                      || (p.admissions?.student_data
-                        ? `${p.admissions.student_data.firstName || ''} ${p.admissions.student_data.lastName || ''}`.trim()
+                      || (admission?.student_data
+                        ? `${admission.student_data.firstName || ''} ${admission.student_data.lastName || ''}`.trim()
                         : null)
                       || 'Unknown'
                     const typeLabel: Record<string, string> = {
