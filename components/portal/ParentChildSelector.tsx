@@ -12,7 +12,7 @@ interface Child {
   id: string
   admission_number: string
   class: string
-  profiles: { full_name: string } | null
+  profiles: { full_name: string }[] | null
 }
 
 export default function ParentChildSelector({ children }: { children: Child[] }) {
@@ -28,7 +28,7 @@ export default function ParentChildSelector({ children }: { children: Child[] })
           <TabsList className="mb-4" data-testid="child-tabs">
             {children.map(c => (
               <TabsTrigger key={c.id} value={c.id} data-testid={`tab-child-${c.id}`}>
-                {c.profiles?.full_name || c.admission_number}
+                {c.profiles?.[0]?.full_name || c.admission_number}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -47,7 +47,7 @@ export default function ParentChildSelector({ children }: { children: Child[] })
             <SelectContent>
               {children.map(c => (
                 <SelectItem key={c.id} value={c.id}>
-                  {c.profiles?.full_name || c.admission_number} ({c.class})
+                  {c.profiles?.[0]?.full_name || c.admission_number} ({c.class})
                 </SelectItem>
               ))}
             </SelectContent>
@@ -68,7 +68,7 @@ function ChildCard({ child }: { child: Child }) {
             <User className="h-7 w-7 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-bold text-foreground">{child.profiles?.full_name || 'Student'}</h3>
+            <h3 className="text-lg font-bold text-foreground">{child.profiles?.[0]?.full_name || 'Student'}</h3>
             <p className="text-sm text-muted-foreground">{child.class}</p>
             <p className="text-xs text-muted-foreground">{child.admission_number}</p>
           </div>
