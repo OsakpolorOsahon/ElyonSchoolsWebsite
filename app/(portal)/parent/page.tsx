@@ -183,7 +183,7 @@ export default async function ParentDashboard() {
             <CardContent>
               {upcomingEvents && upcomingEvents.length > 0 ? (
                 <div className="space-y-4">
-                  {upcomingEvents.map((event: { title: string; start_ts: string; category: string }, index: number) => (
+                  {upcomingEvents.map((event: { title: string; start_ts: string }, index: number) => (
                     <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
                         <Bell className="h-4 w-4 text-primary" />
