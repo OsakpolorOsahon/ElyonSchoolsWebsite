@@ -24,7 +24,7 @@ interface Student {
   id: string
   admission_number: string
   class: string
-  profiles: { full_name: string } | null
+  profiles: { full_name: string }[] | null
 }
 
 const gradeColors: Record<string, string> = {
@@ -120,7 +120,7 @@ export default function ChildResultsPage() {
             {student && (
               <div className="flex items-center gap-2">
                 <User className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-xl font-semibold">{student.profiles?.full_name} — Results</h2>
+                <h2 className="text-xl font-semibold">{student.profiles?.[0]?.full_name} — Results</h2>
               </div>
             )}
           </div>
@@ -156,7 +156,7 @@ export default function ChildResultsPage() {
           <Card>
             <CardContent className="py-16 text-center text-muted-foreground">
               <Trophy className="h-12 w-12 mx-auto mb-4 opacity-30" />
-              <p>No published results available yet for {student.profiles?.full_name}</p>
+              <p>No published results available yet for {student.profiles?.[0]?.full_name}</p>
               <p className="text-sm mt-2">Results will appear here once the admin publishes them.</p>
             </CardContent>
           </Card>

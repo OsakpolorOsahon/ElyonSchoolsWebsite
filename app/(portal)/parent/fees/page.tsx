@@ -16,7 +16,7 @@ interface Child {
   id: string
   admission_number: string
   class: string
-  profiles: { full_name: string } | null
+  profiles: { full_name: string }[] | null
 }
 
 interface FeeStructure {
@@ -171,7 +171,7 @@ function FeesContent() {
         metadata: {
           payment_type: 'school_fee',
           student_id: selectedChild.id,
-          student_name: selectedChild.profiles?.full_name,
+          student_name: selectedChild.profiles?.[0]?.full_name,
           admission_number: selectedChild.admission_number,
           payer_name: profile?.full_name,
         },
@@ -188,7 +188,7 @@ function FeesContent() {
                 payer_email: email,
                 metadata: {
                   student_id: selectedChild.id,
-                  student_name: selectedChild.profiles?.full_name,
+                  student_name: selectedChild.profiles?.[0]?.full_name,
                   admission_number: selectedChild.admission_number,
                 },
               }),
@@ -267,7 +267,7 @@ function FeesContent() {
               <SelectContent>
                 {children.map(c => (
                   <SelectItem key={c.id} value={c.id}>
-                    {c.profiles?.full_name} ({c.class})
+                    {c.profiles?.[0]?.full_name} ({c.class})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -290,7 +290,7 @@ function FeesContent() {
                 </Badge>
                 {selectedChild && (
                   <span className="ml-2 text-sm text-muted-foreground">
-                    {selectedChild.profiles?.full_name} — {selectedChild.class}
+                    {selectedChild.profiles?.[0]?.full_name} — {selectedChild.class}
                   </span>
                 )}
               </div>
@@ -331,7 +331,7 @@ function FeesContent() {
                       <div>
                         <p className="font-medium">Outstanding Balance: {formatAmount(outstanding)}</p>
                         <p className="text-sm text-muted-foreground">
-                          Pay the outstanding balance for {selectedChild?.profiles?.full_name} ({settings?.current_term} Term {settings?.current_year})
+                          Pay the outstanding balance for {selectedChild?.profiles?.[0]?.full_name} ({settings?.current_term} Term {settings?.current_year})
                         </p>
                       </div>
                     </div>

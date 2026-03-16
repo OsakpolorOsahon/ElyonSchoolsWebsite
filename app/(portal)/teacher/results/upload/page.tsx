@@ -18,7 +18,7 @@ interface Student {
   admission_number: string
   class: string
   department: string | null
-  profiles: { full_name: string } | null
+  profiles: { full_name: string }[] | null
 }
 
 interface Exam {
@@ -346,7 +346,7 @@ export default function UploadResultsPage() {
                         <div key={student.id} className="p-3 bg-muted/30 rounded-lg space-y-2">
                           <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-center">
                             <div className="min-w-0">
-                              <p className="font-medium truncate">{student.profiles?.full_name || 'Unknown'}</p>
+                              <p className="font-medium truncate">{student.profiles?.[0]?.full_name || 'Unknown'}</p>
                               <p className="text-xs text-muted-foreground">{student.admission_number}</p>
                             </div>
                             <Input
