@@ -8,14 +8,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Eye, EyeOff, Lock, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Lock, CheckCircle, Loader2, AlertCircle, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+
+function isSessionExpiredError(message: string): boolean {
+  const lower = message.toLowerCase()
+  return (
+    lower.includes('jwt') ||
+    lower.includes('token') ||
+    lower.includes('session') ||
+    lower.includes('expired') ||
+    lower.includes('invalid refresh') ||
+    lower.includes('timed out')
+  )
+}
 
 export default function ResetPasswordPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [isReady, setIsReady] = useState(false)
   const [isError, setIsError] = useState(false)
+  const [isExpired, setIsExpired] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -36,12 +49,21 @@ export default function ResetPasswordPage() {
       const type = params.get('type')
 
       if (accessToken && refreshToken && (type === 'invite' || type === 'recovery')) {
-        const { error } = await supabase.auth.setSession({
+        const { data, error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
         })
         if (error) {
-          setIsError(true)
+          if (isSessionExpiredError(error.message)) {
+            setIsExpired(true)
+          } else {
+            setIsError(true)
+          }
+        } else if (
+          data.session?.expires_at &&
+          data.session.expires_at * 1000 < Date.now()
+        ) {
+          setIsExpired(true)
         } else {
           setIsReady(true)
         }
@@ -116,11 +138,15 @@ export default function ResetPasswordPage() {
       ])
 
       if (error) {
-        toast({
-          title: 'Error',
-          description: error.message,
-          variant: 'destructive',
-        })
+        if (isSessionExpiredError(error.message)) {
+          setIsExpired(true)
+        } else {
+          toast({
+            title: 'Error',
+            description: error.message,
+            variant: 'destructive',
+          })
+        }
         return
       }
 
@@ -130,11 +156,16 @@ export default function ResetPasswordPage() {
         description: 'Your password has been created. You can now sign in.',
       })
     } catch (err) {
-      toast({
-        title: 'Error',
-        description: err instanceof Error ? err.message : 'Something went wrong. Please try again.',
-        variant: 'destructive',
-      })
+      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.'
+      if (isSessionExpiredError(message)) {
+        setIsExpired(true)
+      } else {
+        toast({
+          title: 'Error',
+          description: message,
+          variant: 'destructive',
+        })
+      }
     } finally {
       setIsLoading(false)
     }
@@ -173,6 +204,22 @@ export default function ResetPasswordPage() {
                 <Lock className="h-4 w-4" />
                 Go to Sign In
               </Button>
+            </div>
+          ) : isExpired ? (
+            <div className="text-center py-6">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                <Clock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Invitation link expired</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Your invitation link has expired. Please ask your administrator to delete your account and send you a new invitation.
+              </p>
+              <Link href="/login">
+                <Button variant="outline" className="w-full gap-2" data-testid="button-expired-back-to-login">
+                  <Lock className="h-4 w-4" />
+                  Back to Sign In
+                </Button>
+              </Link>
             </div>
           ) : isError ? (
             <div className="text-center py-6">
