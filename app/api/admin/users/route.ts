@@ -67,6 +67,25 @@ export async function PATCH(request: NextRequest) {
   return NextResponse.json({ success: true })
 }
 
+export async function DELETE(request: NextRequest) {
+  const session = await verifyAdmin()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const body = await request.json()
+  const { id } = body
+
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  if (id === session.user.id) {
+    return NextResponse.json({ error: 'You cannot delete your own account' }, { status: 400 })
+  }
+
+  const supabase = createAdminClient()
+  const { error } = await supabase.auth.admin.deleteUser(id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ success: true })
+}
+
 export async function POST(request: NextRequest) {
   const session = await verifyAdmin()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

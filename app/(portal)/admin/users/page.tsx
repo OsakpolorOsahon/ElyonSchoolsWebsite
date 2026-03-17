@@ -9,10 +9,10 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, ArrowLeft, Users, UserPlus, Mail, Search } from 'lucide-react'
+import { Loader2, ArrowLeft, Users, UserPlus, Mail, Search, Trash2 } from 'lucide-react'
 
 interface UserRecord {
   id: string
@@ -35,17 +35,21 @@ export default function AdminUsersPage() {
   const [filtered, setFiltered] = useState<UserRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<{ full_name: string } | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [updatingRole, setUpdatingRole] = useState<string | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviting, setInviting] = useState(false)
   const [invite, setInvite] = useState({ email: '', full_name: '', role: 'parent' })
+  const [deleteTarget, setDeleteTarget] = useState<UserRecord | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     const load = async () => {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
+      setCurrentUserId(session.user.id)
       const { data: p } = await supabase.from('profiles').select('full_name').eq('id', session.user.id).single()
       setProfile(p)
       await fetchUsers()
@@ -84,6 +88,28 @@ export default function AdminUsersPage() {
       toast({ title: 'Error', description: 'Failed to update role', variant: 'destructive' })
     }
     setUpdatingRole(null)
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: deleteTarget.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setUsers(prev => prev.filter(u => u.id !== deleteTarget.id))
+      toast({ title: 'User deleted', description: `${deleteTarget.full_name || deleteTarget.email} has been removed.` })
+      setDeleteTarget(null)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete user'
+      toast({ title: 'Error', description: message, variant: 'destructive' })
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -221,6 +247,7 @@ export default function AdminUsersPage() {
                       <th className="text-left px-4 py-3 font-medium">Role</th>
                       <th className="text-left px-4 py-3 font-medium">Joined</th>
                       <th className="text-left px-4 py-3 font-medium">Change Role</th>
+                      <th className="text-left px-4 py-3 font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -256,6 +283,19 @@ export default function AdminUsersPage() {
                             {updatingRole === user.id && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
                           </div>
                         </td>
+                        <td className="px-4 py-3">
+                          {user.id !== currentUserId && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteTarget(user)}
+                              data-testid={`button-delete-user-${user.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -265,6 +305,32 @@ export default function AdminUsersPage() {
           </Card>
         )}
       </main>
+
+      <Dialog open={!!deleteTarget} onOpenChange={open => { if (!open) setDeleteTarget(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <strong>{deleteTarget?.full_name || deleteTarget?.email}</strong>? This will permanently remove their account and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="gap-2"
+              data-testid="button-confirm-delete-user"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              {deleting ? 'Deleting...' : 'Delete User'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

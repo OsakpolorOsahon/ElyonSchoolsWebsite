@@ -106,9 +106,14 @@ export default function ResetPasswordPage() {
     try {
       const supabase = createClient()
 
-      const { error } = await supabase.auth.updateUser({
-        password: formData.password,
-      })
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out — please try again.')), 20000)
+      )
+
+      const { error } = await Promise.race([
+        supabase.auth.updateUser({ password: formData.password }),
+        timeout,
+      ])
 
       if (error) {
         toast({
@@ -124,10 +129,10 @@ export default function ResetPasswordPage() {
         title: 'Password Set',
         description: 'Your password has been created. You can now sign in.',
       })
-    } catch {
+    } catch (err) {
       toast({
         title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        description: err instanceof Error ? err.message : 'Something went wrong. Please try again.',
         variant: 'destructive',
       })
     } finally {
