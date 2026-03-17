@@ -43,51 +43,40 @@ export default function ResetPasswordPage() {
 
     async function initSession() {
       try {
-        const hash = window.location.hash
-        const params = new URLSearchParams(hash.replace(/^#/, ''))
-        const accessToken = params.get('access_token')
-        const refreshToken = params.get('refresh_token')
-        const type = params.get('type')
-
-        if (accessToken && refreshToken && (type === 'invite' || type === 'recovery')) {
-          const result = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          })
-          const { error } = result
-          const session = result.data?.session
-          if (error) {
-            if (isSessionExpiredError(error.message)) {
-              setIsExpired(true)
-            } else {
-              setIsError(true)
-            }
-          } else if (session?.expires_at && session.expires_at * 1000 < Date.now()) {
-            setIsExpired(true)
-          } else {
-            setIsReady(true)
-          }
-          return
-        }
-
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
+        // Check if a session is already active first (handles the case where
+        // createBrowserClient has already processed the URL tokens synchronously)
+        const { data: { session: existingSession } } = await supabase.auth.getSession()
+        if (existingSession) {
           setIsReady(true)
           return
         }
 
+        // createBrowserClient (detectSessionInUrl: true by default) automatically
+        // processes hash tokens from the invite URL and fires SIGNED_IN /
+        // PASSWORD_RECOVERY / INITIAL_SESSION via onAuthStateChange.
+        // We must NOT call setSession() manually — that conflicts with the
+        // client's own processing and causes the call to hang indefinitely.
+        let resolved = false
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (resolved) return
           if (
-            (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') &&
+            (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY' || event === 'INITIAL_SESSION') &&
             session
           ) {
+            resolved = true
             setIsReady(true)
             subscription.unsubscribe()
           }
         })
 
+        // Fallback: if nothing fires within 12 seconds the link is invalid/expired
         const timer = setTimeout(() => {
-          setIsError(true)
+          if (!resolved) {
+            resolved = true
+            setIsError(true)
+            subscription.unsubscribe()
+          }
         }, 12000)
 
         return () => {
