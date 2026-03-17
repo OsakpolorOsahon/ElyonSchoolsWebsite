@@ -212,7 +212,7 @@ export default function ResetPasswordPage() {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Invitation link expired</h3>
               <p className="text-sm text-muted-foreground mb-6">
-                Your invitation link has expired. Please ask your administrator to delete your account and send you a new invitation.
+                Your invite link has expired. Please ask your administrator to send you a new invitation.
               </p>
               <Link href="/login">
                 <Button variant="outline" className="w-full gap-2" data-testid="button-expired-back-to-login">
