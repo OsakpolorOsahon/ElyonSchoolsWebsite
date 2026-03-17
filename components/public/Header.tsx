@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Menu, X, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { createClient } from '@/lib/supabase/client'
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -31,8 +32,31 @@ const navigation = [
   { name: 'Contact', href: '/contact' },
 ]
 
+const roleDashboardMap: Record<string, string> = {
+  admin: '/admin',
+  teacher: '/teacher',
+  parent: '/parent',
+  student: '/student',
+}
+
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [dashboardHref, setDashboardHref] = useState<string | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single()
+      if (profile?.role && roleDashboardMap[profile.role]) {
+        setDashboardHref(roleDashboardMap[profile.role])
+      }
+    })
+  }, [])
 
   return (
     <>
@@ -101,11 +125,19 @@ export function Header() {
           </div>
 
           <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-2">
-            <Link href="/login">
-              <Button variant="outline" data-testid="button-sign-in">
-                Sign In
-              </Button>
-            </Link>
+            {dashboardHref ? (
+              <Link href={dashboardHref}>
+                <Button variant="outline" data-testid="button-back-to-dashboard">
+                  Back to Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/login">
+                <Button variant="outline" data-testid="button-sign-in">
+                  Sign In
+                </Button>
+              </Link>
+            )}
             <Link href="/admissions/apply">
               <Button data-testid="button-apply-now">
                 Apply Now
@@ -181,11 +213,19 @@ export function Header() {
                   ))}
                 </div>
                 <div className="py-6 space-y-3">
-                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full" data-testid="button-mobile-sign-in">
-                      Sign In
-                    </Button>
-                  </Link>
+                  {dashboardHref ? (
+                    <Link href={dashboardHref} onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full" data-testid="button-mobile-back-to-dashboard">
+                        Back to Dashboard
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full" data-testid="button-mobile-sign-in">
+                        Sign In
+                      </Button>
+                    </Link>
+                  )}
                   <Link href="/admissions/apply" onClick={() => setMobileMenuOpen(false)}>
                     <Button className="w-full" data-testid="button-mobile-apply-now">
                       Apply Now
