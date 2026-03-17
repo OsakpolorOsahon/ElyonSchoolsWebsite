@@ -42,57 +42,60 @@ export default function ResetPasswordPage() {
     const supabase = createClient()
 
     async function initSession() {
-      const hash = window.location.hash
-      const params = new URLSearchParams(hash.replace(/^#/, ''))
-      const accessToken = params.get('access_token')
-      const refreshToken = params.get('refresh_token')
-      const type = params.get('type')
+      try {
+        const hash = window.location.hash
+        const params = new URLSearchParams(hash.replace(/^#/, ''))
+        const accessToken = params.get('access_token')
+        const refreshToken = params.get('refresh_token')
+        const type = params.get('type')
 
-      if (accessToken && refreshToken && (type === 'invite' || type === 'recovery')) {
-        const { data, error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        })
-        if (error) {
-          if (isSessionExpiredError(error.message)) {
+        if (accessToken && refreshToken && (type === 'invite' || type === 'recovery')) {
+          const result = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          const { error } = result
+          const session = result.data?.session
+          if (error) {
+            if (isSessionExpiredError(error.message)) {
+              setIsExpired(true)
+            } else {
+              setIsError(true)
+            }
+          } else if (session?.expires_at && session.expires_at * 1000 < Date.now()) {
             setIsExpired(true)
           } else {
-            setIsError(true)
+            setIsReady(true)
           }
-        } else if (
-          data.session?.expires_at &&
-          data.session.expires_at * 1000 < Date.now()
-        ) {
-          setIsExpired(true)
-        } else {
-          setIsReady(true)
+          return
         }
-        return
-      }
 
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        setIsReady(true)
-        return
-      }
-
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        if (
-          (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') &&
-          session
-        ) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
           setIsReady(true)
+          return
+        }
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (
+            (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') &&
+            session
+          ) {
+            setIsReady(true)
+            subscription.unsubscribe()
+          }
+        })
+
+        const timer = setTimeout(() => {
+          setIsError(true)
+        }, 12000)
+
+        return () => {
+          clearTimeout(timer)
           subscription.unsubscribe()
         }
-      })
-
-      const timer = setTimeout(() => {
+      } catch {
         setIsError(true)
-      }, 12000)
-
-      return () => {
-        clearTimeout(timer)
-        subscription.unsubscribe()
       }
     }
 
