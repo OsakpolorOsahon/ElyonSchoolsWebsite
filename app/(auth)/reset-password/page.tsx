@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,8 @@ import { createClient } from '@/lib/supabase/client'
 function ResetPasswordContent() {
   const router = useRouter()
   const { toast } = useToast()
+  const [isExchanging, setIsExchanging] = useState(false)
+  const [linkInvalid, setLinkInvalid] = useState(false)
   const [isExpired, setIsExpired] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
@@ -23,6 +25,25 @@ function ResetPasswordContent() {
     password: '',
     confirmPassword: '',
   })
+
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get('code')
+    if (!code) return
+
+    // Exchange the invite code for a session so updateUser() can succeed
+    setIsExchanging(true)
+    const supabase = createClient()
+    supabase.auth
+      .exchangeCodeForSession(code)
+      .then(({ error }) => {
+        if (error) {
+          setLinkInvalid(true)
+        }
+        // Remove the code from the URL so a page refresh doesn't re-use it
+        window.history.replaceState({}, '', '/reset-password')
+      })
+      .finally(() => setIsExchanging(false))
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -143,6 +164,27 @@ function ResetPasswordContent() {
                   Back to Sign In
                 </Button>
               </Link>
+            </div>
+          ) : linkInvalid ? (
+            <div className="text-center py-6">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                <Clock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Link already used or expired</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                This invite link has already been used or has expired. Please ask your administrator to send a new invitation.
+              </p>
+              <Link href="/login">
+                <Button variant="outline" className="w-full gap-2">
+                  <Lock className="h-4 w-4" />
+                  Back to Sign In
+                </Button>
+              </Link>
+            </div>
+          ) : isExchanging ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-3 text-muted-foreground">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm">Setting up your account&hellip;</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
     data: { full_name, role },
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:5000'}/api/auth/callback?next=/reset-password`,
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:5000'}/reset-password`,
   })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
