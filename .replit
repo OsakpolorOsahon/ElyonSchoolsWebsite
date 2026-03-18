@@ -45,3 +45,8 @@ integrations = ["javascript_database:1.0.0"]
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+NEXT_PUBLIC_SITE_URL = "https://d34dbb35-1c82-46c1-a09d-6a41b4746a82-00-2m9ee77wm2uw.worf.replit.dev"
