@@ -28,7 +28,7 @@ function ResetPasswordContent() {
     supabaseRef.current = supabase
 
     async function establishSession() {
-      // ── 1. PKCE flow: ?code=xxx ──────────────────────────────────────────
+      // PKCE flow — token arrives as ?code=xxx
       const code = new URLSearchParams(window.location.search).get('code')
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
@@ -37,7 +37,7 @@ function ResetPasswordContent() {
         return
       }
 
-      // ── 2. Implicit flow: #access_token=xxx&refresh_token=yyy ───────────
+      // Implicit flow — token arrives as #access_token=xxx&refresh_token=yyy
       const hash = window.location.hash
       if (hash && hash.includes('access_token=')) {
         const params = new URLSearchParams(hash.slice(1))
@@ -51,8 +51,8 @@ function ResetPasswordContent() {
         }
       }
 
-      // ── 3. No tokens in URL — check for an existing session ──────────────
-      // (handles server-side callback redirect, or user already logged in)
+      // No tokens in URL — check for an existing session (e.g. server callback
+      // already set cookies, or user is already logged in)
       const { data: { session } } = await supabase.auth.getSession()
       setPageState(session ? 'ready' : 'bad_link')
     }
