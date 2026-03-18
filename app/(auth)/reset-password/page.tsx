@@ -1,34 +1,19 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Eye, EyeOff, Lock, CheckCircle, Loader2, AlertCircle, Clock } from 'lucide-react'
+import { Eye, EyeOff, Lock, CheckCircle, Loader2, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-
-function isSessionExpiredError(message: string): boolean {
-  const lower = message.toLowerCase()
-  return (
-    lower.includes('jwt') ||
-    lower.includes('token') ||
-    lower.includes('session') ||
-    lower.includes('expired') ||
-    lower.includes('invalid refresh') ||
-    lower.includes('timed out')
-  )
-}
 
 function ResetPasswordContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { toast } = useToast()
-  const [isReady, setIsReady] = useState(false)
-  const [isError, setIsError] = useState(searchParams.get('error') === 'invalid_link')
   const [isExpired, setIsExpired] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
@@ -38,55 +23,6 @@ function ResetPasswordContent() {
     password: '',
     confirmPassword: '',
   })
-
-  useEffect(() => {
-    if (isError) return
-
-    const supabase = createClient()
-
-    let resolved = false
-    let timer: ReturnType<typeof setTimeout> | null = null
-
-    // Subscribe FIRST so INITIAL_SESSION is never missed due to a race with
-    // the async getSession() call that follows.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (resolved) return
-      if (
-        (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY' || event === 'INITIAL_SESSION') &&
-        session
-      ) {
-        resolved = true
-        if (timer) clearTimeout(timer)
-        setIsReady(true)
-        subscription.unsubscribe()
-      }
-    })
-
-    // After subscribing, check for a session that was already established
-    // (e.g. set by the /api/auth/callback cookie before this page loaded).
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!resolved && session) {
-        resolved = true
-        if (timer) clearTimeout(timer)
-        setIsReady(true)
-        subscription.unsubscribe()
-      }
-    })
-
-    // Fallback: if nothing fires within 12 seconds the link is invalid/expired
-    timer = setTimeout(() => {
-      if (!resolved) {
-        resolved = true
-        setIsError(true)
-        subscription.unsubscribe()
-      }
-    }, 12000)
-
-    return () => {
-      if (timer) clearTimeout(timer)
-      subscription.unsubscribe()
-    }
-  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -113,18 +49,20 @@ function ResetPasswordContent() {
 
     try {
       const supabase = createClient()
-
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Request timed out — please try again.')), 20000)
-      )
-
-      const { error } = await Promise.race([
-        supabase.auth.updateUser({ password: formData.password }),
-        timeout,
-      ])
+      const { error } = await supabase.auth.updateUser({ password: formData.password })
 
       if (error) {
-        if (isSessionExpiredError(error.message)) {
+        const lower = error.message.toLowerCase()
+        const isSessionError =
+          lower.includes('jwt') ||
+          lower.includes('token') ||
+          lower.includes('session') ||
+          lower.includes('expired') ||
+          lower.includes('invalid refresh') ||
+          lower.includes('not authenticated') ||
+          lower.includes('timed out')
+
+        if (isSessionError) {
           setIsExpired(true)
         } else {
           toast({
@@ -142,16 +80,11 @@ function ResetPasswordContent() {
         description: 'Your password has been created. You can now sign in.',
       })
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.'
-      if (isSessionExpiredError(message)) {
-        setIsExpired(true)
-      } else {
-        toast({
-          title: 'Error',
-          description: message,
-          variant: 'destructive',
-        })
-      }
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Something went wrong. Please try again.',
+        variant: 'destructive',
+      })
     } finally {
       setIsLoading(false)
     }
@@ -186,7 +119,11 @@ function ResetPasswordContent() {
               <p className="text-sm text-muted-foreground mb-6">
                 Your password has been set. Sign in to access your account.
               </p>
-              <Button onClick={() => { window.location.href = '/login' }} className="w-full gap-2" data-testid="button-go-to-login">
+              <Button
+                onClick={() => { window.location.href = '/login' }}
+                className="w-full gap-2"
+                data-testid="button-go-to-login"
+              >
                 <Lock className="h-4 w-4" />
                 Go to Sign In
               </Button>
@@ -206,29 +143,6 @@ function ResetPasswordContent() {
                   Back to Sign In
                 </Button>
               </Link>
-            </div>
-          ) : isError ? (
-            <div className="text-center py-6">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-                <AlertCircle className="h-8 w-8 text-destructive" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Link expired or invalid</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                This link has expired or already been used. Request a new password reset link below.
-              </p>
-              <Button onClick={() => { window.location.href = '/forgot-password' }} className="w-full gap-2">
-                Request New Link
-              </Button>
-              <div className="mt-3">
-                <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground underline">
-                  Back to Sign In
-                </Link>
-              </div>
-            </div>
-          ) : !isReady ? (
-            <div className="flex flex-col items-center justify-center py-10 gap-3 text-muted-foreground">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm">Verifying your link&hellip;</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
