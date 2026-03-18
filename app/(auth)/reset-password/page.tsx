@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -25,9 +25,10 @@ function isSessionExpiredError(message: string): boolean {
 
 export default function ResetPasswordPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const [isReady, setIsReady] = useState(false)
-  const [isError, setIsError] = useState(false)
+  const [isError, setIsError] = useState(searchParams.get('error') === 'invalid_link')
   const [isExpired, setIsExpired] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
@@ -39,12 +40,15 @@ export default function ResetPasswordPage() {
   })
 
   useEffect(() => {
+    if (isError) return
+
     const supabase = createClient()
 
     async function initSession() {
       try {
         // Check if a session is already active first (handles the case where
-        // createBrowserClient has already processed the URL tokens synchronously)
+        // the /api/auth/callback route already exchanged the code and set cookies,
+        // or createBrowserClient has already processed hash tokens synchronously)
         const { data: { session: existingSession } } = await supabase.auth.getSession()
         if (existingSession) {
           setIsReady(true)
