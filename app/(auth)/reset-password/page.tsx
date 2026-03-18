@@ -44,57 +44,47 @@ function ResetPasswordContent() {
 
     const supabase = createClient()
 
-    async function initSession() {
-      try {
-        // Check if a session is already active first (handles the case where
-        // the /api/auth/callback route already exchanged the code and set cookies,
-        // or createBrowserClient has already processed hash tokens synchronously)
-        const { data: { session: existingSession } } = await supabase.auth.getSession()
-        if (existingSession) {
-          setIsReady(true)
-          return
-        }
+    let resolved = false
+    let timer: ReturnType<typeof setTimeout> | null = null
 
-        // createBrowserClient (detectSessionInUrl: true by default) automatically
-        // processes hash tokens from the invite URL and fires SIGNED_IN /
-        // PASSWORD_RECOVERY / INITIAL_SESSION via onAuthStateChange.
-        // We must NOT call setSession() manually — that conflicts with the
-        // client's own processing and causes the call to hang indefinitely.
-        let resolved = false
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (resolved) return
-          if (
-            (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY' || event === 'INITIAL_SESSION') &&
-            session
-          ) {
-            resolved = true
-            setIsReady(true)
-            subscription.unsubscribe()
-          }
-        })
-
-        // Fallback: if nothing fires within 12 seconds the link is invalid/expired
-        const timer = setTimeout(() => {
-          if (!resolved) {
-            resolved = true
-            setIsError(true)
-            subscription.unsubscribe()
-          }
-        }, 12000)
-
-        return () => {
-          clearTimeout(timer)
-          subscription.unsubscribe()
-        }
-      } catch {
-        setIsError(true)
+    // Subscribe FIRST so INITIAL_SESSION is never missed due to a race with
+    // the async getSession() call that follows.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (resolved) return
+      if (
+        (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY' || event === 'INITIAL_SESSION') &&
+        session
+      ) {
+        resolved = true
+        if (timer) clearTimeout(timer)
+        setIsReady(true)
+        subscription.unsubscribe()
       }
-    }
+    })
 
-    const cleanup = initSession()
+    // After subscribing, check for a session that was already established
+    // (e.g. set by the /api/auth/callback cookie before this page loaded).
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!resolved && session) {
+        resolved = true
+        if (timer) clearTimeout(timer)
+        setIsReady(true)
+        subscription.unsubscribe()
+      }
+    })
+
+    // Fallback: if nothing fires within 12 seconds the link is invalid/expired
+    timer = setTimeout(() => {
+      if (!resolved) {
+        resolved = true
+        setIsError(true)
+        subscription.unsubscribe()
+      }
+    }, 12000)
+
     return () => {
-      cleanup.then(fn => fn?.())
+      if (timer) clearTimeout(timer)
+      subscription.unsubscribe()
     }
   }, [])
 
