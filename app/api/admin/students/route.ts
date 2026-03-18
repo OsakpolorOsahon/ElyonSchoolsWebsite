@@ -28,6 +28,20 @@ async function verifyAdmin() {
   return session
 }
 
+export async function GET() {
+  const session = await verifyAdmin()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('students')
+    .select('id, admission_number, class, gender, status, department, graduation_year, transfer_note, repeating, profile_id, profiles(full_name)')
+    .order('created_at', { ascending: false })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ students: data || [] })
+}
+
 export async function POST(request: NextRequest) {
   const session = await verifyAdmin()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

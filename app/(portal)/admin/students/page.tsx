@@ -131,12 +131,9 @@ export default function AdminStudentsPage() {
   })
 
   async function fetchStudents() {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('students')
-      .select('id, admission_number, class, gender, status, department, graduation_year, transfer_note, repeating, profile_id, profiles(full_name)')
-      .order('created_at', { ascending: false })
-    const list = (data || []) as Student[]
+    const res = await fetch('/api/admin/students')
+    const data = await res.json()
+    const list = (data.students || []) as Student[]
     setStudents(list)
     setExistingProfileIds(new Set(list.map(s => s.profile_id).filter(Boolean)))
   }
