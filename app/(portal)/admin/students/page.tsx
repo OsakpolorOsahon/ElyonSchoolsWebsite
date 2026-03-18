@@ -131,11 +131,19 @@ export default function AdminStudentsPage() {
   })
 
   async function fetchStudents() {
-    const res = await fetch('/api/admin/students')
-    const data = await res.json()
-    const list = (data.students || []) as Student[]
-    setStudents(list)
-    setExistingProfileIds(new Set(list.map(s => s.profile_id).filter(Boolean)))
+    try {
+      const res = await fetch('/api/admin/students')
+      const data = await res.json()
+      if (!res.ok) {
+        toast({ title: 'Error loading students', description: data.error || `Status ${res.status}`, variant: 'destructive' })
+        return
+      }
+      const list = (data.students || []) as Student[]
+      setStudents(list)
+      setExistingProfileIds(new Set(list.map(s => s.profile_id).filter(Boolean)))
+    } catch (err) {
+      toast({ title: 'Error loading students', description: 'Could not reach the server. Please refresh.', variant: 'destructive' })
+    }
   }
 
   useEffect(() => {
