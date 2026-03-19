@@ -15,7 +15,7 @@ interface Student {
   admission_number: string
   class: string
   gender: string | null
-  profiles: { full_name: string }[] | null
+  profiles: { full_name: string } | null
 }
 
 interface Exam {

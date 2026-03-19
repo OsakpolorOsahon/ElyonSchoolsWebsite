@@ -16,7 +16,7 @@ interface Child {
   id: string
   admission_number: string
   class: string
-  profiles: { full_name: string }[] | null
+  profiles: { full_name: string } | null
 }
 
 interface FeeStructure {

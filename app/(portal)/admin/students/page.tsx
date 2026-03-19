@@ -26,7 +26,7 @@ interface Student {
   transfer_note: string | null
   repeating: boolean
   profile_id: string
-  profiles: { full_name: string }[] | null
+  profiles: { full_name: string } | null
 }
 
 interface UserProfile {

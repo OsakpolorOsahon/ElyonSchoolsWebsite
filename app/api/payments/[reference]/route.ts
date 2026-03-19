@@ -102,8 +102,8 @@ export async function GET(
         .single()
 
       if (student) {
-        const s = student as unknown as { admission_number: string; profiles: { full_name: string }[] | null }
-        student_name = s.profiles?.[0]?.full_name || null
+        const s = student as unknown as { admission_number: string; profiles: { full_name: string } | null }
+        student_name = s.profiles?.full_name || null
         admission_number = s.admission_number || null
       }
     }

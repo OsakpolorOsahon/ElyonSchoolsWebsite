@@ -60,7 +60,7 @@ export default async function ParentDashboard() {
     id: string
     admission_number: string
     class: string
-    profiles: { full_name: string }[] | null
+    profiles: { full_name: string } | null
   }
   const children = (childrenResult.data || []) as ChildRecord[]
   const upcomingEvents = upcomingEventsResult.data

@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Student not found' }, { status: 404 })
   }
 
-  const studentTyped = student as unknown as { id: string; admission_number: string; profiles: { full_name: string }[] | null }
+  const studentTyped = student as unknown as { id: string; admission_number: string; profiles: { full_name: string } | null }
   const paymentRef = reference || `OFFLINE-${randomUUID().slice(0, 8).toUpperCase()}`
 
   let resolvedTerm = term || null
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     method,
     reference: paymentRef,
     payment_type,
-    payer_name: studentTyped.profiles?.[0]?.full_name || studentTyped.admission_number,
+    payer_name: studentTyped.profiles?.full_name || studentTyped.admission_number,
     recorded_by: session.user.id,
     notes: notes?.trim() || null,
     term: resolvedTerm,

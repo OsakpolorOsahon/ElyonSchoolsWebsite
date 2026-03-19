@@ -19,7 +19,7 @@ interface Student {
   gender: string | null
   department: string | null
   repeating: boolean
-  profiles: { full_name: string }[] | null
+  profiles: { full_name: string } | null
 }
 
 const ALL_CLASSES = [

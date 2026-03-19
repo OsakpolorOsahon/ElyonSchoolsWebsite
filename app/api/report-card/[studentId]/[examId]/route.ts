@@ -12,7 +12,7 @@ interface StudentRow {
   class: string
   department: string | null
   gender: string | null
-  profiles: ProfileRow[] | null
+  profiles: ProfileRow | null
 }
 
 interface SubjectRow {
@@ -185,7 +185,7 @@ export async function GET(
       class: student.class,
       department: student.department,
       gender: student.gender,
-      full_name: student.profiles?.[0]?.full_name || 'Unknown',
+      full_name: student.profiles?.full_name || 'Unknown',
     },
     exam: {
       id: exam.id,
