@@ -41,7 +41,7 @@ export default async function TeacherDashboard() {
   if (assignedClasses.length > 0) {
     const { data } = await supabase
       .from('students')
-      .select('id, admission_number, class, profiles(full_name)')
+      .select('id, admission_number, class, profiles!profile_id(full_name)')
       .in('class', assignedClasses)
       .eq('status', 'active')
     students = data || []

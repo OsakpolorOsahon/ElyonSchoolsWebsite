@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
   const { data: student } = await adminDb
     .from('students')
-    .select('id, admission_number, profiles(full_name)')
+    .select('id, admission_number, profiles!profile_id(full_name)')
     .eq('id', student_id)
     .single()
 

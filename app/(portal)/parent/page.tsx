@@ -38,7 +38,7 @@ export default async function ParentDashboard() {
   const [childrenResult, upcomingEventsResult, announcementsResult] = await Promise.all([
     supabase
       .from('students')
-      .select('id, admission_number, class, profiles(full_name)')
+      .select('id, admission_number, class, profiles!profile_id(full_name)')
       .eq('parent_profile_id', session.user.id)
       .eq('status', 'active'),
     supabase

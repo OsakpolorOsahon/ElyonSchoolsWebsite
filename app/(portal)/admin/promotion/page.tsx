@@ -63,7 +63,7 @@ export default function BulkPromotionPage() {
 
       const { data } = await supabase
         .from('students')
-        .select('id, admission_number, class, gender, department, repeating, profiles(full_name)')
+        .select('id, admission_number, class, gender, department, repeating, profiles!profile_id(full_name)')
         .eq('status', 'active')
         .order('class')
         .order('admission_number')

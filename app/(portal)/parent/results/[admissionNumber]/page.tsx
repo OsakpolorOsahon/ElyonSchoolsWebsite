@@ -56,7 +56,7 @@ export default function ChildResultsPage() {
 
       const { data: studentData } = await supabase
         .from('students')
-        .select('id, admission_number, class, profiles(full_name)')
+        .select('id, admission_number, class, profiles!profile_id(full_name)')
         .eq('admission_number', admissionNumber)
         .eq('parent_profile_id', session.user.id)
         .single()

@@ -65,7 +65,7 @@ export default function ClassStudentsPage() {
       const [studentsRes, examsRes] = await Promise.all([
         supabase
           .from('students')
-          .select('id, admission_number, class, gender, profiles(full_name)')
+          .select('id, admission_number, class, gender, profiles!profile_id(full_name)')
           .eq('class', className)
           .eq('status', 'active')
           .order('admission_number'),

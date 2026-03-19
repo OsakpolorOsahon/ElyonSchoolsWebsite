@@ -35,7 +35,7 @@ export async function GET() {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('students')
-    .select('id, admission_number, class, gender, status, department, graduation_year, transfer_note, repeating, profile_id, profiles(full_name)')
+    .select('id, admission_number, class, gender, status, department, graduation_year, transfer_note, repeating, profile_id, profiles!profile_id(full_name)')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -66,6 +66,16 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createAdminClient()
+
+  const { data: existing } = await supabase
+    .from('students')
+    .select('id')
+    .eq('profile_id', profile_id)
+    .maybeSingle()
+
+  if (existing) {
+    return NextResponse.json({ error: 'This student account is already linked to another student record.' }, { status: 400 })
+  }
 
   const { error } = await supabase.from('students').insert({
     profile_id,

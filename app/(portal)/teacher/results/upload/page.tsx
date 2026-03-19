@@ -113,7 +113,7 @@ export default function UploadResultsPage() {
       if (classes.length > 0) {
         const { data: studs } = await supabase
           .from('students')
-          .select('id, admission_number, class, department, profiles(full_name)')
+          .select('id, admission_number, class, department, profiles!profile_id(full_name)')
           .in('class', classes)
           .eq('status', 'active')
           .order('admission_number')

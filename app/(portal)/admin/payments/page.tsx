@@ -135,7 +135,7 @@ export default function AdminPaymentsPage() {
 
       const [paymentsRes, studentsRes, feesRes, settingsRes] = await Promise.all([
         supabase.from('payments').select('*, admissions(class_applied, student_data)').order('created_at', { ascending: false }),
-        supabase.from('students').select('id, admission_number, class, profiles(full_name)').eq('status', 'active').order('admission_number'),
+        supabase.from('students').select('id, admission_number, class, profiles!profile_id(full_name)').eq('status', 'active').order('admission_number'),
         supabase.from('fee_structures').select('*'),
         supabase.from('academic_settings').select('current_term, current_year').eq('singleton_key', true).single(),
       ])

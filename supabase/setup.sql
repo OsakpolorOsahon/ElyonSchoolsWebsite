@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS classes (
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS students (
   id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  profile_id        UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  profile_id        UUID UNIQUE REFERENCES profiles(id) ON DELETE SET NULL,
   admission_number  TEXT NOT NULL UNIQUE,
   class             TEXT NOT NULL,
   dob               DATE,

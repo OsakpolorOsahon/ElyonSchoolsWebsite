@@ -97,7 +97,7 @@ export async function GET(
     if (payment.student_id) {
       const { data: student } = await adminDb
         .from('students')
-        .select('admission_number, profiles(full_name)')
+        .select('admission_number, profiles!profile_id(full_name)')
         .eq('id', payment.student_id)
         .single()
 
