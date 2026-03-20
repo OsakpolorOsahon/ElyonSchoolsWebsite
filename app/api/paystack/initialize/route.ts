@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { admissionId, email } = body
+    const { admissionId, email } = body as { admissionId: string; email: string }
 
     if (!admissionId || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })

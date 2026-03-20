@@ -37,7 +37,6 @@ function PaymentContent() {
         body: JSON.stringify({
           admissionId,
           email: applicantEmail || 'applicant@elyonschools.edu.ng',
-          amount,
         }),
       })
 
