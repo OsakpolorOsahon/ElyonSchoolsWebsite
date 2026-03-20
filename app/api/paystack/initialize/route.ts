@@ -4,10 +4,17 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { admissionId, email } = body as { admissionId: string; email: string }
+    // `amount` is accepted in the request body for API contract compatibility,
+    // but is intentionally ignored — the authoritative amount is always read
+    // from the DB to prevent underpayment via tampered request body.
+    const { admissionId, email: clientEmail } = body as {
+      admissionId: string
+      email?: string
+      amount?: number
+    }
 
-    if (!admissionId || !email) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    if (!admissionId) {
+      return NextResponse.json({ error: 'Missing admissionId' }, { status: 400 })
     }
 
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY
@@ -18,7 +25,7 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
     const { data: admission, error: admissionError } = await supabase
       .from('admissions')
-      .select('id, amount, status')
+      .select('id, amount, status, guardian_data')
       .eq('id', admissionId)
       .single()
 
@@ -33,9 +40,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // amount is always read from the DB — client-provided amount is intentionally ignored
-    // to prevent underpayment via tampered request body
+    const guardianData = admission.guardian_data as Record<string, string> | null
+    const email = clientEmail || guardianData?.email || 'applicant@elyonschools.edu.ng'
     const amountNaira = admission.amount as number
+
     const origin = request.nextUrl.origin
     const callbackUrl = `${origin}/admissions/payment/callback?id=${admissionId}`
     const reference = `ELYON-ADM-${admissionId.slice(0, 8)}-${Date.now()}`
