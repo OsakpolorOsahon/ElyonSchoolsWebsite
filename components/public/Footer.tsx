@@ -13,7 +13,7 @@ const footerNavigation = {
   academics: [
     { name: 'Nursery School', href: '/academics/nursery' },
     { name: 'Primary School', href: '/academics/primary' },
-    { name: 'Secondary School', href: '/academics/secondary' },
+    { name: 'High School', href: '/academics/secondary' },
     { name: 'Curriculum', href: '/academics#curriculum' },
     { name: 'Extracurriculars', href: '/academics#extracurriculars' },
   ],
@@ -64,7 +64,7 @@ export function Footer() {
               </div>
             </div>
             <p className="text-sm leading-6 text-primary-foreground/80">
-              Nurturing young minds from Nursery through Secondary education. 
+              Nurturing young minds from Nursery through high school. 
               Building tomorrow&apos;s leaders with excellence in academics, 
               character, and values.
             </p>
