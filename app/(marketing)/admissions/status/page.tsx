@@ -195,7 +195,7 @@ function StatusContent() {
                       <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
                         Your application is awaiting payment. Please complete the application fee to proceed.
                         <div className="mt-2">
-                          <Link href={`/admissions/payment?id=${admission.id}&amount=${admission.amount || 50000}`}>
+                          <Link href={`/admissions/payment?id=${admission.id}&amount=${admission.amount || 50000}&email=${encodeURIComponent(admission.guardian_data?.email || '')}`}>
                             <Button size="sm" className="mt-1">Complete Payment</Button>
                           </Link>
                         </div>
