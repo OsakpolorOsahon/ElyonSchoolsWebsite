@@ -31,16 +31,15 @@ export async function POST(request: NextRequest) {
     }
 
     const metadataAdmissionId = verifyData.data.metadata?.admission_id as string | undefined
-    const admissionId = metadataAdmissionId || clientAdmissionId
 
-    if (!admissionId) {
+    if (!metadataAdmissionId) {
       return NextResponse.json(
-        { error: 'Could not determine admission from payment reference' },
+        { error: 'Payment reference is not linked to an admission' },
         { status: 400 }
       )
     }
 
-    if (clientAdmissionId && metadataAdmissionId && metadataAdmissionId !== clientAdmissionId) {
+    if (clientAdmissionId && metadataAdmissionId !== clientAdmissionId) {
       console.error('Admission ID mismatch in Paystack metadata', {
         provided: clientAdmissionId,
         inMetadata: metadataAdmissionId,
@@ -51,6 +50,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    const admissionId = metadataAdmissionId
 
     const supabase = createAdminClient()
 
@@ -96,7 +97,11 @@ export async function POST(request: NextRequest) {
       .eq('id', admissionId)
 
     if (admissionError) {
-      console.error('Error updating admission:', admissionError)
+      console.error('Error updating admission status:', admissionError)
+      return NextResponse.json(
+        { error: 'Payment received but failed to update application status. Please contact the school.' },
+        { status: 500 }
+      )
     }
 
     await supabase.from('payments').insert({

@@ -14,14 +14,17 @@ function CallbackContent() {
   const [status, setStatus] = useState<VerifyStatus>('verifying')
   const [reference, setReference] = useState('')
   const [admissionId, setAdmissionId] = useState('')
+  const [applicantEmail, setApplicantEmail] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     const ref = searchParams.get('reference') || searchParams.get('trxref') || ''
     const id = searchParams.get('id') || ''
+    const email = searchParams.get('email') || ''
 
     setReference(ref)
     setAdmissionId(id)
+    setApplicantEmail(email)
 
     if (!ref) {
       setStatus('failed')
@@ -125,7 +128,7 @@ function CallbackContent() {
           )}
           <div className="flex flex-col gap-2">
             {admissionId && (
-              <Link href={`/admissions/payment?id=${admissionId}`}>
+              <Link href={`/admissions/payment?id=${admissionId}${applicantEmail ? `&email=${encodeURIComponent(applicantEmail)}` : ''}`}>
                 <Button className="w-full" data-testid="button-retry-payment">
                   Try Payment Again
                 </Button>

@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     const amountNaira = admission.amount as number
     const origin = request.nextUrl.origin
-    const callbackUrl = `${origin}/admissions/payment/callback?id=${admissionId}`
+    const callbackUrl = `${origin}/admissions/payment/callback?id=${admissionId}&email=${encodeURIComponent(email)}`
     const reference = `ELYON-ADM-${admissionId.slice(0, 8)}-${Date.now()}`
 
     const initResponse = await fetch('https://api.paystack.co/transaction/initialize', {
