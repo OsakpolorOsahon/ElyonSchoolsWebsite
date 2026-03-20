@@ -11,16 +11,30 @@ import { CreditCard, ArrowLeft, Loader2 } from 'lucide-react'
 function PaymentContent() {
   const searchParams = useSearchParams()
   const { toast } = useToast()
+
   const [isRedirecting, setIsRedirecting] = useState(false)
+  const [serverAmount, setServerAmount] = useState<number | null>(null)
+  const [isLoadingAmount, setIsLoadingAmount] = useState(true)
 
   const admissionId = searchParams.get('id')
-  const amount = parseInt(searchParams.get('amount') || '50000', 10)
   const applicantEmail = searchParams.get('email') || ''
 
   useEffect(() => {
     if (!admissionId) {
       window.location.href = '/admissions/apply'
+      return
     }
+
+    fetch(`/api/admissions?id=${admissionId}`)
+      .then(res => res.json())
+      .then(data => {
+        const amount = data.results?.[0]?.amount
+        if (typeof amount === 'number') {
+          setServerAmount(amount)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingAmount(false))
   }, [admissionId])
 
   const formatAmount = (naira: number) =>
@@ -84,7 +98,13 @@ function PaymentContent() {
             )}
             <div className="flex justify-between items-center">
               <span className="font-medium">Application Fee</span>
-              <span className="text-2xl font-bold text-primary">{formatAmount(amount)}</span>
+              {isLoadingAmount ? (
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              ) : (
+                <span className="text-2xl font-bold text-primary" data-testid="text-amount">
+                  {serverAmount !== null ? formatAmount(serverAmount) : 'N/A'}
+                </span>
+              )}
             </div>
           </div>
 
@@ -96,7 +116,7 @@ function PaymentContent() {
             className="w-full gap-2"
             size="lg"
             onClick={handlePayment}
-            disabled={isRedirecting || !admissionId}
+            disabled={isRedirecting || !admissionId || isLoadingAmount || serverAmount === null}
             data-testid="button-pay-now"
           >
             {isRedirecting ? (
@@ -107,7 +127,7 @@ function PaymentContent() {
             ) : (
               <>
                 <CreditCard className="h-4 w-4" />
-                Pay {formatAmount(amount)}
+                {serverAmount !== null ? `Pay ${formatAmount(serverAmount)}` : 'Pay Now'}
               </>
             )}
           </Button>
