@@ -4,10 +4,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { reference, admissionId } = body
+    const { reference, admissionId: clientAdmissionId } = body
 
-    if (!reference || !admissionId) {
-      return NextResponse.json({ error: 'Missing reference or admissionId' }, { status: 400 })
+    if (!reference) {
+      return NextResponse.json({ error: 'Missing payment reference' }, { status: 400 })
     }
 
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY
@@ -31,9 +31,18 @@ export async function POST(request: NextRequest) {
     }
 
     const metadataAdmissionId = verifyData.data.metadata?.admission_id as string | undefined
-    if (metadataAdmissionId && metadataAdmissionId !== admissionId) {
+    const admissionId = metadataAdmissionId || clientAdmissionId
+
+    if (!admissionId) {
+      return NextResponse.json(
+        { error: 'Could not determine admission from payment reference' },
+        { status: 400 }
+      )
+    }
+
+    if (clientAdmissionId && metadataAdmissionId && metadataAdmissionId !== clientAdmissionId) {
       console.error('Admission ID mismatch in Paystack metadata', {
-        provided: admissionId,
+        provided: clientAdmissionId,
         inMetadata: metadataAdmissionId,
         reference,
       })
@@ -47,12 +56,19 @@ export async function POST(request: NextRequest) {
 
     const { data: admission, error: admissionLookupError } = await supabase
       .from('admissions')
-      .select('id, amount, status')
+      .select('id, amount, status, paystack_reference')
       .eq('id', admissionId)
       .single()
 
     if (admissionLookupError || !admission) {
       return NextResponse.json({ error: 'Admission not found' }, { status: 404 })
+    }
+
+    if (
+      admission.status === 'processing' &&
+      (admission as any).paystack_reference === reference
+    ) {
+      return NextResponse.json({ success: true, admissionId })
     }
 
     const expectedAmountKobo = (admission.amount as number) * 100
@@ -88,7 +104,7 @@ export async function POST(request: NextRequest) {
       paystack_response: verifyData.data,
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, admissionId })
   } catch (error) {
     console.error('Paystack verify error:', error)
     return NextResponse.json({ error: 'Verification failed' }, { status: 500 })

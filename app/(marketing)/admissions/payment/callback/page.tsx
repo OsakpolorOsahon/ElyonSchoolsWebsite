@@ -14,6 +14,7 @@ function CallbackContent() {
   const [status, setStatus] = useState<VerifyStatus>('verifying')
   const [reference, setReference] = useState('')
   const [admissionId, setAdmissionId] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     const ref = searchParams.get('reference') || searchParams.get('trxref') || ''
@@ -22,24 +23,34 @@ function CallbackContent() {
     setReference(ref)
     setAdmissionId(id)
 
-    if (!ref || !id) {
+    if (!ref) {
       setStatus('failed')
+      setErrorMessage('No payment reference found.')
       return
     }
+
+    const body: Record<string, string> = { reference: ref }
+    if (id) body.admissionId = id
 
     fetch('/api/paystack/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reference: ref, admissionId: id }),
+      body: JSON.stringify(body),
     })
-      .then(res => {
-        if (res.ok) {
+      .then(async res => {
+        const data = await res.json()
+        if (res.ok && data.success) {
+          if (data.admissionId) setAdmissionId(data.admissionId)
           setStatus('success')
         } else {
+          setErrorMessage(data.error || 'Payment verification failed.')
           setStatus('failed')
         }
       })
-      .catch(() => setStatus('failed'))
+      .catch(() => {
+        setErrorMessage('Could not connect to the server. Please contact the school.')
+        setStatus('failed')
+      })
   }, [searchParams])
 
   if (status === 'verifying') {
@@ -76,9 +87,7 @@ function CallbackContent() {
               We will review your application and contact you via email with the outcome. This typically takes 3–5 business days.
             </p>
             <div className="flex flex-col gap-2">
-              <Link
-                href={`/payments/receipt?ref=${reference}&amount=50000&type=admission_fee`}
-              >
+              <Link href={`/payments/receipt?ref=${reference}&amount=50000&type=admission_fee`}>
                 <Button className="w-full" data-testid="button-view-receipt">
                   View Receipt
                 </Button>
@@ -104,7 +113,7 @@ function CallbackContent() {
           </div>
           <CardTitle className="text-2xl">Payment Verification Failed</CardTitle>
           <CardDescription>
-            We could not confirm your payment. If money was deducted from your account, please contact the school immediately.
+            {errorMessage || 'We could not confirm your payment. If money was deducted from your account, please contact the school immediately.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -122,7 +131,11 @@ function CallbackContent() {
                 </Button>
               </Link>
             )}
-            <Link href="https://wa.me/2347035175566?text=Hello%2C%20I%20need%20help%20with%20my%20admission%20payment" target="_blank" rel="noopener noreferrer">
+            <Link
+              href="https://wa.me/2347035175566?text=Hello%2C%20I%20need%20help%20with%20my%20admission%20payment"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <Button variant="outline" className="w-full" data-testid="button-contact-school">
                 Contact School on WhatsApp
               </Button>
