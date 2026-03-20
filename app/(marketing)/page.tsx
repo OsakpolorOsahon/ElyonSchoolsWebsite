@@ -17,6 +17,28 @@ import {
 
 export const revalidate = 60
 
+interface EventRow {
+  title: string
+  start_ts: string
+  category: string
+  location: string | null
+}
+
+interface NewsRow {
+  id: string
+  title: string
+  slug: string | null
+  summary: string | null
+  published_at: string | null
+}
+
+interface GalleryRow {
+  id: string
+  title: string
+  public_url: string
+  category: string | null
+}
+
 const stats = [
   { id: 1, name: 'Years of Excellence', value: '30+', icon: Trophy },
   { id: 2, name: 'Students Enrolled', value: '1,500+', icon: Users },
@@ -60,16 +82,19 @@ const whyChooseUs = [
   'Excellent academic track record',
 ]
 
-const fallbackEvents = [
+const fallbackEvents: EventRow[] = [
   { title: 'Open Day for Prospective Parents', start_ts: '2025-06-15T09:00:00', category: 'Admissions', location: 'School Hall' },
   { title: 'Inter-House Sports Competition', start_ts: '2025-07-20T08:00:00', category: 'Sports', location: 'School Grounds' },
   { title: 'Cultural Day Celebration', start_ts: '2025-08-01T10:00:00', category: 'Cultural', location: 'School Grounds' },
 ]
 
-const fallbackNews = [
-  { id: '1', title: 'New Academic Session Begins', summary: 'We welcome all students and parents to the new academic session with renewed commitment to excellence.', published_at: '2025-09-01' },
-  { id: '2', title: 'Outstanding WAEC Results', summary: 'Elyon High School records a 98% pass rate in this year\'s WAEC examinations, with many students earning distinctions.', published_at: '2025-08-15' },
-  { id: '3', title: 'Inter-School Science Competition', summary: 'Our students clinched first place at the state-wide inter-school science and technology competition.', published_at: '2025-07-20' },
+const fallbackGallery = [
+  { src: '/images/Cultural_Day_Celebration_dad79f7b.png', alt: 'Cultural Day Celebration' },
+  { src: '/images/Sports_Day_Event_690fc0d2.png', alt: 'Sports Day Event' },
+  { src: '/images/Graduation_Ceremony_965a6757.png', alt: 'Graduation Ceremony' },
+  { src: '/images/Campus_Aerial_View_5504009d.png', alt: 'Campus Aerial View' },
+  { src: '/images/Science_Lab_Activity_6e9e2453.png', alt: 'Science Lab Activity' },
+  { src: '/images/Library_Study_Area_96a8f944.png', alt: 'Library Study Area' },
 ]
 
 export default async function HomePage() {
@@ -95,9 +120,9 @@ export default async function HomePage() {
       .limit(6),
   ])
 
-  const events = liveEvents && liveEvents.length > 0 ? liveEvents : fallbackEvents
-  const news = liveNews && liveNews.length > 0 ? liveNews : fallbackNews
-  const gallery = galleryItems ?? []
+  const events: EventRow[] = liveEvents && liveEvents.length > 0 ? (liveEvents as EventRow[]) : fallbackEvents
+  const news: NewsRow[] = (liveNews ?? []) as NewsRow[]
+  const gallery: GalleryRow[] = (galleryItems ?? []) as GalleryRow[]
 
   return (
     <>
@@ -237,7 +262,7 @@ export default async function HomePage() {
                     src="/images/Classroom_Learning_Scene_15f24cb5.png"
                     alt="Classroom learning"
                     fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 25vw, 300px"
+                    sizes="(max-width: 768px) 100vw, 25vw"
                     className="object-cover"
                   />
                 </div>
@@ -246,7 +271,7 @@ export default async function HomePage() {
                     src="/images/Science_Lab_Activity_6e9e2453.png"
                     alt="Science laboratory"
                     fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 25vw, 300px"
+                    sizes="(max-width: 768px) 100vw, 25vw"
                     className="object-cover"
                   />
                 </div>
@@ -257,120 +282,12 @@ export default async function HomePage() {
                     src="/images/Library_Study_Area_96a8f944.png"
                     alt="Library study area"
                     fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 25vw, 300px"
+                    sizes="(max-width: 768px) 100vw, 25vw"
                     className="object-cover"
                   />
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Latest News
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Stay informed with the latest updates and stories from Elyon Schools.
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            {news.map((post: any) => (
-              <Card key={post.id} className="hover-elevate flex flex-col">
-                <CardContent className="pt-6 flex flex-col flex-1">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Newspaper className="h-4 w-4 text-primary flex-shrink-0" />
-                    <span className="text-xs text-muted-foreground">
-                      {post.published_at
-                        ? new Date(post.published_at).toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' })
-                        : 'School News'}
-                    </span>
-                  </div>
-                  <h3 className="font-semibold text-foreground mb-2 leading-snug">{post.title}</h3>
-                  {post.summary && (
-                    <p className="text-sm text-muted-foreground flex-1 line-clamp-3">{post.summary}</p>
-                  )}
-                  {post.slug && (
-                    <Link href={`/news`} className="mt-4 inline-flex items-center gap-1 text-sm text-primary font-medium hover:underline" data-testid={`link-news-${post.id}`}>
-                      Read More <ArrowRight className="h-3 w-3" />
-                    </Link>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <div className="text-center mt-10">
-            <Link href="/news">
-              <Button variant="outline" className="gap-2" data-testid="button-view-all-news">
-                View All News
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 bg-muted/30">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              School Gallery
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              A glimpse of life at Elyon Schools — our campus, activities, and memorable moments.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {gallery.length > 0 ? (
-              gallery.map((item: any) => (
-                <div key={item.id} className="relative aspect-square rounded-lg overflow-hidden group" data-testid={`gallery-item-${item.id}`}>
-                  <Image
-                    src={item.public_url}
-                    alt={item.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    sizes="(max-width: 640px) 50vw, 33vw"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-end p-3">
-                    <p className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 line-clamp-2">{item.title}</p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              [
-                { src: '/images/Cultural_Day_Celebration_dad79f7b.png', alt: 'Cultural Day Celebration' },
-                { src: '/images/Sports_Day_Event_690fc0d2.png', alt: 'Sports Day Event' },
-                { src: '/images/Graduation_Ceremony_965a6757.png', alt: 'Graduation Ceremony' },
-                { src: '/images/Campus_Aerial_View_5504009d.png', alt: 'Campus Aerial View' },
-                { src: '/images/Science_Lab_Activity_6e9e2453.png', alt: 'Science Lab Activity' },
-                { src: '/images/Library_Study_Area_96a8f944.png', alt: 'Library Study Area' },
-              ].map((img) => (
-                <div key={img.alt} className="relative aspect-square rounded-lg overflow-hidden group">
-                  <Image
-                    src={img.src}
-                    alt={img.alt}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    sizes="(max-width: 640px) 50vw, 33vw"
-                  />
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="text-center mt-10">
-            <Link href="/gallery">
-              <Button variant="outline" className="gap-2" data-testid="button-view-gallery">
-                View Gallery
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
           </div>
         </div>
       </section>
@@ -387,7 +304,7 @@ export default async function HomePage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
-            {events.map((event: any, index: number) => (
+            {events.map((event, index) => (
               <Card key={index} className="hover-elevate">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
@@ -413,9 +330,116 @@ export default async function HomePage() {
           </div>
 
           <div className="text-center mt-10">
-            <Link href="/news">
+            <Link href="/events">
               <Button variant="outline" className="gap-2" data-testid="button-view-all-events">
                 View All Events
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 bg-muted/30">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Latest News
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Stay informed with the latest updates and stories from Elyon Schools.
+            </p>
+          </div>
+
+          {news.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-3">
+              {news.map((post) => (
+                <Card key={post.id} className="hover-elevate flex flex-col">
+                  <CardContent className="pt-6 flex flex-col flex-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Newspaper className="h-4 w-4 text-primary flex-shrink-0" />
+                      <span className="text-xs text-muted-foreground">
+                        {post.published_at
+                          ? new Date(post.published_at).toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' })
+                          : 'School News'}
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-foreground mb-2 leading-snug">{post.title}</h3>
+                    {post.summary && (
+                      <p className="text-sm text-muted-foreground flex-1 line-clamp-3">{post.summary}</p>
+                    )}
+                    <Link href="/news" className="mt-4 inline-flex items-center gap-1 text-sm text-primary font-medium hover:underline" data-testid={`link-news-${post.id}`}>
+                      Read More <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              <Newspaper className="h-12 w-12 mx-auto mb-4 opacity-40" />
+              <p className="text-lg font-medium">No news published yet</p>
+              <p className="text-sm mt-1">Check back soon for updates from Elyon Schools.</p>
+            </div>
+          )}
+
+          <div className="text-center mt-10">
+            <Link href="/news">
+              <Button variant="outline" className="gap-2" data-testid="button-view-all-news">
+                View All News
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              School Gallery
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              A glimpse of life at Elyon Schools — our campus, activities, and memorable moments.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            {gallery.length > 0 ? (
+              gallery.map((item) => (
+                <div key={item.id} className="relative aspect-square rounded-lg overflow-hidden group" data-testid={`gallery-item-${item.id}`}>
+                  <Image
+                    src={item.public_url}
+                    alt={item.title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 640px) 50vw, 33vw"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-end p-3">
+                    <p className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 line-clamp-2">{item.title}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              fallbackGallery.map((img) => (
+                <div key={img.alt} className="relative aspect-square rounded-lg overflow-hidden group">
+                  <Image
+                    src={img.src}
+                    alt={img.alt}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 640px) 50vw, 33vw"
+                  />
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="text-center mt-10">
+            <Link href="/gallery">
+              <Button variant="outline" className="gap-2" data-testid="button-view-gallery">
+                View Gallery
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
