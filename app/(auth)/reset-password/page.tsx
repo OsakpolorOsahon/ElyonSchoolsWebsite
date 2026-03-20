@@ -96,6 +96,7 @@ function ResetPasswordContent() {
         return
       }
       setPageState('done')
+      setTimeout(() => { window.location.href = '/login' }, 3000)
     } catch (err) {
       toast({
         title: 'Error',
@@ -172,7 +173,7 @@ function ResetPasswordContent() {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">All done!</h3>
               <p className="text-sm text-muted-foreground mb-6">
-                Your password has been updated. You can now sign in with your new password.
+                Your password has been updated. You will be taken to the sign-in page in a moment.
               </p>
               <Button
                 onClick={() => { window.location.href = '/login' }}
