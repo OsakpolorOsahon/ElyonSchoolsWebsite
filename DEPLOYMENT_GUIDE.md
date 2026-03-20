@@ -140,8 +140,7 @@ This single step creates ALL your database tables, security rules, and image sto
 2. Find and click the icon called **"SQL Editor"**. It may look like `</>` or just say "SQL Editor".
 3. You will see a large empty white/grey text box. Click inside it.
 4. Now you need to open the file `supabase/setup.sql` from your project:
-   - If you are on **Replit:** Find the file in the file list on the left side, click it to open it, press `Ctrl+A` (or `Cmd+A` on Mac) to select all the text, then press `Ctrl+C` (or `Cmd+C`) to copy it.
-   - If you have the files on **your computer:** Open the `supabase` folder, then open `setup.sql` with any text editor (Notepad on Windows, TextEdit on Mac), press `Ctrl+A` to select all, and press `Ctrl+C` to copy.
+   - Open the `supabase` folder, then open `setup.sql` with any text editor (Notepad on Windows, TextEdit on Mac), press `Ctrl+A` to select all, and press `Ctrl+C` to copy.
 5. Go back to the Supabase SQL Editor. Click inside the empty box and press `Ctrl+V` (or `Cmd+V` on Mac) to paste. The box should now be filled with a lot of text starting with comments like `-- ELYON SCHOOLS MANAGEMENT SYSTEM`.
 6. Click the green **"Run"** button (or press `Ctrl+Enter`).
 7. Wait about 15–30 seconds.
