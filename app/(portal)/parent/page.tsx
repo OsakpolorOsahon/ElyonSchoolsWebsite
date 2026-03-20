@@ -62,7 +62,7 @@ export default async function ParentDashboard() {
     class: string
     profiles: { full_name: string } | null
   }
-  const children = (childrenResult.data || []) as ChildRecord[]
+  const children = (childrenResult.data || []) as unknown as ChildRecord[]
   const upcomingEvents = upcomingEventsResult.data
   const announcements = announcementsResult.data
 

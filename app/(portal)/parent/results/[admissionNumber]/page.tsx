@@ -65,7 +65,7 @@ export default function ChildResultsPage() {
         setLoading(false)
         return
       }
-      setStudent(studentData as Student)
+      setStudent(studentData as unknown as Student)
 
       const { data: resultsData } = await supabase
         .from('student_results')
