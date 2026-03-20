@@ -149,7 +149,7 @@ export default function ClassStudentsPage() {
                       <User className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold">{student.profiles?.[0]?.full_name || 'Unknown'}</p>
+                      <p className="font-semibold">{student.profiles?.full_name || 'Unknown'}</p>
                       <p className="text-sm text-muted-foreground">
                         {student.admission_number}
                         {student.gender && ` · ${student.gender}`}

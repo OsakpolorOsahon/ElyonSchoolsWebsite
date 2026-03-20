@@ -168,7 +168,7 @@ export default function AdminStudentsPage() {
     setFiltered(
       students.filter(s => {
         const matchesSearch =
-          s.profiles?.[0]?.full_name?.toLowerCase().includes(q) ||
+          s.profiles?.full_name?.toLowerCase().includes(q) ||
           s.admission_number.toLowerCase().includes(q) ||
           s.class.toLowerCase().includes(q)
         const matchesStatus = statusFilter === 'all' || s.status === statusFilter
@@ -270,7 +270,7 @@ export default function AdminStudentsPage() {
         title: nextClass ? 'Student promoted' : 'Student graduated',
         description: nextClass
           ? `Moved from ${promoteTarget.class} to ${nextClass}.`
-          : `${promoteTarget.profiles?.[0]?.full_name || 'Student'} has been graduated.`,
+          : `${promoteTarget.profiles?.full_name || 'Student'} has been graduated.`,
       })
       setPromoteTarget(null)
       await fetchStudents()
@@ -321,8 +321,8 @@ export default function AdminStudentsPage() {
       toast({
         title: student.repeating ? 'Repeating cleared' : 'Marked as repeating',
         description: student.repeating
-          ? `${student.profiles?.[0]?.full_name || 'Student'} will be promoted normally.`
-          : `${student.profiles?.[0]?.full_name || 'Student'} will stay in ${student.class} during promotion.`,
+          ? `${student.profiles?.full_name || 'Student'} will be promoted normally.`
+          : `${student.profiles?.full_name || 'Student'} will stay in ${student.class} during promotion.`,
       })
       await fetchStudents()
     } catch (err) {
@@ -352,7 +352,7 @@ export default function AdminStudentsPage() {
   function openPaymentDialog(student: Student) {
     setPaymentForm({
       student_id: student.id,
-      student_name: student.profiles?.[0]?.full_name || student.admission_number,
+      student_name: student.profiles?.full_name || student.admission_number,
       amount: '',
       payment_type: 'school_fee',
       method: 'cash',
@@ -514,7 +514,7 @@ export default function AdminStudentsPage() {
                           <Users className="h-5 w-5 text-primary" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold truncate">{student.profiles?.[0]?.full_name || 'Unknown'}</p>
+                          <p className="font-semibold truncate">{student.profiles?.full_name || 'Unknown'}</p>
                           <p className="text-sm text-muted-foreground">
                             {student.admission_number} · {student.class}
                             {student.gender && ` · ${student.gender}`}
@@ -728,7 +728,7 @@ export default function AdminStudentsPage() {
           <DialogHeader>
             <DialogTitle>Change Student Status</DialogTitle>
             <DialogDescription>
-              {statusTarget?.profiles?.[0]?.full_name} ({statusTarget?.admission_number})
+              {statusTarget?.profiles?.full_name} ({statusTarget?.admission_number})
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -794,7 +794,7 @@ export default function AdminStudentsPage() {
               {promoteTarget && getNextClass(promoteTarget.class) ? 'Promote Student' : 'Graduate Student'}
             </DialogTitle>
             <DialogDescription>
-              {promoteTarget?.profiles?.[0]?.full_name} ({promoteTarget?.admission_number})
+              {promoteTarget?.profiles?.full_name} ({promoteTarget?.admission_number})
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -824,7 +824,7 @@ export default function AdminStudentsPage() {
           <DialogHeader>
             <DialogTitle>Set Department</DialogTitle>
             <DialogDescription>
-              {deptTarget?.profiles?.[0]?.full_name} ({deptTarget?.class})
+              {deptTarget?.profiles?.full_name} ({deptTarget?.class})
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-2">
@@ -947,7 +947,7 @@ export default function AdminStudentsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <History className="h-5 w-5" />
-              Results History — {resultsTarget?.profiles?.[0]?.full_name || 'Student'}
+              Results History — {resultsTarget?.profiles?.full_name || 'Student'}
             </DialogTitle>
             <DialogDescription>
               {resultsTarget?.admission_number} · {resultsTarget?.class}

@@ -255,7 +255,7 @@ export default function BulkPromotionPage() {
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">
-                                      {student.profiles?.[0]?.full_name || 'Unknown'}
+                                      {student.profiles?.full_name || 'Unknown'}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                       {student.admission_number}
