@@ -72,8 +72,8 @@ const requirements = {
 const fees = [
   { level: 'Nursery (Pre-Nursery to Nursery 2)', tuition: '₦150,000', admission: '₦50,000' },
   { level: 'Primary (Primary 1 to Primary 6)', tuition: '₦200,000', admission: '₦75,000' },
-  { level: 'Junior Secondary (JSS 1 to JSS 3)', tuition: '₦250,000', admission: '₦100,000' },
-  { level: 'Senior Secondary (SSS 1 to SSS 3)', tuition: '₦300,000', admission: '₦125,000' },
+  { level: 'Junior High (JSS 1 to JSS 3)', tuition: '₦250,000', admission: '₦100,000' },
+  { level: 'Senior High (SSS 1 to SSS 3)', tuition: '₦300,000', admission: '₦125,000' },
 ]
 
 const faqs = [
@@ -87,7 +87,7 @@ const faqs = [
   },
   {
     question: 'What is the student-to-teacher ratio?',
-    answer: 'We maintain a low student-to-teacher ratio of approximately 20:1 for primary and secondary, and 15:1 for nursery classes to ensure personalized attention.',
+    answer: 'We maintain a low student-to-teacher ratio of approximately 20:1 for primary and high school, and 15:1 for nursery classes to ensure personalized attention.',
   },
   {
     question: 'Are there scholarship opportunities?',
@@ -218,7 +218,7 @@ export default function AdmissionsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-primary">
                   <Users className="h-5 w-5" />
-                  Secondary School
+                  High School
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -339,7 +339,7 @@ export default function AdmissionsPage() {
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Academic Timetable</h3>
                 <p className="text-sm text-muted-foreground mb-6">
-                  Primary and secondary school daily class timetables for the current session.
+                  Primary and high school daily class timetables for the current session.
                 </p>
                 <Link href="/downloads/timetable" target="_blank">
                   <Button variant="outline" className="gap-2 w-full">

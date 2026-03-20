@@ -18,19 +18,19 @@ import {
 
 export const metadata: Metadata = {
   title: 'Nursery School - Elyon Schools',
-  description: 'Elyon Nursery School provides a nurturing environment for children ages 2-5 to explore, learn, and grow through play-based education.',
+  description: 'Elyon Nursery School provides a nurturing environment for children from 18 months to 5 years to explore, learn, and grow through play-based education.',
 }
 
 const ageGroups = [
   {
-    name: 'Creche',
-    ages: '6 months - 2 years',
+    name: 'Toddlers',
+    ages: '18 months – 2 years',
     description: 'Loving care in a safe, stimulating environment',
     color: 'bg-pink-100 dark:bg-pink-900/30',
   },
   {
-    name: 'Toddlers',
-    ages: '2 - 3 years',
+    name: 'Pre-Toddlers',
+    ages: '2 – 3 years',
     description: 'Developing motor skills and social awareness',
     color: 'bg-purple-100 dark:bg-purple-900/30',
   },
@@ -100,7 +100,7 @@ export default function NurseryPage() {
           <div className="text-center">
             <Badge className="mb-4 bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300 hover:bg-pink-100">
               <Baby className="mr-1 h-3 w-3" />
-              Ages 6 months - 5 years
+              18 months – 5 years
             </Badge>
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
               Nursery School

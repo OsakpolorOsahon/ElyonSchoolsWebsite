@@ -22,7 +22,7 @@ const navigation = [
     children: [
       { name: 'Nursery School', href: '/academics/nursery' },
       { name: 'Primary School', href: '/academics/primary' },
-      { name: 'Secondary School', href: '/academics/secondary' },
+      { name: 'High School', href: '/academics/secondary' },
     ]
   },
   { name: 'Admissions', href: '/admissions' },
@@ -72,9 +72,9 @@ export function Header() {
                 className="h-12 w-auto"
                 priority
               />
-              <div className="hidden sm:block">
-                <p className="text-lg font-bold text-primary leading-tight">Elyon Schools</p>
-                <p className="text-xs text-muted-foreground">Excellence in Education</p>
+              <div>
+                <p className="text-base font-bold text-primary leading-tight">Elyon Schools</p>
+                <p className="text-xs text-muted-foreground hidden sm:block">Excellence in Education</p>
               </div>
             </Link>
           </div>

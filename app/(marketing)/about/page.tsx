@@ -46,7 +46,7 @@ const values = [
 const milestones = [
   { year: '1994', title: 'School Founded', description: 'Elyon Schools was established with just 50 students and a vision for excellence.' },
   { year: '2000', title: 'Primary Section Added', description: 'Expanded to include primary education, growing our student body significantly.' },
-  { year: '2005', title: 'Secondary School Launched', description: 'Opened our secondary school section to provide complete education journey.' },
+  { year: '2005', title: 'High School Launched', description: 'Opened our high school section to provide a complete education journey.' },
   { year: '2010', title: 'New Campus Completed', description: 'Moved to our current modern campus with state-of-the-art facilities.' },
   { year: '2018', title: 'STEM Lab Inaugurated', description: 'Opened our advanced science and technology laboratory.' },
   { year: '2024', title: '30th Anniversary', description: 'Celebrating three decades of educational excellence and thousands of successful alumni.' },
@@ -105,7 +105,7 @@ export default function AboutPage() {
                 </p>
                 <p>
                   Today, Elyon Schools serves over 1,500 students from nursery through 
-                  secondary levels. Our modern campus features well-equipped classrooms, 
+                  high school. Our modern campus features well-equipped classrooms, 
                   science laboratories, a library, computer labs, sports facilities, and 
                   recreational areas that support holistic development.
                 </p>

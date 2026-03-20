@@ -8,11 +8,11 @@ import {
   GraduationCap, 
   Users, 
   Trophy, 
-  BookOpen,
   Calendar,
   ArrowRight,
   CheckCircle,
-  Star
+  Star,
+  Newspaper
 } from 'lucide-react'
 
 export const revalidate = 60
@@ -27,7 +27,7 @@ const stats = [
 const schoolLevels = [
   {
     name: 'Nursery School',
-    ages: 'Ages 2-5',
+    ages: '18 months – 5 years',
     description: 'A nurturing environment where young minds begin their educational journey through play-based learning and early childhood development.',
     features: ['Play-based learning', 'Early literacy & numeracy', 'Creative arts', 'Social skills development'],
     href: '/academics/nursery',
@@ -42,10 +42,10 @@ const schoolLevels = [
     color: 'bg-secondary',
   },
   {
-    name: 'Secondary School',
-    ages: 'Ages 12-17',
+    name: 'High School',
+    ages: 'Ages 10-17',
     description: 'Preparing students for higher education and future careers with comprehensive academic programs and life skills.',
-    features: ['WAEC & NECO preparation', 'Career guidance', 'Leadership programs', 'University prep'],
+    features: ['WAEC & NECO preparation', 'Secondary exams CBT', 'French natural value education', 'University prep'],
     href: '/academics/secondary',
     color: 'bg-primary',
   },
@@ -66,16 +66,38 @@ const fallbackEvents = [
   { title: 'Cultural Day Celebration', start_ts: '2025-08-01T10:00:00', category: 'Cultural', location: 'School Grounds' },
 ]
 
+const fallbackNews = [
+  { id: '1', title: 'New Academic Session Begins', summary: 'We welcome all students and parents to the new academic session with renewed commitment to excellence.', published_at: '2025-09-01' },
+  { id: '2', title: 'Outstanding WAEC Results', summary: 'Elyon High School records a 98% pass rate in this year\'s WAEC examinations, with many students earning distinctions.', published_at: '2025-08-15' },
+  { id: '3', title: 'Inter-School Science Competition', summary: 'Our students clinched first place at the state-wide inter-school science and technology competition.', published_at: '2025-07-20' },
+]
+
 export default async function HomePage() {
   const supabase = await createClient()
-  const { data: liveEvents } = await supabase
-    .from('events')
-    .select('title, start_ts, category, location')
-    .gte('start_ts', new Date().toISOString())
-    .order('start_ts', { ascending: true })
-    .limit(3)
+
+  const [{ data: liveEvents }, { data: liveNews }, { data: galleryItems }] = await Promise.all([
+    supabase
+      .from('events')
+      .select('title, start_ts, category, location')
+      .gte('start_ts', new Date().toISOString())
+      .order('start_ts', { ascending: true })
+      .limit(3),
+    supabase
+      .from('news_posts')
+      .select('id, title, slug, summary, published_at')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(3),
+    supabase
+      .from('gallery_items')
+      .select('id, title, public_url, category')
+      .order('created_at', { ascending: false })
+      .limit(6),
+  ])
 
   const events = liveEvents && liveEvents.length > 0 ? liveEvents : fallbackEvents
+  const news = liveNews && liveNews.length > 0 ? liveNews : fallbackNews
+  const gallery = galleryItems ?? []
 
   return (
     <>
@@ -96,7 +118,7 @@ export default async function HomePage() {
             </div>
             <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
               Nurturing Excellence from{' '}
-              <span className="text-accent">Nursery to Secondary</span>
+              <span className="text-accent">Nursery to High School</span>
             </h1>
             <p className="mt-6 text-lg leading-8 text-gray-200">
               At Elyon Schools, we provide quality education that develops the whole child 
@@ -145,7 +167,7 @@ export default async function HomePage() {
               Education for Every Stage
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              From early childhood through secondary education, we provide age-appropriate 
+              From early childhood through high school, we provide age-appropriate 
               learning experiences that prepare students for success.
             </p>
           </div>
@@ -249,6 +271,114 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Latest News
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Stay informed with the latest updates and stories from Elyon Schools.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {news.map((post: any) => (
+              <Card key={post.id} className="hover-elevate flex flex-col">
+                <CardContent className="pt-6 flex flex-col flex-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Newspaper className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-xs text-muted-foreground">
+                      {post.published_at
+                        ? new Date(post.published_at).toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' })
+                        : 'School News'}
+                    </span>
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-2 leading-snug">{post.title}</h3>
+                  {post.summary && (
+                    <p className="text-sm text-muted-foreground flex-1 line-clamp-3">{post.summary}</p>
+                  )}
+                  {post.slug && (
+                    <Link href={`/news`} className="mt-4 inline-flex items-center gap-1 text-sm text-primary font-medium hover:underline" data-testid={`link-news-${post.id}`}>
+                      Read More <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <Link href="/news">
+              <Button variant="outline" className="gap-2" data-testid="button-view-all-news">
+                View All News
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 bg-muted/30">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              School Gallery
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              A glimpse of life at Elyon Schools — our campus, activities, and memorable moments.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            {gallery.length > 0 ? (
+              gallery.map((item: any) => (
+                <div key={item.id} className="relative aspect-square rounded-lg overflow-hidden group" data-testid={`gallery-item-${item.id}`}>
+                  <Image
+                    src={item.public_url}
+                    alt={item.title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 640px) 50vw, 33vw"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-end p-3">
+                    <p className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 line-clamp-2">{item.title}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              [
+                { src: '/images/Cultural_Day_Celebration_dad79f7b.png', alt: 'Cultural Day Celebration' },
+                { src: '/images/Sports_Day_Event_690fc0d2.png', alt: 'Sports Day Event' },
+                { src: '/images/Graduation_Ceremony_965a6757.png', alt: 'Graduation Ceremony' },
+                { src: '/images/Campus_Aerial_View_5504009d.png', alt: 'Campus Aerial View' },
+                { src: '/images/Science_Lab_Activity_6e9e2453.png', alt: 'Science Lab Activity' },
+                { src: '/images/Library_Study_Area_96a8f944.png', alt: 'Library Study Area' },
+              ].map((img) => (
+                <div key={img.alt} className="relative aspect-square rounded-lg overflow-hidden group">
+                  <Image
+                    src={img.src}
+                    alt={img.alt}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 640px) 50vw, 33vw"
+                  />
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="text-center mt-10">
+            <Link href="/gallery">
+              <Button variant="outline" className="gap-2" data-testid="button-view-gallery">
+                View Gallery
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               Upcoming Events
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -305,7 +435,7 @@ export default async function HomePage() {
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <Link href="/admissions/apply">
               <Button size="lg" variant="secondary" className="gap-2" data-testid="button-cta-apply">
-                Start Application
+                Apply Now
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>

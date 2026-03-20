@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useToast } from '@/hooks/use-toast'
+
 import { 
   Phone, 
   Mail, 
@@ -22,7 +22,8 @@ import {
   Send,
   MessageSquare,
   CheckCircle,
-  Building2
+  Building2,
+  MessageCircle
 } from 'lucide-react'
 
 const contactInfo = [
@@ -58,7 +59,7 @@ const subjects = [
 ]
 
 export default function ContactPage() {
-  const { toast } = useToast()
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [formData, setFormData] = useState({
@@ -73,29 +74,13 @@ export default function ContactPage() {
     e.preventDefault()
     setIsSubmitting(true)
 
-    try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
+    const message = `*New Message from Elyon Schools Website*\n\n*Name:* ${formData.name}\n*Email:* ${formData.email}\n*Phone:* ${formData.phone || 'Not provided'}\n*Subject:* ${formData.subject}\n\n*Message:*\n${formData.message}`
 
-      if (!response.ok) throw new Error('Failed to submit')
+    const whatsappUrl = `https://wa.me/2347035175566?text=${encodeURIComponent(message)}`
+    window.open(whatsappUrl, '_blank')
 
-      setIsSubmitted(true)
-      toast({
-        title: 'Message Sent!',
-        description: 'Thank you for contacting us. We will get back to you soon.',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to send message. Please try again.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
+    setIsSubmitted(true)
+    setIsSubmitting(false)
   }
 
   return (
@@ -128,12 +113,12 @@ export default function ContactPage() {
                 <CardContent>
                   {isSubmitted ? (
                     <div className="text-center py-12">
-                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                        <CheckCircle className="h-8 w-8 text-primary" />
+                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                        <MessageCircle className="h-8 w-8 text-green-600" />
                       </div>
-                      <h3 className="text-xl font-semibold text-foreground mb-2">Thank You!</h3>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">WhatsApp Opened!</h3>
                       <p className="text-muted-foreground mb-6">
-                        Your message has been received. We will respond within 24-48 hours.
+                        Your message has been prepared and WhatsApp has been opened. Please send it to complete your enquiry.
                       </p>
                       <Button onClick={() => {
                         setIsSubmitted(false)
@@ -216,13 +201,13 @@ export default function ContactPage() {
                         />
                       </div>
 
-                      <Button type="submit" className="w-full gap-2" disabled={isSubmitting} data-testid="button-submit-contact">
+                      <Button type="submit" className="w-full gap-2 bg-green-600 hover:bg-green-700" disabled={isSubmitting} data-testid="button-submit-contact">
                         {isSubmitting ? (
-                          <>Sending...</>
+                          <>Opening WhatsApp...</>
                         ) : (
                           <>
-                            <Send className="h-4 w-4" />
-                            Send Message
+                            <MessageCircle className="h-4 w-4" />
+                            Send via WhatsApp
                           </>
                         )}
                       </Button>

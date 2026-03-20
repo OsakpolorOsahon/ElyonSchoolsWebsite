@@ -22,8 +22,8 @@ import {
 } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Secondary School - Elyon Schools',
-  description: 'Elyon Secondary School offers quality education from JSS 1 to SSS 3, preparing students for WAEC, NECO, and university admission.',
+  title: 'High School - Elyon Schools',
+  description: 'Elyon High School offers quality education from JSS 1 to SSS 3, preparing students for WAEC, NECO, CBT exams, and university admission.',
 }
 
 const jssSubjects = [
@@ -101,6 +101,8 @@ const features = [
   'Career counseling',
   'JAMB preparation classes',
   'Extracurricular activities',
+  'French natural value education',
+  'Secondary exams CBT preparation',
 ]
 
 export default function SecondaryPage() {
@@ -114,11 +116,11 @@ export default function SecondaryPage() {
               JSS 1 - SSS 3
             </Badge>
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
-              Secondary School
+              High School
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
               Shaping future leaders through academic excellence and character development. 
-              Our secondary program prepares students for success in national examinations 
+              Our high school program prepares students for success in national examinations 
               and higher education.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
@@ -201,7 +203,7 @@ export default function SecondaryPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BookOpen className="h-5 w-5 text-primary" />
-                    Junior Secondary School (JSS 1-3)
+                    Junior High School (JSS 1-3)
                   </CardTitle>
                   <CardDescription>
                     A broad curriculum covering all foundational subjects
@@ -299,9 +301,9 @@ export default function SecondaryPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-2 items-center">
             <div>
-              <h2 className="text-3xl font-bold text-foreground">Why Choose Elyon Secondary?</h2>
+              <h2 className="text-3xl font-bold text-foreground">Why Choose Elyon High School?</h2>
               <p className="mt-4 text-muted-foreground">
-                At Elyon Secondary School, we combine rigorous academics with character 
+                At Elyon High School, we combine rigorous academics with character 
                 formation to produce graduates who excel in national examinations and 
                 are prepared for university education.
               </p>
@@ -360,7 +362,7 @@ export default function SecondaryPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold">Begin Your Journey to Success</h2>
           <p className="mt-4 text-primary-foreground/80 max-w-2xl mx-auto">
-            Join Elyon Secondary School and get the quality education you need 
+            Join Elyon High School and get the quality education you need 
             to achieve your academic and career goals.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">

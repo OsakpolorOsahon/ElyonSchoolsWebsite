@@ -17,13 +17,13 @@ import {
 
 export const metadata = {
   title: 'Academics - Elyon Schools',
-  description: 'Explore our comprehensive academic programs from Nursery through Secondary education at Elyon Schools.',
+  description: 'Explore our comprehensive academic programs from Nursery through High School education at Elyon Schools.',
 }
 
 const programs = [
   {
     name: 'Nursery School',
-    ages: 'Ages 2-5 years',
+    ages: '18 months – 5 years',
     description: 'Our nursery program provides a safe, nurturing environment where young children develop foundational skills through play-based learning.',
     href: '/academics/nursery',
     color: 'bg-yellow-500',
@@ -35,7 +35,7 @@ const programs = [
       'Physical development activities',
       'Language development',
     ],
-    classes: ['Pre-Nursery (2-3 years)', 'Nursery 1 (3-4 years)', 'Nursery 2 (4-5 years)'],
+    classes: ['Toddlers (18 months – 2 years)', 'Nursery 1 (2-4 years)', 'Nursery 2 (4-5 years)'],
   },
   {
     name: 'Primary School',
@@ -54,17 +54,17 @@ const programs = [
     classes: ['Primary 1', 'Primary 2', 'Primary 3', 'Primary 4', 'Primary 5', 'Primary 6'],
   },
   {
-    name: 'Secondary School',
-    ages: 'Ages 12-17 years',
-    description: 'Our secondary program prepares students for national examinations and future academic pursuits with comprehensive subject offerings.',
+    name: 'High School',
+    ages: 'Ages 10-17 years',
+    description: 'Our high school program prepares students for national examinations and future academic pursuits with comprehensive subject offerings.',
     href: '/academics/secondary',
     color: 'bg-primary',
     features: [
       'WAEC and NECO examination preparation',
+      'Secondary exams CBT preparation',
+      'French natural value education',
       'Science: Physics, Chemistry, Biology',
       'Commercial: Economics, Commerce, Accounting',
-      'Arts: Literature, Government, History',
-      'Technical and Vocational subjects',
       'Career guidance and counseling',
     ],
     classes: ['JSS 1', 'JSS 2', 'JSS 3', 'SSS 1', 'SSS 2', 'SSS 3'],
@@ -90,7 +90,7 @@ export default function AcademicsPage() {
               Academic Programs
             </h1>
             <p className="text-xl text-primary-foreground/90 leading-relaxed">
-              From nursery through secondary education, Elyon Schools offers comprehensive 
+              From nursery through high school, Elyon Schools offers comprehensive 
               academic programs designed to develop well-rounded individuals prepared for 
               success in higher education and life.
             </p>

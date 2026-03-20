@@ -30,7 +30,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold mb-3">2. About Elyon Schools</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Elyon Schools is a Nigerian educational institution established in 1994, providing nursery, primary, and secondary education. Our services include academic instruction, extracurricular activities, and related educational support services.
+              Elyon Schools is a Nigerian educational institution established in 1994, providing nursery, primary, and high school education. Our services include academic instruction, extracurricular activities, and related educational support services.
             </p>
           </section>
 

@@ -53,9 +53,9 @@ export default function ProspectusPage() {
           <h3 className="text-xl font-bold border-l-4 border-primary pl-3 mb-3">Academic Programmes</h3>
           <div className="grid grid-cols-3 gap-4">
             {[
-              { level: 'Nursery School', ages: 'Ages 2–5', classes: 'Creche, Nursery 1, Nursery 2' },
+              { level: 'Nursery School', ages: '18 months – 5 years', classes: 'Toddlers, Nursery 1, Nursery 2' },
               { level: 'Primary School', ages: 'Ages 6–11', classes: 'Primary 1 – Primary 6' },
-              { level: 'Secondary School', ages: 'Ages 12–17', classes: 'JSS 1–3 & SSS 1–3' },
+              { level: 'High School', ages: 'Ages 10–17', classes: 'JSS 1–3 & SSS 1–3' },
             ].map(p => (
               <div key={p.level} className="border rounded-lg p-4 text-center">
                 <p className="font-semibold text-primary">{p.level}</p>

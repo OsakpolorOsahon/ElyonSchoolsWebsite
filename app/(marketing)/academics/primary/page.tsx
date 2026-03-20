@@ -94,7 +94,7 @@ export default function PrimaryPage() {
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
               Building strong foundations for lifelong learning. Our primary program 
-              develops well-rounded students prepared for secondary education and beyond.
+              develops well-rounded students prepared for high school and beyond.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/admissions/apply">
