@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Eye, EyeOff, Lock, CheckCircle, Loader2, Clock } from 'lucide-react'
+import { Eye, EyeOff, Lock, CheckCircle, Loader2, Clock, Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -15,6 +16,7 @@ type PageState = 'loading' | 'ready' | 'bad_link' | 'done'
 
 function ResetPasswordContent() {
   const { toast } = useToast()
+  const searchParams = useSearchParams()
   const supabaseRef = useRef<SupabaseClient | null>(null)
   const [pageState, setPageState] = useState<PageState>('loading')
   const [isLoading, setIsLoading] = useState(false)
@@ -28,16 +30,15 @@ function ResetPasswordContent() {
     supabaseRef.current = supabase
 
     async function establishSession() {
-      // PKCE flow — token arrives as ?code=xxx
-      const code = new URLSearchParams(window.location.search).get('code')
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        window.history.replaceState({}, '', '/reset-password')
-        setPageState(error ? 'bad_link' : 'ready')
+      // If the server callback reported an error, show bad_link immediately
+      const urlError = searchParams.get('error')
+      if (urlError === 'invalid_link') {
+        setPageState('bad_link')
         return
       }
 
-      // Implicit flow — token arrives as #access_token=xxx&refresh_token=yyy
+      // Implicit flow fallback — token arrives as #access_token=xxx&refresh_token=yyy
+      // (used when Supabase project is configured for implicit flow)
       const hash = window.location.hash
       if (hash && hash.includes('access_token=')) {
         const params = new URLSearchParams(hash.slice(1))
@@ -51,14 +52,14 @@ function ResetPasswordContent() {
         }
       }
 
-      // No tokens in URL — check for an existing session (e.g. server callback
-      // already set cookies, or user is already logged in)
+      // Primary path — server callback already exchanged the PKCE code and set
+      // session cookies before redirecting here, so just check for an active session.
       const { data: { session } } = await supabase.auth.getSession()
       setPageState(session ? 'ready' : 'bad_link')
     }
 
     establishSession()
-  }, [])
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -88,7 +89,7 @@ function ResetPasswordContent() {
       const { error } = await supabase.auth.updateUser({ password })
       if (error) {
         toast({
-          title: 'Could not set password',
+          title: 'Could not update password',
           description: error.message,
           variant: 'destructive',
         })
@@ -106,6 +107,16 @@ function ResetPasswordContent() {
     }
   }
 
+  const cardTitle = pageState === 'done' ? 'Password Reset!' : 'Reset Your Password'
+  const cardDescription =
+    pageState === 'done'
+      ? 'Your password has been updated successfully'
+      : pageState === 'loading'
+      ? 'Verifying your reset link…'
+      : pageState === 'bad_link'
+      ? 'There was a problem with your reset link'
+      : 'Choose a new strong password for your account'
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 py-12 px-4">
       <Card className="w-full max-w-md">
@@ -115,21 +126,15 @@ function ResetPasswordContent() {
               ES
             </div>
           </div>
-          <CardTitle className="text-2xl">
-            {pageState === 'done' ? 'Password Created' : 'Create Your Password'}
-          </CardTitle>
-          <CardDescription>
-            {pageState === 'done'
-              ? 'You can now sign in to your account'
-              : 'Choose a strong password to secure your account'}
-          </CardDescription>
+          <CardTitle className="text-2xl">{cardTitle}</CardTitle>
+          <CardDescription>{cardDescription}</CardDescription>
         </CardHeader>
 
         <CardContent>
           {pageState === 'loading' && (
             <div className="flex flex-col items-center justify-center py-10 gap-3 text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm">Setting up your account&hellip;</p>
+              <p className="text-sm">Verifying your reset link&hellip;</p>
             </div>
           )}
 
@@ -139,12 +144,18 @@ function ResetPasswordContent() {
                 <Clock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">
-                Invite link expired or already used
+                Reset link expired or already used
               </h3>
               <p className="text-sm text-muted-foreground mb-6">
-                This invite link has already been used or has expired. Ask your
-                administrator to send you a new invitation.
+                This password reset link has expired or has already been used.
+                Please request a new one — reset links are only valid for a short time.
               </p>
+              <Link href="/forgot-password">
+                <Button className="w-full gap-2 mb-3" data-testid="button-request-new-link">
+                  <Mail className="h-4 w-4" />
+                  Request New Reset Link
+                </Button>
+              </Link>
               <Link href="/login">
                 <Button variant="outline" className="w-full gap-2" data-testid="button-bad-link-back">
                   <Lock className="h-4 w-4" />
@@ -161,7 +172,7 @@ function ResetPasswordContent() {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">All done!</h3>
               <p className="text-sm text-muted-foreground mb-6">
-                Your password has been set. Sign in to access your account.
+                Your password has been updated. You can now sign in with your new password.
               </p>
               <Button
                 onClick={() => { window.location.href = '/login' }}
@@ -241,12 +252,12 @@ function ResetPasswordContent() {
                 {isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Setting password&hellip;
+                    Updating password&hellip;
                   </>
                 ) : (
                   <>
                     <Lock className="h-4 w-4" />
-                    Set Password
+                    Update Password
                   </>
                 )}
               </Button>

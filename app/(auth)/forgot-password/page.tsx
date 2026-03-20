@@ -23,9 +23,9 @@ export default function ForgotPasswordPage() {
 
     try {
       const supabase = createClient()
-      
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.origin}/api/auth/callback?next=/reset-password`,
       })
 
       if (error) {
@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
         title: 'Email Sent',
         description: 'Check your inbox for password reset instructions.',
       })
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Something went wrong. Please try again.',
@@ -81,13 +81,18 @@ export default function ForgotPasswordPage() {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Email Sent!</h3>
               <p className="text-sm text-muted-foreground mb-6">
-                We&apos;ve sent password reset instructions to <strong>{email}</strong>. 
+                We&apos;ve sent password reset instructions to <strong>{email}</strong>.
                 Please check your inbox and follow the link to reset your password.
               </p>
               <p className="text-xs text-muted-foreground mb-6">
                 Didn&apos;t receive the email? Check your spam folder or try again.
               </p>
-              <Button onClick={() => setIsSubmitted(false)} variant="outline" className="gap-2" data-testid="button-try-again">
+              <Button
+                onClick={() => { setIsSubmitted(false) }}
+                variant="outline"
+                className="gap-2"
+                data-testid="button-try-again"
+              >
                 Try Again
               </Button>
             </div>
@@ -106,7 +111,12 @@ export default function ForgotPasswordPage() {
                 />
               </div>
 
-              <Button type="submit" className="w-full gap-2" disabled={isLoading} data-testid="button-reset-submit">
+              <Button
+                type="submit"
+                className="w-full gap-2"
+                disabled={isLoading}
+                data-testid="button-reset-submit"
+              >
                 {isLoading ? 'Sending...' : (
                   <>
                     <Mail className="h-4 w-4" />

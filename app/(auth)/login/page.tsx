@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -9,19 +9,55 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Eye, EyeOff, LogIn } from 'lucide-react'
+import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+
+const DASHBOARDS: Record<string, string> = {
+  admin: '/admin',
+  teacher: '/teacher',
+  parent: '/parent',
+  student: '/student',
+}
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const [checkingAuth, setCheckingAuth] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  })
+  const [formData, setFormData] = useState({ email: '', password: '' })
+
+  useEffect(() => {
+    const supabase = createClient()
+
+    async function checkExistingSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          setCheckingAuth(false)
+          return
+        }
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+
+        const redirectTo = searchParams.get('redirect')
+        if (redirectTo) {
+          router.replace(redirectTo)
+        } else {
+          router.replace(profile?.role ? DASHBOARDS[profile.role] || '/' : '/')
+        }
+      } catch {
+        setCheckingAuth(false)
+      }
+    }
+
+    checkExistingSession()
+  }, [router, searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,7 +65,7 @@ function LoginForm() {
 
     try {
       const supabase = createClient()
-      
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -50,25 +86,18 @@ function LoginForm() {
         .eq('id', data.user.id)
         .single()
 
-      const redirectTo = searchParams.get('redirect')
-      
-      if (redirectTo) {
-        router.push(redirectTo)
-      } else {
-        const dashboards: Record<string, string> = {
-          admin: '/admin',
-          teacher: '/teacher',
-          parent: '/parent',
-          student: '/student',
-        }
-        router.push(profile?.role ? dashboards[profile.role] || '/' : '/')
-      }
-
       toast({
         title: 'Welcome back!',
         description: 'You have successfully logged in.',
       })
-    } catch (error) {
+
+      const redirectTo = searchParams.get('redirect')
+      if (redirectTo) {
+        router.push(redirectTo)
+      } else {
+        router.push(profile?.role ? DASHBOARDS[profile.role] || '/' : '/')
+      }
+    } catch {
       toast({
         title: 'Error',
         description: 'Something went wrong. Please try again.',
@@ -77,6 +106,14 @@ function LoginForm() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
@@ -146,7 +183,12 @@ function LoginForm() {
             </div>
 
             <Button type="submit" className="w-full gap-2" disabled={isLoading} data-testid="button-login-submit">
-              {isLoading ? 'Signing in...' : (
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
                 <>
                   <LogIn className="h-4 w-4" />
                   Sign In
@@ -176,8 +218,8 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     }>
       <LoginForm />
