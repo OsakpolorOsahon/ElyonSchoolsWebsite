@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     const guardianData = admission.guardian_data as Record<string, string> | null
-    const email = clientEmail || guardianData?.email || 'applicant@elyonschools.edu.ng'
+    const email = guardianData?.email || clientEmail || 'applicant@elyonschools.edu.ng'
     const amountNaira = admission.amount as number
 
     const origin = request.nextUrl.origin

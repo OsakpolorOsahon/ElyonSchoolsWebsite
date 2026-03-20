@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (admission.status === 'processing' && admission.paystack_reference === reference) {
-      return NextResponse.json({ success: true, admissionId })
+      return NextResponse.json({ success: true, admissionId, amount: admission.amount })
     }
 
     const expectedAmountKobo = admission.amount * 100
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
       paystack_response: verifyData.data,
     })
 
-    return NextResponse.json({ success: true, admissionId })
+    return NextResponse.json({ success: true, admissionId, amount: admission.amount })
   } catch (error) {
     console.error('Paystack verify error:', error)
     return NextResponse.json({ error: 'Verification failed' }, { status: 500 })

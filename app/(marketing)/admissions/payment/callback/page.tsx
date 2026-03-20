@@ -14,6 +14,7 @@ function CallbackContent() {
   const [status, setStatus] = useState<VerifyStatus>('verifying')
   const [reference, setReference] = useState('')
   const [admissionId, setAdmissionId] = useState('')
+  const [verifiedAmount, setVerifiedAmount] = useState<number | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
@@ -41,6 +42,7 @@ function CallbackContent() {
         const data = await res.json()
         if (res.ok && data.success) {
           if (data.admissionId) setAdmissionId(data.admissionId)
+          if (typeof data.amount === 'number') setVerifiedAmount(data.amount)
           setStatus('success')
         } else {
           setErrorMessage(data.error || 'Payment verification failed.')
@@ -87,7 +89,7 @@ function CallbackContent() {
               We will review your application and contact you via email with the outcome. This typically takes 3–5 business days.
             </p>
             <div className="flex flex-col gap-2">
-              <Link href={`/payments/receipt?ref=${reference}&amount=50000&type=admission_fee`}>
+              <Link href={`/payments/receipt?ref=${reference}&amount=${verifiedAmount ?? 50000}&type=admission_fee`}>
                 <Button className="w-full" data-testid="button-view-receipt">
                   View Receipt
                 </Button>
