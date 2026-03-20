@@ -48,10 +48,11 @@ function PaymentContent() {
       }
 
       window.location.href = data.authorization_url
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Please try again or contact the school.'
       toast({
         title: 'Could not start payment',
-        description: err.message || 'Please try again or contact the school.',
+        description: message,
         variant: 'destructive',
       })
       setIsRedirecting(false)

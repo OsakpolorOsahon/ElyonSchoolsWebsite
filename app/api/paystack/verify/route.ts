@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const verifyResponse = await fetch(
-      `https://api.paystack.co/transaction/verify/${reference}`,
+      `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
       {
         headers: {
           Authorization: `Bearer ${paystackSecretKey}`,
@@ -30,7 +30,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Payment verification failed' }, { status: 400 })
     }
 
+    const metadataAdmissionId = verifyData.data.metadata?.admission_id as string | undefined
+    if (metadataAdmissionId && metadataAdmissionId !== admissionId) {
+      console.error('Admission ID mismatch in Paystack metadata', {
+        provided: admissionId,
+        inMetadata: metadataAdmissionId,
+        reference,
+      })
+      return NextResponse.json(
+        { error: 'Payment reference does not match admission' },
+        { status: 400 }
+      )
+    }
+
     const supabase = createAdminClient()
+
+    const { data: admission, error: admissionLookupError } = await supabase
+      .from('admissions')
+      .select('id, amount, status')
+      .eq('id', admissionId)
+      .single()
+
+    if (admissionLookupError || !admission) {
+      return NextResponse.json({ error: 'Admission not found' }, { status: 404 })
+    }
+
+    const expectedAmountKobo = (admission.amount as number) * 100
+    const paidAmountKobo = verifyData.data.amount as number
+    if (paidAmountKobo < expectedAmountKobo) {
+      console.error('Insufficient payment amount', {
+        expected: expectedAmountKobo,
+        paid: paidAmountKobo,
+        reference,
+        admissionId,
+      })
+      return NextResponse.json({ error: 'Insufficient payment amount' }, { status: 400 })
+    }
 
     const { error: admissionError } = await supabase
       .from('admissions')

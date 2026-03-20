@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { admissionId, email, amount } = body
+    const { admissionId, email } = body
 
-    if (!admissionId || !email || !amount) {
+    if (!admissionId || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -14,6 +15,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Payment not configured' }, { status: 500 })
     }
 
+    const supabase = createAdminClient()
+    const { data: admission, error: admissionError } = await supabase
+      .from('admissions')
+      .select('id, amount, status')
+      .eq('id', admissionId)
+      .single()
+
+    if (admissionError || !admission) {
+      return NextResponse.json({ error: 'Admission not found' }, { status: 404 })
+    }
+
+    if (admission.status !== 'pending_payment') {
+      return NextResponse.json(
+        { error: 'This application is not awaiting payment' },
+        { status: 400 }
+      )
+    }
+
+    const amountNaira = admission.amount as number
     const origin = request.nextUrl.origin
     const callbackUrl = `${origin}/admissions/payment/callback?id=${admissionId}`
     const reference = `ELYON-ADM-${admissionId.slice(0, 8)}-${Date.now()}`
@@ -26,7 +46,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         email,
-        amount: amount * 100,
+        amount: amountNaira * 100,
         currency: 'NGN',
         reference,
         callback_url: callbackUrl,
