@@ -104,11 +104,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const customer = verifyData.data.customer as { email?: string; first_name?: string; last_name?: string } | null
+    const payerName = [customer?.first_name, customer?.last_name].filter(Boolean).join(' ') || null
+
     await supabase.from('payments').insert({
       admission_id: admissionId,
       amount: verifyData.data.amount / 100,
       status: 'success',
       method: 'paystack',
+      payment_type: 'admission_fee',
+      payer_email: customer?.email || null,
+      payer_name: payerName,
       reference,
       paystack_response: verifyData.data,
     })
