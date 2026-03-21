@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Download, Home, Loader2, AlertCircle } from 'lucide-react'
+import { Download, ArrowLeft, Home, Loader2, AlertCircle } from 'lucide-react'
 import { downloadAsPdf } from '@/lib/download-pdf'
 
 const paymentTypeLabels: Record<string, string> = {
@@ -106,9 +106,9 @@ function ReceiptContent() {
   return (
     <div className="min-h-screen bg-muted/30">
       <div className="bg-muted/30 border-b px-6 py-3 flex items-center justify-between">
-        <Link href="/">
+        <Link href="/payments">
           <Button variant="ghost" size="sm" className="gap-2">
-            <Home className="h-4 w-4" /> Home
+            <ArrowLeft className="h-4 w-4" /> Back to Payments
           </Button>
         </Link>
         <Button size="sm" className="gap-2" onClick={handleDownload} disabled={generatingPdf} data-testid="button-download-receipt">
