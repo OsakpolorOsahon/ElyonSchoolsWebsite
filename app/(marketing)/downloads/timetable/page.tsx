@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Printer, ArrowLeft } from 'lucide-react'
+import { Download, ArrowLeft, Loader2 } from 'lucide-react'
+import { downloadAsPdf } from '@/lib/download-pdf'
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
@@ -31,80 +33,91 @@ const secondaryTimetable = [
 ]
 
 export default function TimetablePage() {
+  const [generatingPdf, setGeneratingPdf] = useState(false)
+
+  const handleDownload = async () => {
+    setGeneratingPdf(true)
+    try {
+      await downloadAsPdf('timetable-doc', 'elyon-schools-timetable.pdf', { landscape: true })
+    } finally {
+      setGeneratingPdf(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white">
-      <div className="print:hidden bg-muted/30 border-b px-6 py-3 flex items-center justify-between">
+      <div className="bg-muted/30 border-b px-6 py-3 flex items-center justify-between">
         <Link href="/admissions">
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
         </Link>
-        <Button
-          size="sm"
-          className="gap-2"
-          onClick={() => typeof window !== 'undefined' && window.print()}
-        >
-          <Printer className="h-4 w-4" /> Print / Save as PDF
+        <Button size="sm" className="gap-2" onClick={handleDownload} disabled={generatingPdf}>
+          {generatingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {generatingPdf ? 'Generating…' : 'Download as PDF'}
         </Button>
       </div>
 
-      <div className="mx-auto max-w-6xl px-6 py-10 print:py-2">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary">ELYON SCHOOLS</h1>
-          <p className="text-muted-foreground">Academic Timetable — 2024/2025 Session</p>
-        </div>
-
-        <section className="mb-10">
-          <h2 className="text-xl font-bold text-primary mb-4 text-center">PRIMARY SCHOOL TIMETABLE</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-primary text-primary-foreground">
-                  <th className="p-2 border text-left w-28">Time</th>
-                  {days.map(d => <th key={d} className="p-2 border text-center">{d}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {primaryTimetable.map((row, i) => (
-                  <tr key={i} className={row.subjects[0] === 'BREAK' || row.subjects[0] === 'LUNCH' ? 'bg-amber-50' : i % 2 === 0 ? 'bg-muted/20' : ''}>
-                    <td className="p-2 border font-medium text-xs">{row.time}</td>
-                    {row.subjects.map((s, j) => (
-                      <td key={j} className={`p-2 border text-center text-xs ${s === 'BREAK' || s === 'LUNCH' ? 'font-bold text-amber-700' : ''}`}>{s}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="mx-auto max-w-6xl px-6 py-10">
+        <div id="timetable-doc">
+          <div className="text-center mb-8">
+            <img src="/logo.png" alt="Elyon Schools" className="h-16 w-16 object-contain mx-auto mb-2" />
+            <h1 className="text-3xl font-bold text-primary">ELYON SCHOOLS</h1>
+            <p className="text-muted-foreground">Academic Timetable — 2024/2025 Session</p>
           </div>
-        </section>
 
-        <section className="mb-10">
-          <h2 className="text-xl font-bold text-primary mb-4 text-center">SECONDARY SCHOOL TIMETABLE (JSS/SSS)</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-primary text-primary-foreground">
-                  <th className="p-2 border text-left w-28">Time</th>
-                  {days.map(d => <th key={d} className="p-2 border text-center">{d}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {secondaryTimetable.map((row, i) => (
-                  <tr key={i} className={row.subjects[0] === 'BREAK' || row.subjects[0] === 'LUNCH' ? 'bg-amber-50' : i % 2 === 0 ? 'bg-muted/20' : ''}>
-                    <td className="p-2 border font-medium text-xs">{row.time}</td>
-                    {row.subjects.map((s, j) => (
-                      <td key={j} className={`p-2 border text-center text-xs ${s === 'BREAK' || s === 'LUNCH' ? 'font-bold text-amber-700' : ''}`}>{s}</td>
-                    ))}
+          <section className="mb-10">
+            <h2 className="text-xl font-bold text-primary mb-4 text-center">PRIMARY SCHOOL TIMETABLE</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-primary text-primary-foreground">
+                    <th className="p-2 border text-left w-28">Time</th>
+                    {days.map(d => <th key={d} className="p-2 border text-center">{d}</th>)}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+                </thead>
+                <tbody>
+                  {primaryTimetable.map((row, i) => (
+                    <tr key={i} className={row.subjects[0] === 'BREAK' || row.subjects[0] === 'LUNCH' ? 'bg-amber-50' : i % 2 === 0 ? 'bg-muted/20' : ''}>
+                      <td className="p-2 border font-medium text-xs">{row.time}</td>
+                      {row.subjects.map((s, j) => (
+                        <td key={j} className={`p-2 border text-center text-xs ${s === 'BREAK' || s === 'LUNCH' ? 'font-bold text-amber-700' : ''}`}>{s}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
 
-        <div className="text-center text-xs text-muted-foreground border-t pt-4">
-          Note: This timetable is subject to change. Subject teachers will notify students of any adjustments.<br />
-          Elyon Schools | 123 Education Avenue, Ikeja, Lagos | +234 803 123 4567
+          <section className="mb-10">
+            <h2 className="text-xl font-bold text-primary mb-4 text-center">SECONDARY SCHOOL TIMETABLE (JSS/SSS)</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-primary text-primary-foreground">
+                    <th className="p-2 border text-left w-28">Time</th>
+                    {days.map(d => <th key={d} className="p-2 border text-center">{d}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {secondaryTimetable.map((row, i) => (
+                    <tr key={i} className={row.subjects[0] === 'BREAK' || row.subjects[0] === 'LUNCH' ? 'bg-amber-50' : i % 2 === 0 ? 'bg-muted/20' : ''}>
+                      <td className="p-2 border font-medium text-xs">{row.time}</td>
+                      {row.subjects.map((s, j) => (
+                        <td key={j} className={`p-2 border text-center text-xs ${s === 'BREAK' || s === 'LUNCH' ? 'font-bold text-amber-700' : ''}`}>{s}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <div className="text-center text-xs text-muted-foreground border-t pt-4">
+            Note: This timetable is subject to change. Subject teachers will notify students of any adjustments.<br />
+            Elyon Schools | 123 Education Avenue, Ikeja, Lagos | +234 803 123 4567
+          </div>
         </div>
       </div>
     </div>

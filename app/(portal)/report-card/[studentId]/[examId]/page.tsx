@@ -6,7 +6,8 @@ import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, ArrowLeft, Printer, Save } from 'lucide-react'
+import { Loader2, ArrowLeft, Download, Save } from 'lucide-react'
+import { downloadAsPdf } from '@/lib/download-pdf'
 
 interface ResultRow {
   id: string | null
@@ -57,6 +58,7 @@ export default function ReportCardPage() {
   const [error, setError] = useState<string | null>(null)
   const [comment, setComment] = useState('')
   const [savingComment, setSavingComment] = useState(false)
+  const [generatingPdf, setGeneratingPdf] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -100,6 +102,17 @@ export default function ReportCardPage() {
     }
   }
 
+  const handleDownload = async () => {
+    if (!data) return
+    setGeneratingPdf(true)
+    try {
+      const filename = `report-card-${data.student.admission_number}-${data.exam.term}-${data.exam.year}.pdf`
+      await downloadAsPdf('report-card', filename)
+    } finally {
+      setGeneratingPdf(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -137,7 +150,7 @@ export default function ReportCardPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="print:hidden bg-background border-b border-border sticky top-0 z-40">
+      <div className="bg-background border-b border-border sticky top-0 z-40">
         <div className="mx-auto max-w-4xl px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href={backUrl}>
@@ -147,31 +160,31 @@ export default function ReportCardPage() {
             </Link>
             <h1 className="text-lg font-semibold">Report Card</h1>
           </div>
-          <Button onClick={() => window.print()} className="gap-2" data-testid="button-print">
-            <Printer className="h-4 w-4" />
-            Print / Save as PDF
+          <Button onClick={handleDownload} disabled={generatingPdf} className="gap-2" data-testid="button-download">
+            {generatingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {generatingPdf ? 'Generating…' : 'Download as PDF'}
           </Button>
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-6 py-8 print:p-0 print:max-w-none">
-        <div className="bg-white rounded-lg shadow-sm print:shadow-none print:rounded-none" id="report-card">
-          <div className="p-8 print:p-6">
+      <div className="mx-auto max-w-4xl px-6 py-8">
+        <div className="bg-white rounded-lg shadow-sm" id="report-card">
+          <div className="p-8">
             <div className="text-center mb-6 border-b-2 border-green-700 pb-6">
               <div className="flex items-center justify-center gap-4 mb-2">
                 <img
                   src="/logo-official.png"
                   alt="School Logo"
-                  className="h-20 w-20 object-contain print:h-16 print:w-16"
+                  className="h-20 w-20 object-contain"
                 />
                 <div>
-                  <h1 className="text-2xl font-bold text-green-800 uppercase tracking-wider print:text-xl">
+                  <h1 className="text-2xl font-bold text-green-800 uppercase tracking-wider">
                     {school_name}
                   </h1>
                   <p className="text-sm text-gray-600 mt-1">Excellence in Education Since 1994</p>
                   <p className="text-xs text-gray-500">Motto: &quot;Training a Child in the Way of the Lord&quot;</p>
                 </div>
-                <div className="h-20 w-20 print:h-16 print:w-16" />
+                <div className="h-20 w-20" />
               </div>
               <div className="mt-3 inline-block bg-green-700 text-white px-6 py-1.5 rounded-sm text-sm font-semibold uppercase tracking-wider">
                 Student Report Card
@@ -307,7 +320,7 @@ export default function ReportCardPage() {
               <div>
                 <p className="text-sm font-semibold text-gray-600 mb-1">Principal&apos;s Comment:</p>
                 {isAdmin ? (
-                  <div className="print:hidden space-y-2">
+                  <div data-pdf-hide className="space-y-2">
                     <Textarea
                       value={comment}
                       onChange={e => setComment(e.target.value)}
@@ -327,7 +340,11 @@ export default function ReportCardPage() {
                     </Button>
                   </div>
                 ) : null}
-                <p className={`text-sm italic text-gray-700 border-b border-dotted border-gray-400 min-h-[24px] pb-1 ${isAdmin ? 'hidden print:block' : ''}`} data-testid="text-principal-comment">
+                <p
+                  className={`text-sm italic text-gray-700 border-b border-dotted border-gray-400 min-h-[24px] pb-1 ${isAdmin ? 'hidden' : ''}`}
+                  {...(isAdmin ? { 'data-pdf-show': 'true' } : {})}
+                  data-testid="text-principal-comment"
+                >
                   {comment || '—'}
                 </p>
               </div>
@@ -352,50 +369,6 @@ export default function ReportCardPage() {
           </div>
         </div>
       </div>
-
-      <style jsx global>{`
-        @media print {
-          body {
-            background: white !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          .print\\:hidden {
-            display: none !important;
-          }
-          .print\\:block {
-            display: block !important;
-          }
-          .print\\:p-0 {
-            padding: 0 !important;
-          }
-          .print\\:max-w-none {
-            max-width: none !important;
-          }
-          .print\\:shadow-none {
-            box-shadow: none !important;
-          }
-          .print\\:rounded-none {
-            border-radius: 0 !important;
-          }
-          .print\\:p-6 {
-            padding: 1.5rem !important;
-          }
-          .print\\:h-16 {
-            height: 4rem !important;
-          }
-          .print\\:w-16 {
-            width: 4rem !important;
-          }
-          .print\\:text-xl {
-            font-size: 1.25rem !important;
-          }
-          @page {
-            size: A4;
-            margin: 10mm;
-          }
-        }
-      `}</style>
     </div>
   )
 }

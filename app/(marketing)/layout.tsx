@@ -8,11 +8,15 @@ export default function MarketingLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <div className="print:hidden">
+        <Header />
+      </div>
       <main className="flex-1">
         {children}
       </main>
-      <Footer />
+      <div className="print:hidden">
+        <Footer />
+      </div>
     </div>
   )
 }

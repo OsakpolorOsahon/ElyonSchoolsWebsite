@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Loader2, Printer, ArrowLeft, CheckCircle } from 'lucide-react'
+import { Loader2, Download, ArrowLeft, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
+import { downloadAsPdf } from '@/lib/download-pdf'
 
 interface PaymentData {
   id: string
@@ -43,6 +44,7 @@ export default function ReceiptPage() {
   const [payment, setPayment] = useState<PaymentData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [generatingPdf, setGeneratingPdf] = useState(false)
 
   const formatAmount = (n: number) =>
     new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(n)
@@ -62,6 +64,15 @@ export default function ReceiptPage() {
     }
     load()
   }, [reference])
+
+  const handleDownload = async () => {
+    setGeneratingPdf(true)
+    try {
+      await downloadAsPdf('receipt-doc', `elyon-receipt-${reference.slice(0, 16)}.pdf`)
+    } finally {
+      setGeneratingPdf(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -99,64 +110,57 @@ export default function ReceiptPage() {
   ]
 
   return (
-    <>
-      <style jsx global>{`
-        @media print {
-          .no-print { display: none !important; }
-          body { background: white !important; }
-        }
-      `}</style>
+    <div className="min-h-screen bg-muted/30 py-8 px-4">
+      <div className="flex justify-center gap-3 mb-6">
+        <Button variant="outline" className="gap-2" onClick={() => window.history.back()}>
+          <ArrowLeft className="h-4 w-4" /> Back
+        </Button>
+        <Button className="gap-2" onClick={handleDownload} disabled={generatingPdf} data-testid="button-download-receipt">
+          {generatingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {generatingPdf ? 'Generating…' : 'Download Receipt'}
+        </Button>
+      </div>
 
-      <div className="min-h-screen bg-muted/30 py-8 px-4">
-        <div className="no-print flex justify-center gap-3 mb-6">
-          <Button variant="outline" className="gap-2" onClick={() => window.history.back()}>
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Button>
-          <Button className="gap-2" onClick={() => window.print()} data-testid="button-print-receipt">
-            <Printer className="h-4 w-4" /> Print / Save as PDF
-          </Button>
+      <div id="receipt-doc" className="max-w-lg mx-auto bg-white border rounded-xl p-8 shadow-sm relative overflow-hidden" data-testid="receipt-content">
+        {isPaid && (
+          <div className="absolute top-1/2 right-8 -translate-y-1/2 -rotate-[15deg] border-[5px] border-green-500 text-green-500 text-4xl font-extrabold px-8 py-3 rounded-xl opacity-15 pointer-events-none select-none">
+            PAID
+          </div>
+        )}
+
+        <div className="text-center mb-6 pb-6 border-b-2 border-primary">
+          <img src="/logo.png" alt="Elyon Schools" className="h-16 w-16 object-contain mx-auto mb-2" />
+          <h1 className="text-2xl font-bold text-primary tracking-tight" data-testid="text-school-name">ELYON SCHOOLS</h1>
+          <p className="text-sm text-muted-foreground mt-1">123 Education Avenue, Ikeja, Lagos</p>
+          <p className="text-sm text-muted-foreground">Tel: +234 xxx xxx xxxx</p>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <h2 className="text-xl font-semibold">PAYMENT RECEIPT</h2>
+            {isPaid && <CheckCircle className="h-5 w-5 text-green-600" />}
+          </div>
         </div>
 
-        <div className="max-w-lg mx-auto bg-white border rounded-xl p-8 shadow-sm relative overflow-hidden" data-testid="receipt-content">
-          {isPaid && (
-            <div className="absolute top-1/2 right-8 -translate-y-1/2 -rotate-[15deg] border-[5px] border-green-500 text-green-500 text-4xl font-extrabold px-8 py-3 rounded-xl opacity-15 pointer-events-none select-none">
-              PAID
+        <div className="space-y-3">
+          {rows.map(row => (
+            <div key={row.label} className="flex justify-between py-2 border-b border-dashed border-gray-200 last:border-0">
+              <span className="text-sm text-gray-500">{row.label}</span>
+              <span className={`text-sm font-medium text-right ${row.highlight ? 'text-primary font-bold text-lg' : ''}`} data-testid={`receipt-${row.label.toLowerCase().replace(/\s+/g, '-')}`}>
+                {row.value}
+              </span>
             </div>
-          )}
+          ))}
+        </div>
 
-          <div className="text-center mb-6 pb-6 border-b-2 border-primary">
-            <h1 className="text-2xl font-bold text-primary tracking-tight" data-testid="text-school-name">ELYON SCHOOLS</h1>
-            <p className="text-sm text-muted-foreground mt-1">123 Education Avenue, Ikeja, Lagos</p>
-            <p className="text-sm text-muted-foreground">Tel: +234 xxx xxx xxxx</p>
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <h2 className="text-xl font-semibold">PAYMENT RECEIPT</h2>
-              {isPaid && <CheckCircle className="h-5 w-5 text-green-600" />}
-            </div>
+        {isPaid && (
+          <div className="mt-6 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+            <p className="text-green-700 font-semibold text-sm">Payment Confirmed</p>
           </div>
+        )}
 
-          <div className="space-y-3">
-            {rows.map(row => (
-              <div key={row.label} className="flex justify-between py-2 border-b border-dashed border-gray-200 last:border-0">
-                <span className="text-sm text-gray-500">{row.label}</span>
-                <span className={`text-sm font-medium text-right ${row.highlight ? 'text-primary font-bold text-lg' : ''}`} data-testid={`receipt-${row.label.toLowerCase().replace(/\s+/g, '-')}`}>
-                  {row.value}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {isPaid && (
-            <div className="mt-6 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
-              <p className="text-green-700 font-semibold text-sm">Payment Confirmed</p>
-            </div>
-          )}
-
-          <div className="mt-8 pt-4 border-t text-center">
-            <p className="text-xs text-gray-400">This is a computer-generated receipt. No signature required.</p>
-            <p className="text-xs text-gray-400 mt-1">&copy; {new Date().getFullYear()} Elyon Schools. All rights reserved.</p>
-          </div>
+        <div className="mt-8 pt-4 border-t text-center">
+          <p className="text-xs text-gray-400">This is a computer-generated receipt. No signature required.</p>
+          <p className="text-xs text-gray-400 mt-1">&copy; {new Date().getFullYear()} Elyon Schools. All rights reserved.</p>
         </div>
       </div>
-    </>
+    </div>
   )
 }

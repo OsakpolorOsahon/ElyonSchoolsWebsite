@@ -4,7 +4,8 @@ import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Printer, Home, Loader2, AlertCircle } from 'lucide-react'
+import { Download, Home, Loader2, AlertCircle } from 'lucide-react'
+import { downloadAsPdf } from '@/lib/download-pdf'
 
 const paymentTypeLabels: Record<string, string> = {
   school_fee: 'School Fees',
@@ -19,6 +20,7 @@ function ReceiptContent() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [generatingPdf, setGeneratingPdf] = useState(false)
   const [receipt, setReceipt] = useState<{
     amount: number
     payment_type?: string
@@ -51,6 +53,15 @@ function ReceiptContent() {
 
   const formatAmount = (n: number) =>
     new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(n)
+
+  const handleDownload = async () => {
+    setGeneratingPdf(true)
+    try {
+      await downloadAsPdf('receipt-doc', `elyon-receipt-${ref.slice(0, 16)}.pdf`)
+    } finally {
+      setGeneratingPdf(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -93,22 +104,23 @@ function ReceiptContent() {
     : 'Payment'
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="print:hidden bg-muted/30 border-b px-6 py-3 flex items-center justify-between">
-        <Link href="/payments">
+    <div className="min-h-screen bg-muted/30">
+      <div className="bg-muted/30 border-b px-6 py-3 flex items-center justify-between">
+        <Link href="/">
           <Button variant="ghost" size="sm" className="gap-2">
-            <Home className="h-4 w-4" /> Back
+            <Home className="h-4 w-4" /> Home
           </Button>
         </Link>
-        <Button size="sm" className="gap-2" onClick={() => window.print()}>
-          <Printer className="h-4 w-4" /> Print Receipt
+        <Button size="sm" className="gap-2" onClick={handleDownload} disabled={generatingPdf} data-testid="button-download-receipt">
+          {generatingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {generatingPdf ? 'Generating…' : 'Download Receipt'}
         </Button>
       </div>
 
-      <div className="mx-auto max-w-lg px-6 py-12 print:py-4">
-        <div className="border-2 border-primary/30 rounded-xl p-8 print:border-gray-400">
+      <div className="mx-auto max-w-lg px-6 py-12">
+        <div id="receipt-doc" className="border-2 border-primary/30 rounded-xl p-8 bg-white">
           <div className="text-center mb-8 pb-6 border-b">
-            <div className="text-4xl mb-2">🏫</div>
+            <img src="/logo.png" alt="Elyon Schools" className="h-16 w-16 object-contain mx-auto mb-2" />
             <h1 className="text-2xl font-bold text-primary">ELYON SCHOOLS</h1>
             <p className="text-sm text-muted-foreground">123 Education Avenue, Ikeja, Lagos</p>
             <p className="text-sm text-muted-foreground">Tel: +234 803 123 4567</p>
@@ -126,7 +138,7 @@ function ReceiptContent() {
 
           <div className="space-y-3 mb-6">
             {[
-              { label: 'Receipt No.', value: receipt.reference.slice(0, 24) + (receipt.reference.length > 24 ? '...' : '') },
+              { label: 'Receipt No.', value: receipt.reference.slice(0, 24) + (receipt.reference.length > 24 ? '…' : '') },
               { label: 'Payment Type', value: typeLabel },
               { label: 'Payer Name', value: displayName },
               { label: 'Amount Paid', value: formatAmount(receipt.amount), highlight: true },
@@ -151,9 +163,10 @@ function ReceiptContent() {
           </div>
         </div>
 
-        <div className="print:hidden text-center mt-6 space-y-3">
-          <Button className="w-full gap-2" onClick={() => window.print()}>
-            <Printer className="h-4 w-4" /> Print or Save as PDF
+        <div className="text-center mt-6 space-y-3">
+          <Button className="w-full gap-2" onClick={handleDownload} disabled={generatingPdf} data-testid="button-download-pdf">
+            {generatingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {generatingPdf ? 'Generating PDF…' : 'Download as PDF'}
           </Button>
           <Link href="/">
             <Button variant="outline" className="w-full">Return to Home</Button>
