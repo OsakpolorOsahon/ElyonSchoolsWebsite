@@ -1165,12 +1165,15 @@ export default function AdminStudentsPage() {
             </div>
             <div className="space-y-2">
               <Label>Parent Account</Label>
-              <Select value={editForm.parent_profile_id} onValueChange={v => setEditForm(f => ({ ...f, parent_profile_id: v }))}>
+              <Select
+                value={editForm.parent_profile_id || '__none__'}
+                onValueChange={v => setEditForm(f => ({ ...f, parent_profile_id: v === '__none__' ? '' : v }))}
+              >
                 <SelectTrigger data-testid="select-edit-parent">
                   <SelectValue placeholder="Select parent (optional)..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No parent linked</SelectItem>
+                  <SelectItem value="__none__">No parent linked</SelectItem>
                   {parentUsers.map(u => (
                     <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
                   ))}
