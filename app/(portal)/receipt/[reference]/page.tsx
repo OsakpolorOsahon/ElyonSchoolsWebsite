@@ -68,7 +68,7 @@ export default function ReceiptPage() {
   const handleDownload = async () => {
     setGeneratingPdf(true)
     try {
-      await downloadAsPdf('receipt-doc', `elyon-receipt-${reference.slice(0, 16)}.pdf`)
+      await downloadAsPdf('receipt-doc', `elyon-receipt-${reference.slice(0, 16)}.pdf`, { singlePage: true })
     } finally {
       setGeneratingPdf(false)
     }

@@ -1,7 +1,7 @@
 export async function downloadAsPdf(
   elementId: string,
   filename: string,
-  options?: { landscape?: boolean }
+  options?: { landscape?: boolean; singlePage?: boolean }
 ): Promise<void> {
   const { default: html2canvas } = await import('html2canvas')
   const { default: jsPDF } = await import('jspdf')
@@ -45,6 +45,11 @@ export async function downloadAsPdf(
 
     if (imgH <= ph) {
       pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH)
+    } else if (options?.singlePage) {
+      const scale = ph / imgH
+      const scaledW = imgW * scale
+      const offsetX = (pw - scaledW) / 2
+      pdf.addImage(imgData, 'JPEG', offsetX, 0, scaledW, ph)
     } else {
       const pages = Math.ceil(imgH / ph)
       for (let i = 0; i < pages; i++) {
