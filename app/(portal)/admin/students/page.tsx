@@ -26,6 +26,7 @@ interface Student {
   transfer_note: string | null
   repeating: boolean
   profile_id: string
+  parent_profile_id: string | null
   profiles: { full_name: string } | null
 }
 
@@ -119,7 +120,7 @@ export default function AdminStudentsPage() {
 
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Student | null>(null)
-  const [editForm, setEditForm] = useState({ admission_number: '', gender: '', parent_profile_id: '' })
+  const [editForm, setEditForm] = useState({ admission_number: '', class: '', gender: '', parent_profile_id: '' })
   const [editSaving, setEditSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
@@ -357,11 +358,6 @@ export default function AdminStudentsPage() {
 
   async function openEditDialog(student: Student) {
     setEditTarget(student)
-    setEditForm({
-      admission_number: student.admission_number,
-      gender: student.gender || '',
-      parent_profile_id: '',
-    })
     if (parentUsers.length === 0) {
       const res = await fetch('/api/admin/users')
       const data = await res.json()
@@ -369,13 +365,19 @@ export default function AdminStudentsPage() {
       setStudentUsers(users.filter(u => u.role === 'student'))
       setParentUsers(users.filter(u => u.role === 'parent'))
     }
+    setEditForm({
+      admission_number: student.admission_number,
+      class: student.class,
+      gender: student.gender || '',
+      parent_profile_id: student.parent_profile_id || '',
+    })
     setEditDialogOpen(true)
   }
 
   async function handleEditSave() {
     if (!editTarget) return
-    if (!editForm.admission_number.trim()) {
-      toast({ title: 'Missing field', description: 'Admission number is required.', variant: 'destructive' })
+    if (!editForm.admission_number.trim() || !editForm.class) {
+      toast({ title: 'Missing fields', description: 'Admission number and class are required.', variant: 'destructive' })
       return
     }
     setEditSaving(true)
@@ -386,6 +388,7 @@ export default function AdminStudentsPage() {
         body: JSON.stringify({
           id: editTarget.id,
           admission_number: editForm.admission_number,
+          class: editForm.class,
           gender: editForm.gender || null,
           parent_profile_id: editForm.parent_profile_id || null,
         }),
@@ -404,7 +407,7 @@ export default function AdminStudentsPage() {
   }
 
   async function handleDeleteStudent(student: Student) {
-    if (!confirm(`Delete student "${student.profiles?.full_name || student.admission_number}"? This will permanently remove their record.`)) return
+    if (!confirm(`Delete student "${student.profiles?.full_name || student.admission_number}" (${student.admission_number})?\n\nThis will permanently remove their student record. Associated results, payments, and report card comments may also be affected. This cannot be undone.`)) return
     setDeletingId(student.id)
     try {
       const res = await fetch(`/api/admin/students?id=${student.id}`, { method: 'DELETE' })
@@ -1121,7 +1124,7 @@ export default function AdminStudentsPage() {
           <DialogHeader>
             <DialogTitle>Edit Student Details</DialogTitle>
             <DialogDescription>
-              {editTarget?.profiles?.full_name} — update admission number, gender, or parent link.
+              {editTarget?.profiles?.full_name} — update admission number, class, gender, or parent link.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -1134,6 +1137,19 @@ export default function AdminStudentsPage() {
                 placeholder="e.g. ELY/2025/001"
                 data-testid="input-edit-admission"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Class *</Label>
+              <Select value={editForm.class} onValueChange={v => setEditForm(f => ({ ...f, class: v }))}>
+                <SelectTrigger data-testid="select-edit-class">
+                  <SelectValue placeholder="Select class..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {ALL_CLASSES.map(cls => (
+                    <SelectItem key={cls} value={cls}>{cls}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Gender</Label>
@@ -1160,9 +1176,6 @@ export default function AdminStudentsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {parentUsers.length === 0 && (
-                <p className="text-xs text-muted-foreground">Open "Add Student" first to load parent accounts.</p>
-              )}
             </div>
           </div>
           <DialogFooter>

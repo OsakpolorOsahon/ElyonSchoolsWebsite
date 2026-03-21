@@ -107,6 +107,10 @@ export default function AdminExamsPage() {
 
   const handleEditSave = async () => {
     if (!editTarget) return
+    if (editTarget.published) {
+      toast({ title: 'Cannot edit published exam', description: 'Unpublish the exam first before making changes.', variant: 'destructive' })
+      return
+    }
     if (!editForm.name.trim() || !editForm.term || !editForm.year) {
       toast({ title: 'Missing fields', description: 'Please fill in all fields.', variant: 'destructive' })
       return
@@ -273,15 +277,17 @@ export default function AdminExamsPage() {
                           <><Eye className="h-4 w-4 mr-1" /> Publish</>
                         )}
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-foreground"
-                        onClick={() => openEditDialog(exam)}
-                        data-testid={`button-edit-exam-${exam.id}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      {!exam.published && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={() => openEditDialog(exam)}
+                          data-testid={`button-edit-exam-${exam.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"

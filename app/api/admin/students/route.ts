@@ -35,7 +35,7 @@ export async function GET() {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('students')
-    .select('id, admission_number, class, gender, status, department, graduation_year, transfer_note, repeating, profile_id, profiles!profile_id(full_name)')
+    .select('id, admission_number, class, gender, status, department, graduation_year, transfer_note, repeating, profile_id, parent_profile_id, profiles!profile_id(full_name)')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
