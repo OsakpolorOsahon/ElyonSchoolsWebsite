@@ -68,3 +68,36 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ success: true, id: data.id })
 }
+
+export async function PATCH(request: NextRequest) {
+  const session = await verifyAdmin()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const body = await request.json()
+  const { id, title, description, start_ts, end_ts, location, category } = body
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  if (!title || !start_ts || !end_ts) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('events')
+    .update({ title, description: description || null, start_ts, end_ts, location: location || null, category: category || 'Other' })
+    .eq('id', id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true })
+}
+
+export async function DELETE(request: NextRequest) {
+  const session = await verifyAdmin()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+  const supabase = createAdminClient()
+  const { error } = await supabase.from('events').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true })
+}

@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Plus, Trash2, BookOpen, Eye, EyeOff } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Loader2, ArrowLeft, Plus, Trash2, BookOpen, Eye, EyeOff, Pencil } from 'lucide-react'
 
 interface Exam {
   id: string
@@ -34,6 +35,10 @@ export default function AdminExamsPage() {
   const [form, setForm] = useState({ name: '', term: '', year: String(currentYear) })
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<Exam | null>(null)
+  const [editForm, setEditForm] = useState({ name: '', term: '', year: String(currentYear) })
+  const [editSaving, setEditSaving] = useState(false)
 
   useEffect(() => {
     load()
@@ -91,6 +96,36 @@ export default function AdminExamsPage() {
       toast({ title: 'Error', description: err.message || 'Failed to delete', variant: 'destructive' })
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  const openEditDialog = (exam: Exam) => {
+    setEditTarget(exam)
+    setEditForm({ name: exam.name, term: exam.term, year: String(exam.year) })
+    setEditOpen(true)
+  }
+
+  const handleEditSave = async () => {
+    if (!editTarget) return
+    if (!editForm.name.trim() || !editForm.term || !editForm.year) {
+      toast({ title: 'Missing fields', description: 'Please fill in all fields.', variant: 'destructive' })
+      return
+    }
+    setEditSaving(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('exams')
+        .update({ name: editForm.name.trim(), term: editForm.term, year: parseInt(editForm.year) })
+        .eq('id', editTarget.id)
+      if (error) throw error
+      toast({ title: 'Exam updated', description: `${editForm.name} has been saved.` })
+      setEditOpen(false)
+      await load()
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to update exam', variant: 'destructive' })
+    } finally {
+      setEditSaving(false)
     }
   }
 
@@ -241,6 +276,15 @@ export default function AdminExamsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="text-muted-foreground hover:text-foreground"
+                        onClick={() => openEditDialog(exam)}
+                        data-testid={`button-edit-exam-${exam.id}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => handleDelete(exam.id, exam.name)}
                         disabled={deletingId === exam.id}
@@ -258,6 +302,59 @@ export default function AdminExamsPage() {
           </CardContent>
         </Card>
       </main>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Exam</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-exam-name">Exam Name *</Label>
+              <Input
+                id="edit-exam-name"
+                placeholder="e.g. First Term Examination"
+                value={editForm.name}
+                onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                data-testid="input-edit-exam-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Term *</Label>
+              <Select value={editForm.term} onValueChange={v => setEditForm(f => ({ ...f, term: v }))}>
+                <SelectTrigger data-testid="select-edit-exam-term">
+                  <SelectValue placeholder="Select term" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="First Term">First Term</SelectItem>
+                  <SelectItem value="Second Term">Second Term</SelectItem>
+                  <SelectItem value="Third Term">Third Term</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Year *</Label>
+              <Select value={editForm.year} onValueChange={v => setEditForm(f => ({ ...f, year: v }))}>
+                <SelectTrigger data-testid="select-edit-exam-year">
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {yearOptions.map(y => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditSave} disabled={editSaving} data-testid="button-save-exam-edit">
+              {editSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

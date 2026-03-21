@@ -7,7 +7,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Plus, Calendar, MapPin, Clock } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { Loader2, ArrowLeft, Plus, Calendar, MapPin, Clock, Pencil, Trash2 } from 'lucide-react'
 
 interface Event {
   id: string
@@ -28,9 +29,18 @@ const categoryColors: Record<string, string> = {
 }
 
 export default function AdminEventsPage() {
+  const { toast } = useToast()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const fetchEvents = async () => {
+    const res = await fetch('/api/admin/events')
+    const data = await res.json()
+    setEvents(data.events || [])
+    setLoading(false)
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -39,14 +49,26 @@ export default function AdminEventsPage() {
       if (!session) return
       const { data: p } = await supabase.from('profiles').select('full_name').eq('id', session.user.id).single()
       setProfile(p)
-
-      const res = await fetch('/api/admin/events')
-      const data = await res.json()
-      setEvents(data.events || [])
-      setLoading(false)
+      await fetchEvents()
     }
     load()
   }, [])
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`Delete event "${title}"? This cannot be undone.`)) return
+    setDeletingId(id)
+    try {
+      const res = await fetch(`/api/admin/events?id=${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setEvents(prev => prev.filter(e => e.id !== id))
+      toast({ title: 'Event deleted', description: `"${title}" has been removed.` })
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to delete event', variant: 'destructive' })
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -67,7 +89,7 @@ export default function AdminEventsPage() {
             <h2 className="text-xl font-semibold">All Events</h2>
           </div>
           <Link href="/admin/events/new">
-            <Button className="gap-2">
+            <Button className="gap-2" data-testid="button-new-event">
               <Plus className="h-4 w-4" />
               New Event
             </Button>
@@ -91,18 +113,44 @@ export default function AdminEventsPage() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {events.map(event => (
-              <Card key={event.id}>
+              <Card key={event.id} data-testid={`card-event-${event.id}`}>
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 shrink-0">
                       <Calendar className="h-6 w-6 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold">{event.title}</h3>
-                        <Badge className={categoryColors[event.category] || categoryColors.Other}>
-                          {event.category}
-                        </Badge>
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold">{event.title}</h3>
+                          <Badge className={categoryColors[event.category] || categoryColors.Other}>
+                            {event.category}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Link href={`/admin/events/${event.id}/edit`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                              data-testid={`button-edit-event-${event.id}`}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDelete(event.id, event.title)}
+                            disabled={deletingId === event.id}
+                            data-testid={`button-delete-event-${event.id}`}
+                          >
+                            {deletingId === event.id
+                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              : <Trash2 className="h-3.5 w-3.5" />}
+                          </Button>
+                        </div>
                       </div>
                       {event.description && (
                         <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{event.description}</p>

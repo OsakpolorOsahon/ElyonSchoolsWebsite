@@ -6,9 +6,14 @@ import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, ArrowLeft, Plus, Megaphone, Trash2 } from 'lucide-react'
+import { Loader2, ArrowLeft, Plus, Megaphone, Trash2, Pencil } from 'lucide-react'
 
 interface Announcement {
   id: string
@@ -33,6 +38,11 @@ export default function AdminAnnouncementsPage() {
   const [profile, setProfile] = useState<any>(null)
   const [toggling, setToggling] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+
+  const [editOpen, setEditOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<Announcement | null>(null)
+  const [editForm, setEditForm] = useState({ title: '', body: '', target_audience: 'all' })
+  const [editSaving, setEditSaving] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -80,6 +90,46 @@ export default function AdminAnnouncementsPage() {
     setDeleting(null)
   }
 
+  const openEdit = (ann: Announcement) => {
+    setEditTarget(ann)
+    setEditForm({ title: ann.title, body: ann.body, target_audience: ann.target_audience })
+    setEditOpen(true)
+  }
+
+  const handleEditSave = async () => {
+    if (!editTarget) return
+    if (!editForm.title.trim() || !editForm.body.trim()) {
+      toast({ title: 'Missing fields', description: 'Title and body are required.', variant: 'destructive' })
+      return
+    }
+    setEditSaving(true)
+    try {
+      const res = await fetch('/api/admin/announcements', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editTarget.id,
+          title: editForm.title,
+          body: editForm.body,
+          target_audience: editForm.target_audience,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setAnnouncements(prev => prev.map(a =>
+        a.id === editTarget.id
+          ? { ...a, title: editForm.title, body: editForm.body, target_audience: editForm.target_audience }
+          : a
+      ))
+      toast({ title: 'Announcement updated' })
+      setEditOpen(false)
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to update', variant: 'destructive' })
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-muted/30">
       <PortalHeader
@@ -99,7 +149,7 @@ export default function AdminAnnouncementsPage() {
             <h2 className="text-xl font-semibold">All Announcements</h2>
           </div>
           <Link href="/admin/announcements/new">
-            <Button className="gap-2">
+            <Button className="gap-2" data-testid="button-new-announcement">
               <Plus className="h-4 w-4" /> New Announcement
             </Button>
           </Link>
@@ -122,7 +172,7 @@ export default function AdminAnnouncementsPage() {
         ) : (
           <div className="space-y-3">
             {announcements.map(ann => (
-              <Card key={ann.id}>
+              <Card key={ann.id} data-testid={`card-announcement-${ann.id}`}>
                 <CardContent className="py-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -140,12 +190,13 @@ export default function AdminAnnouncementsPage() {
                         {new Date(ann.created_at).toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' })}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                       <Button
                         size="sm"
                         variant={ann.is_published ? 'outline' : 'default'}
                         onClick={() => togglePublished(ann.id, ann.is_published)}
                         disabled={toggling === ann.id}
+                        data-testid={`button-toggle-announcement-${ann.id}`}
                       >
                         {toggling === ann.id ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
                         {ann.is_published ? 'Unpublish' : 'Publish'}
@@ -153,9 +204,20 @@ export default function AdminAnnouncementsPage() {
                       <Button
                         size="sm"
                         variant="ghost"
+                        className="gap-1.5 text-muted-foreground hover:text-foreground"
+                        onClick={() => openEdit(ann)}
+                        data-testid={`button-edit-announcement-${ann.id}`}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         className="text-destructive hover:text-destructive"
                         onClick={() => deleteAnnouncement(ann.id)}
                         disabled={deleting === ann.id}
+                        data-testid={`button-delete-announcement-${ann.id}`}
                       >
                         {deleting === ann.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                       </Button>
@@ -167,6 +229,56 @@ export default function AdminAnnouncementsPage() {
           </div>
         )}
       </main>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Announcement</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Title *</Label>
+              <Input
+                value={editForm.title}
+                onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
+                placeholder="Announcement title"
+                data-testid="input-edit-ann-title"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Body *</Label>
+              <Textarea
+                value={editForm.body}
+                onChange={e => setEditForm(f => ({ ...f, body: e.target.value }))}
+                placeholder="Announcement content..."
+                rows={4}
+                data-testid="input-edit-ann-body"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Target Audience</Label>
+              <Select value={editForm.target_audience} onValueChange={v => setEditForm(f => ({ ...f, target_audience: v }))}>
+                <SelectTrigger data-testid="select-edit-ann-audience">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Everyone</SelectItem>
+                  <SelectItem value="parents">Parents</SelectItem>
+                  <SelectItem value="students">Students</SelectItem>
+                  <SelectItem value="teachers">Teachers</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditSave} disabled={editSaving} data-testid="button-save-ann-edit">
+              {editSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

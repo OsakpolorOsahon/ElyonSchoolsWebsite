@@ -138,6 +138,14 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - Class view page (`/teacher/classes/[class]`) — exam selector + "View Report Card" links per student
 - Results upload page (`/teacher/results/upload`) — select exam/subject, enter scores + remarks per student. Subjects are filtered by `applicable_classes` and `applicable_departments` (SSS classes only) — empty arrays mean "applies to all"
 
+### Admin Portal — Edit & Delete Coverage (Task #12)
+- **Students** (`/admin/students`): Edit button (admission_number, gender, parent link) + Delete button per student card. API (`/api/admin/students`): PATCH extended + DELETE added.
+- **Exams** (`/admin/exams`): Edit button (name, term, year) opens inline dialog. Direct Supabase update.
+- **Events** (`/admin/events`): Edit icon links to `/admin/events/[id]/edit` (new page). Delete button with confirm. API: PATCH + DELETE added.
+- **News** (`/admin/news`): Edit link to `/admin/news/[id]/edit` (new page). Delete button. API: PATCH + DELETE added.
+- **Announcements** (`/admin/announcements`): Edit button (title, body, audience) opens dialog. API PATCH extended for full edit.
+- **Gallery** (`/admin/gallery`): Edit button (title, description, category) on hover overlay opens dialog. API PATCH added.
+
 ### Student Portal (`/student`)
 - Dashboard with real profile data (name, class, admission number)
 - **Announcements section** — shows published announcements targeting 'all' or 'students'

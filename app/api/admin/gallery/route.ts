@@ -85,6 +85,25 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function PATCH(request: NextRequest) {
+  const session = await verifyAdmin()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const body = await request.json()
+  const { id, title, description, category } = body
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  if (!title?.trim()) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('gallery_items')
+    .update({ title: title.trim(), description: description || null, category: category || 'campus' })
+    .eq('id', id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true })
+}
+
 export async function DELETE(request: NextRequest) {
   const session = await verifyAdmin()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

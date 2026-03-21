@@ -163,12 +163,43 @@ export async function PATCH(request: NextRequest) {
     if (transfer_note === undefined) updateData.transfer_note = null
   }
 
+  if (body.admission_number !== undefined) {
+    const adm = body.admission_number?.trim()
+    if (!adm) return NextResponse.json({ error: 'Admission number cannot be empty' }, { status: 400 })
+    updateData.admission_number = adm
+  }
+
+  if (body.gender !== undefined) {
+    if (body.gender && !['Male', 'Female'].includes(body.gender)) {
+      return NextResponse.json({ error: 'Invalid gender' }, { status: 400 })
+    }
+    updateData.gender = body.gender || null
+  }
+
+  if (body.parent_profile_id !== undefined) {
+    updateData.parent_profile_id = body.parent_profile_id || null
+  }
+
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
   }
 
   const { error } = await supabase.from('students').update(updateData).eq('id', id)
 
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true })
+}
+
+export async function DELETE(request: NextRequest) {
+  const session = await verifyAdmin()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+  const supabase = createAdminClient()
+  const { error } = await supabase.from('students').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }

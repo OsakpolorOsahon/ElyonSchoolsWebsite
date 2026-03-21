@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Users, Search, UserPlus, ArrowUpRight, GraduationCap, ChevronUp, FileText, Banknote, History } from 'lucide-react'
+import { Loader2, ArrowLeft, Users, Search, UserPlus, ArrowUpRight, GraduationCap, ChevronUp, FileText, Banknote, History, Pencil, Trash2 } from 'lucide-react'
 
 interface Student {
   id: string
@@ -116,6 +116,12 @@ export default function AdminStudentsPage() {
   const [resultsTarget, setResultsTarget] = useState<Student | null>(null)
   const [resultsLoading, setResultsLoading] = useState(false)
   const [cumulativeResults, setCumulativeResults] = useState<ExamResultGroup[]>([])
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<Student | null>(null)
+  const [editForm, setEditForm] = useState({ admission_number: '', gender: '', parent_profile_id: '' })
+  const [editSaving, setEditSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
   const [paymentSaving, setPaymentSaving] = useState(false)
@@ -346,6 +352,71 @@ export default function AdminStudentsPage() {
       toast({ title: 'Error', description: 'Failed to load results', variant: 'destructive' })
     } finally {
       setResultsLoading(false)
+    }
+  }
+
+  async function openEditDialog(student: Student) {
+    setEditTarget(student)
+    setEditForm({
+      admission_number: student.admission_number,
+      gender: student.gender || '',
+      parent_profile_id: '',
+    })
+    if (parentUsers.length === 0) {
+      const res = await fetch('/api/admin/users')
+      const data = await res.json()
+      const users: UserProfile[] = data.users || []
+      setStudentUsers(users.filter(u => u.role === 'student'))
+      setParentUsers(users.filter(u => u.role === 'parent'))
+    }
+    setEditDialogOpen(true)
+  }
+
+  async function handleEditSave() {
+    if (!editTarget) return
+    if (!editForm.admission_number.trim()) {
+      toast({ title: 'Missing field', description: 'Admission number is required.', variant: 'destructive' })
+      return
+    }
+    setEditSaving(true)
+    try {
+      const res = await fetch('/api/admin/students', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editTarget.id,
+          admission_number: editForm.admission_number,
+          gender: editForm.gender || null,
+          parent_profile_id: editForm.parent_profile_id || null,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast({ title: 'Student updated', description: 'Student details saved.' })
+      setEditDialogOpen(false)
+      await fetchStudents()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save'
+      toast({ title: 'Error', description: message, variant: 'destructive' })
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
+  async function handleDeleteStudent(student: Student) {
+    if (!confirm(`Delete student "${student.profiles?.full_name || student.admission_number}"? This will permanently remove their record.`)) return
+    setDeletingId(student.id)
+    try {
+      const res = await fetch(`/api/admin/students?id=${student.id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast({ title: 'Student deleted', description: 'Student record removed.' })
+      await fetchStudents()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete'
+      toast({ title: 'Error', description: message, variant: 'destructive' })
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -607,6 +678,27 @@ export default function AdminStudentsPage() {
                           <Badge className={STATUS_COLORS[student.status] || 'bg-gray-100 text-gray-700'}>
                             {student.status}
                           </Badge>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={() => openEditDialog(student)}
+                          data-testid={`button-edit-student-${student.id}`}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDeleteStudent(student)}
+                          disabled={deletingId === student.id}
+                          data-testid={`button-delete-student-${student.id}`}
+                        >
+                          {deletingId === student.id
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <Trash2 className="h-3.5 w-3.5" />}
                         </Button>
                       </div>
                     </div>
@@ -1020,6 +1112,66 @@ export default function AdminStudentsPage() {
               ))}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Student Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Student Details</DialogTitle>
+            <DialogDescription>
+              {editTarget?.profiles?.full_name} — update admission number, gender, or parent link.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-admission">Admission Number *</Label>
+              <Input
+                id="edit-admission"
+                value={editForm.admission_number}
+                onChange={e => setEditForm(f => ({ ...f, admission_number: e.target.value }))}
+                placeholder="e.g. ELY/2025/001"
+                data-testid="input-edit-admission"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Gender</Label>
+              <Select value={editForm.gender} onValueChange={v => setEditForm(f => ({ ...f, gender: v }))}>
+                <SelectTrigger data-testid="select-edit-gender">
+                  <SelectValue placeholder="Select gender..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Parent Account</Label>
+              <Select value={editForm.parent_profile_id} onValueChange={v => setEditForm(f => ({ ...f, parent_profile_id: v }))}>
+                <SelectTrigger data-testid="select-edit-parent">
+                  <SelectValue placeholder="Select parent (optional)..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No parent linked</SelectItem>
+                  {parentUsers.map(u => (
+                    <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {parentUsers.length === 0 && (
+                <p className="text-xs text-muted-foreground">Open "Add Student" first to load parent accounts.</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditSave} disabled={editSaving} data-testid="button-confirm-edit-student">
+              {editSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Save Changes
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

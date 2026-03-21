@@ -7,7 +7,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Plus, Newspaper } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { Loader2, ArrowLeft, Plus, Newspaper, Pencil, Trash2 } from 'lucide-react'
 
 interface NewsPost {
   id: string
@@ -20,9 +21,18 @@ interface NewsPost {
 }
 
 export default function AdminNewsPage() {
+  const { toast } = useToast()
   const [posts, setPosts] = useState<NewsPost[]>([])
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const fetchPosts = async () => {
+    const res = await fetch('/api/admin/news')
+    const data = await res.json()
+    setPosts(data.posts || [])
+    setLoading(false)
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -31,14 +41,26 @@ export default function AdminNewsPage() {
       if (!session) return
       const { data: p } = await supabase.from('profiles').select('full_name').eq('id', session.user.id).single()
       setProfile(p)
-
-      const res = await fetch('/api/admin/news')
-      const data = await res.json()
-      setPosts(data.posts || [])
-      setLoading(false)
+      await fetchPosts()
     }
     load()
   }, [])
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`Delete news post "${title}"? This cannot be undone.`)) return
+    setDeletingId(id)
+    try {
+      const res = await fetch(`/api/admin/news?id=${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setPosts(prev => prev.filter(p => p.id !== id))
+      toast({ title: 'Post deleted', description: `"${title}" has been removed.` })
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to delete post', variant: 'destructive' })
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -59,7 +81,7 @@ export default function AdminNewsPage() {
             <h2 className="text-xl font-semibold">All News Posts</h2>
           </div>
           <Link href="/admin/news/new">
-            <Button className="gap-2">
+            <Button className="gap-2" data-testid="button-new-post">
               <Plus className="h-4 w-4" />
               New Post
             </Button>
@@ -83,7 +105,7 @@ export default function AdminNewsPage() {
         ) : (
           <div className="space-y-3">
             {posts.map(post => (
-              <Card key={post.id}>
+              <Card key={post.id} data-testid={`card-post-${post.id}`}>
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -104,6 +126,31 @@ export default function AdminNewsPage() {
                           : `Created ${new Date(post.created_at).toLocaleDateString('en-NG')}`}
                         {' · '}Slug: {post.slug}
                       </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Link href={`/admin/news/${post.id}/edit`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1.5 text-muted-foreground hover:text-foreground"
+                          data-testid={`button-edit-post-${post.id}`}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Edit
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(post.id, post.title)}
+                        disabled={deletingId === post.id}
+                        data-testid={`button-delete-post-${post.id}`}
+                      >
+                        {deletingId === post.id
+                          ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          : <Trash2 className="h-3.5 w-3.5" />}
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
