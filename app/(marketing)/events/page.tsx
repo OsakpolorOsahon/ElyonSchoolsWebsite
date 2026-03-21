@@ -1,6 +1,4 @@
 import Link from 'next/link'
-import { Header } from '@/components/public/Header'
-import { Footer } from '@/components/public/Footer'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -60,9 +58,7 @@ export default async function EventsPage() {
     new Date(ts).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <div className="min-h-screen">
-      <Header />
-
+    <>
       <section className="bg-primary text-primary-foreground py-16">
         <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center">
           <Calendar className="h-12 w-12 mx-auto mb-4 text-primary-foreground/80" />
@@ -189,8 +185,6 @@ export default async function EventsPage() {
           </Link>
         </div>
       </main>
-
-      <Footer />
-    </div>
+    </>
   )
 }

@@ -1,6 +1,3 @@
-import { Header } from '@/components/public/Header'
-import { Footer } from '@/components/public/Footer'
-
 export const metadata = {
   title: 'Terms of Service - Elyon Schools',
   description: 'Terms and conditions governing use of Elyon Schools services and facilities.',
@@ -10,10 +7,7 @@ export default function TermsPage() {
   const lastUpdated = 'January 2025'
 
   return (
-    <div className="min-h-screen">
-      <Header />
-
-      <main className="mx-auto max-w-3xl px-6 py-16 lg:px-8">
+    <main className="mx-auto max-w-3xl px-6 py-16 lg:px-8">
         <div className="mb-10">
           <h1 className="text-4xl font-bold text-foreground mb-3">Terms of Service</h1>
           <p className="text-muted-foreground">Last updated: {lastUpdated}</p>
@@ -112,9 +106,6 @@ export default function TermsPage() {
             </div>
           </section>
         </div>
-      </main>
-
-      <Footer />
-    </div>
+    </main>
   )
 }

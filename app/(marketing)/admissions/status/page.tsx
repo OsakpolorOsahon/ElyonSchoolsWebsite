@@ -3,8 +3,6 @@
 import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Header } from '@/components/public/Header'
-import { Footer } from '@/components/public/Footer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -84,10 +82,7 @@ function StatusContent() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <Header />
-
-      <main className="mx-auto max-w-3xl px-6 py-16">
+    <main className="mx-auto max-w-3xl px-6 py-16 bg-muted/30 flex-1">
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 mb-4">
             <FileText className="h-8 w-8 text-primary" />
@@ -221,10 +216,7 @@ function StatusContent() {
         <div className="mt-10 text-center text-sm text-muted-foreground">
           Having trouble? <Link href="/contact" className="text-primary hover:underline">Contact our admissions team</Link>
         </div>
-      </main>
-
-      <Footer />
-    </div>
+    </main>
   )
 }
 
