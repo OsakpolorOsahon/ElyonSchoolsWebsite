@@ -127,24 +127,32 @@ export default function AdminPaymentsPage() {
 
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      const { data: p } = await supabase.from('profiles').select('full_name').eq('id', session.user.id).single()
-      setProfile(p)
+      try {
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) return
+        const { data: p } = await supabase.from('profiles').select('full_name').eq('id', session.user.id).single()
+        setProfile(p)
 
-      const [paymentsJson, studentsRes, feesRes, settingsRes] = await Promise.all([
-        fetch('/api/admin/payments').then(r => r.json()),
-        supabase.from('students').select('id, admission_number, class, profiles!profile_id(full_name)').eq('status', 'active').order('admission_number'),
-        supabase.from('fee_structures').select('*'),
-        supabase.from('academic_settings').select('current_term, current_year').eq('singleton_key', true).single(),
-      ])
+        const paymentsRes = await fetch('/api/admin/payments')
+        if (!paymentsRes.ok) throw new Error('Failed to load payments')
+        const paymentsJson = await paymentsRes.json()
 
-      setPayments(paymentsJson.payments || [])
-      setStudents((studentsRes.data || []) as unknown as Student[])
-      setFeeStructures((feesRes.data || []) as FeeStructure[])
-      setSettings(settingsRes.data as AcademicSettings | null)
-      setLoading(false)
+        const [studentsRes, feesRes, settingsRes] = await Promise.all([
+          supabase.from('students').select('id, admission_number, class, profiles!profile_id(full_name)').eq('status', 'active').order('admission_number'),
+          supabase.from('fee_structures').select('*'),
+          supabase.from('academic_settings').select('current_term, current_year').eq('singleton_key', true).single(),
+        ])
+
+        setPayments(paymentsJson.payments || [])
+        setStudents((studentsRes.data || []) as unknown as Student[])
+        setFeeStructures((feesRes.data || []) as FeeStructure[])
+        setSettings(settingsRes.data as AcademicSettings | null)
+      } catch {
+        toast({ title: 'Error', description: 'Failed to load payment data. Please refresh the page.', variant: 'destructive' })
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [])
@@ -274,8 +282,11 @@ export default function AdminPaymentsPage() {
       toast({ title: 'Payment recorded', description: 'Offline payment has been saved successfully.' })
       setOfflineDialogOpen(false)
 
-      const refreshed = await fetch('/api/admin/payments').then(r => r.json())
-      setPayments(refreshed.payments || [])
+      const refreshRes = await fetch('/api/admin/payments')
+      if (refreshRes.ok) {
+        const refreshed = await refreshRes.json()
+        setPayments(refreshed.payments || [])
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
       toast({ title: 'Error', description: msg, variant: 'destructive' })
