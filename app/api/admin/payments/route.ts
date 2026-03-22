@@ -3,6 +3,27 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { randomUUID } from 'crypto'
 
+export async function GET() {
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
+  const adminDb = createAdminClient()
+  const { data: profile } = await adminDb.from('profiles').select('role').eq('id', session.user.id).single()
+  if (!profile || profile.role !== 'admin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { data, error } = await adminDb
+    .from('payments')
+    .select('*, admissions(class_applied, student_data)')
+    .order('created_at', { ascending: false })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ payments: data || [] })
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()

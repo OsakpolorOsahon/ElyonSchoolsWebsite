@@ -133,14 +133,14 @@ export default function AdminPaymentsPage() {
       const { data: p } = await supabase.from('profiles').select('full_name').eq('id', session.user.id).single()
       setProfile(p)
 
-      const [paymentsRes, studentsRes, feesRes, settingsRes] = await Promise.all([
-        supabase.from('payments').select('*, admissions(class_applied, student_data)').order('created_at', { ascending: false }),
+      const [paymentsJson, studentsRes, feesRes, settingsRes] = await Promise.all([
+        fetch('/api/admin/payments').then(r => r.json()),
         supabase.from('students').select('id, admission_number, class, profiles!profile_id(full_name)').eq('status', 'active').order('admission_number'),
         supabase.from('fee_structures').select('*'),
         supabase.from('academic_settings').select('current_term, current_year').eq('singleton_key', true).single(),
       ])
 
-      setPayments(paymentsRes.data || [])
+      setPayments(paymentsJson.payments || [])
       setStudents((studentsRes.data || []) as unknown as Student[])
       setFeeStructures((feesRes.data || []) as FeeStructure[])
       setSettings(settingsRes.data as AcademicSettings | null)
@@ -274,9 +274,8 @@ export default function AdminPaymentsPage() {
       toast({ title: 'Payment recorded', description: 'Offline payment has been saved successfully.' })
       setOfflineDialogOpen(false)
 
-      const supabase = createClient()
-      const { data: refreshed } = await supabase.from('payments').select('*, admissions(class_applied, student_data)').order('created_at', { ascending: false })
-      setPayments(refreshed || [])
+      const refreshed = await fetch('/api/admin/payments').then(r => r.json())
+      setPayments(refreshed.payments || [])
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
       toast({ title: 'Error', description: msg, variant: 'destructive' })
