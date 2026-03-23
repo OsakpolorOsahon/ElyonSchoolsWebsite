@@ -56,6 +56,7 @@ export default function UploadResultsPage() {
   const [caScores, setCaScores] = useState<Record<string, string>>({})
   const [examScores, setExamScores] = useState<Record<string, string>>({})
   const [remarks, setRemarks] = useState<Record<string, string>>({})
+  const [scoreErrors, setScoreErrors] = useState<Record<string, string>>({})
 
   const classStudents = allStudents.filter(s => s.class === selectedClass)
 
@@ -138,6 +139,7 @@ export default function UploadResultsPage() {
     setCaScores({})
     setExamScores({})
     setRemarks({})
+    setScoreErrors({})
     setSelectedSubject('')
   }, [selectedClass])
 
@@ -148,6 +150,40 @@ export default function UploadResultsPage() {
     if (score >= 45) return 'D'
     if (score >= 40) return 'E'
     return 'F'
+  }
+
+  const hasScoreErrors = Object.keys(scoreErrors).some(k => scoreErrors[k] !== '')
+
+  const handleCaChange = (studentId: string, value: string) => {
+    setCaScores(prev => ({ ...prev, [studentId]: value }))
+    if (value === '') {
+      setScoreErrors(prev => ({ ...prev, [`${studentId}:ca`]: '' }))
+      return
+    }
+    const n = parseFloat(value)
+    if (isNaN(n) || n < 0) {
+      setScoreErrors(prev => ({ ...prev, [`${studentId}:ca`]: 'Min 0' }))
+    } else if (n > 40) {
+      setScoreErrors(prev => ({ ...prev, [`${studentId}:ca`]: 'Max 40' }))
+    } else {
+      setScoreErrors(prev => ({ ...prev, [`${studentId}:ca`]: '' }))
+    }
+  }
+
+  const handleExamChange = (studentId: string, value: string) => {
+    setExamScores(prev => ({ ...prev, [studentId]: value }))
+    if (value === '') {
+      setScoreErrors(prev => ({ ...prev, [`${studentId}:exam`]: '' }))
+      return
+    }
+    const n = parseFloat(value)
+    if (isNaN(n) || n < 0) {
+      setScoreErrors(prev => ({ ...prev, [`${studentId}:exam`]: 'Min 0' }))
+    } else if (n > 60) {
+      setScoreErrors(prev => ({ ...prev, [`${studentId}:exam`]: 'Max 60' }))
+    } else {
+      setScoreErrors(prev => ({ ...prev, [`${studentId}:exam`]: '' }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -342,37 +378,53 @@ export default function UploadResultsPage() {
                       const ca = caScores[student.id] ? parseFloat(caScores[student.id]) : 0
                       const ex = examScores[student.id] ? parseFloat(examScores[student.id]) : 0
                       const total = (caScores[student.id] || examScores[student.id]) ? ca + ex : null
+                      const caError = scoreErrors[`${student.id}:ca`] || ''
+                      const examError = scoreErrors[`${student.id}:exam`] || ''
                       return (
                         <div key={student.id} className="p-3 bg-muted/30 rounded-lg space-y-2">
-                          <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-center">
-                            <div className="min-w-0">
+                          <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-start">
+                            <div className="min-w-0 pt-1">
                               <p className="font-medium truncate">{student.profiles?.full_name || 'Unknown'}</p>
                               <p className="text-xs text-muted-foreground">{student.admission_number}</p>
                             </div>
-                            <Input
-                              type="number"
-                              min="0"
-                              max="40"
-                              step="0.5"
-                              className="text-center h-9"
-                              placeholder="CA"
-                              value={caScores[student.id] || ''}
-                              onChange={e => setCaScores(prev => ({ ...prev, [student.id]: e.target.value }))}
-                              data-testid={`input-ca-${student.id}`}
-                            />
-                            <Input
-                              type="number"
-                              min="0"
-                              max="60"
-                              step="0.5"
-                              className="text-center h-9"
-                              placeholder="Exam"
-                              value={examScores[student.id] || ''}
-                              onChange={e => setExamScores(prev => ({ ...prev, [student.id]: e.target.value }))}
-                              data-testid={`input-exam-${student.id}`}
-                            />
-                            <div className="text-center">
-                              {total !== null && (
+                            <div className="space-y-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="40"
+                                step="0.5"
+                                className={`text-center h-9 ${caError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                                placeholder="CA"
+                                value={caScores[student.id] || ''}
+                                onChange={e => handleCaChange(student.id, e.target.value)}
+                                data-testid={`input-ca-${student.id}`}
+                              />
+                              {caError && (
+                                <p className="text-xs text-destructive text-center leading-none" data-testid={`error-ca-${student.id}`}>
+                                  {caError}
+                                </p>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="60"
+                                step="0.5"
+                                className={`text-center h-9 ${examError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                                placeholder="Exam"
+                                value={examScores[student.id] || ''}
+                                onChange={e => handleExamChange(student.id, e.target.value)}
+                                data-testid={`input-exam-${student.id}`}
+                              />
+                              {examError && (
+                                <p className="text-xs text-destructive text-center leading-none" data-testid={`error-exam-${student.id}`}>
+                                  {examError}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-center pt-1">
+                              {total !== null && !caError && !examError && (
                                 <span className="text-sm font-bold text-primary" data-testid={`text-total-${student.id}`}>
                                   {total} {getGrade(total)}
                                 </span>
@@ -395,7 +447,7 @@ export default function UploadResultsPage() {
             </Card>
 
             {students.length > 0 && (
-              <Button type="submit" disabled={isSubmitting} className="gap-2 w-full sm:w-auto" data-testid="button-save-results">
+              <Button type="submit" disabled={isSubmitting || hasScoreErrors} className="gap-2 w-full sm:w-auto" data-testid="button-save-results">
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {isSubmitting ? 'Saving Results...' : 'Save Results'}
               </Button>

@@ -107,7 +107,7 @@ export default async function AdminDashboard() {
 
     const classesWithResults = new Set<string>()
     for (const r of (examResults || [])) {
-      const studentClass = (r as unknown as { student_id: string; students: { class: string }[] }).students?.[0]?.class
+      const studentClass = (r as unknown as { student_id: string; students: { class: string } }).students?.class
       if (studentClass) classesWithResults.add(studentClass)
     }
     classStatuses = ALL_CLASSES.map(cls => ({ class: cls, hasResults: classesWithResults.has(cls) }))
