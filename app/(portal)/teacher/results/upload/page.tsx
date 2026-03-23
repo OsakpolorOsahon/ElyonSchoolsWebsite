@@ -151,10 +151,14 @@ export default function UploadResultsPage() {
     setIsEditing(false)
   }, [selectedSubject])
 
+  const studentIdsKey = useMemo(() => students.map(s => s.id).sort().join(','), [students])
+
   useEffect(() => {
     if (!selectedClass || !selectedExam || !selectedSubject) return
-    const studentIds = students.map(s => s.id)
+    const studentIds = studentIdsKey ? studentIdsKey.split(',').filter(Boolean) : []
     if (studentIds.length === 0) return
+
+    let cancelled = false
 
     const fetchExisting = async () => {
       setLoadingExisting(true)
@@ -165,6 +169,8 @@ export default function UploadResultsPage() {
         .eq('exam_id', selectedExam)
         .eq('subject_id', selectedSubject)
         .in('student_id', studentIds)
+
+      if (cancelled) return
 
       if (data && data.length > 0) {
         const newCa: Record<string, string> = {}
@@ -190,7 +196,8 @@ export default function UploadResultsPage() {
       setLoadingExisting(false)
     }
     fetchExisting()
-  }, [selectedClass, selectedExam, selectedSubject, students])
+    return () => { cancelled = true }
+  }, [selectedClass, selectedExam, selectedSubject, studentIdsKey])
 
   const getGrade = (score: number): string => {
     if (score >= 70) return 'A'
