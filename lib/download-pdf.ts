@@ -18,12 +18,22 @@ export async function downloadAsPdf(
   hideEls.forEach(el => { el.style.display = 'none' })
   showEls.forEach(el => { el.style.display = 'block' })
 
+  const PDF_WIDTH = 800
+  const savedWidth = element.style.width
+  const savedMinWidth = element.style.minWidth
+  const savedMaxWidth = element.style.maxWidth
+
+  element.style.width = `${PDF_WIDTH}px`
+  element.style.minWidth = `${PDF_WIDTH}px`
+  element.style.maxWidth = `${PDF_WIDTH}px`
+
   try {
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff',
       logging: false,
+      windowWidth: PDF_WIDTH,
     })
 
     const imgData = canvas.toDataURL('image/jpeg', 0.95)
@@ -60,6 +70,9 @@ export async function downloadAsPdf(
 
     pdf.save(filename)
   } finally {
+    element.style.width = savedWidth
+    element.style.minWidth = savedMinWidth
+    element.style.maxWidth = savedMaxWidth
     hideEls.forEach((el, i) => { el.style.display = savedHide[i] })
     showEls.forEach((el, i) => { el.style.display = savedShow[i] })
   }
