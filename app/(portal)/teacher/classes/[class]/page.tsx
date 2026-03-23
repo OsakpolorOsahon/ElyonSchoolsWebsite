@@ -62,13 +62,8 @@ export default function ClassStudentsPage() {
         return
       }
 
-      const [studentsRes, examsRes] = await Promise.all([
-        supabase
-          .from('students')
-          .select('id, admission_number, class, gender, profiles!profile_id(full_name)')
-          .eq('class', className)
-          .eq('status', 'active')
-          .order('admission_number'),
+      const [studentsJson, examsRes] = await Promise.all([
+        fetch(`/api/teacher/class-students?class=${encodeURIComponent(className)}`).then(r => r.json()),
         supabase
           .from('exams')
           .select('id, name, term, year, published')
@@ -76,7 +71,7 @@ export default function ClassStudentsPage() {
           .order('term'),
       ])
 
-      setStudents((studentsRes.data || []) as unknown as Student[])
+      setStudents((studentsJson.students || []) as unknown as Student[])
       setExams((examsRes.data || []) as Exam[])
       setLoading(false)
     }

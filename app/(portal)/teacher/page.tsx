@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { PortalHeader } from '@/components/portal/PortalHeader'
@@ -11,6 +12,7 @@ import {
   BookOpen,
   ArrowRight,
   Clock,
+  Megaphone,
 } from 'lucide-react'
 
 export const metadata = {
@@ -30,6 +32,8 @@ export default async function TeacherDashboard() {
 
   if (profile?.role !== 'teacher') redirect('/')
 
+  const adminDb = createAdminClient()
+
   const { data: classAssignments } = await supabase
     .from('class_teacher')
     .select('class')
@@ -39,7 +43,7 @@ export default async function TeacherDashboard() {
 
   let students: any[] = []
   if (assignedClasses.length > 0) {
-    const { data } = await supabase
+    const { data } = await adminDb
       .from('students')
       .select('id, admission_number, class, profiles!profile_id(full_name)')
       .in('class', assignedClasses)
@@ -49,15 +53,27 @@ export default async function TeacherDashboard() {
 
   const classCounts = assignedClasses.map(cls => ({
     name: cls,
-    students: students.filter(s => s.class === cls).length,
+    students: students.filter((s: any) => s.class === cls).length,
   }))
 
-  const { data: upcomingEventsData } = await supabase
-    .from('events')
-    .select('title, start_ts, location')
-    .gte('start_ts', new Date().toISOString())
-    .order('start_ts')
-    .limit(3)
+  const [upcomingEventsResult, announcementsResult] = await Promise.all([
+    supabase
+      .from('events')
+      .select('title, start_ts, location')
+      .gte('start_ts', new Date().toISOString())
+      .order('start_ts')
+      .limit(3),
+    adminDb
+      .from('announcements')
+      .select('id, title, body, created_at')
+      .eq('is_published', true)
+      .in('target_audience', ['all', 'teachers'])
+      .order('created_at', { ascending: false })
+      .limit(5),
+  ])
+
+  const upcomingEventsData = upcomingEventsResult.data
+  const announcements = announcementsResult.data
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -88,6 +104,28 @@ export default async function TeacherDashboard() {
             </Card>
           </Link>
         </div>
+
+        {announcements && announcements.length > 0 && (
+          <Card className="mb-8 border-primary/20 bg-primary/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Megaphone className="h-4 w-4 text-primary" />
+                School Announcements
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-0">
+              {announcements.map((ann: { id: string; title: string; body: string; created_at: string }) => (
+                <div key={ann.id} className="border-l-4 border-primary pl-3">
+                  <p className="font-medium text-sm">{ann.title}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{ann.body}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {new Date(ann.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {classCounts.length > 0 && (
           <div className="mb-8">
@@ -146,7 +184,7 @@ export default async function TeacherDashboard() {
                         <Users className="h-4 w-4 text-primary" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{s.profiles?.full_name || 'Unknown'}</p>
+                        <p className="text-sm font-medium">{(s.profiles as any)?.full_name || s.admission_number}</p>
                         <p className="text-xs text-muted-foreground">{s.class} · {s.admission_number}</p>
                       </div>
                     </div>
