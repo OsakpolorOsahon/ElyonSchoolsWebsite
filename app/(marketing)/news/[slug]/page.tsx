@@ -91,7 +91,7 @@ export default async function NewsArticlePage({ params }: { params: Promise<{ sl
             <Link href="/news">
               <Button variant="outline" className="gap-2">
                 <ArrowLeft className="h-4 w-4" />
-                Back to News & Events
+                Back to News
               </Button>
             </Link>
           </div>
