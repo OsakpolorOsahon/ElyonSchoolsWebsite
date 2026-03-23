@@ -201,10 +201,10 @@ export default async function StudentDashboard() {
             <CardContent>
               {results && results.length > 0 ? (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {results.map((result: { score: number; grade: string; subjects: { name: string }[] | null }, index: number) => (
+                  {results.map((result: { score: number; grade: string; subjects: { name: string } | null }, index: number) => (
                     <div key={index} className="p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">{result.subjects?.[0]?.name || 'Subject'}</span>
+                        <span className="text-sm font-medium">{result.subjects?.name || 'Subject'}</span>
                         <span className={`text-xs font-bold px-2 py-1 rounded ${
                           result.grade === 'A' ? 'bg-green-100 text-green-700' :
                           result.grade === 'B' ? 'bg-blue-100 text-blue-700' :
