@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { useRouter } from 'next/navigation'
 import { CreditCard, GraduationCap, Heart, FileText, Loader2, Shield, CheckCircle } from 'lucide-react'
 
 const paymentTypes = [
@@ -44,9 +43,11 @@ const paymentTypes = [
 function PaymentCard({
   type,
   onPay,
+  disabled,
 }: {
   type: typeof paymentTypes[0]
   onPay: (id: string, amount: number, metadata: Record<string, string>) => void
+  disabled?: boolean
 }) {
   const [amount, setAmount] = useState('')
   const [studentId, setStudentId] = useState('')
@@ -92,6 +93,7 @@ function PaymentCard({
               value={studentId}
               onChange={e => setStudentId(e.target.value)}
               placeholder="e.g. ELY/2024/001"
+              data-testid={`input-admission-${type.id}`}
             />
           </div>
         )}
@@ -102,6 +104,7 @@ function PaymentCard({
             value={payerName}
             onChange={e => setPayerName(e.target.value)}
             placeholder="e.g. Amaka Johnson"
+            data-testid={`input-name-${type.id}`}
           />
         </div>
         <div className="space-y-1">
@@ -112,6 +115,7 @@ function PaymentCard({
             value={payerEmail}
             onChange={e => setPayerEmail(e.target.value)}
             placeholder="your@email.com"
+            data-testid={`input-email-${type.id}`}
           />
         </div>
         <div className="space-y-1">
@@ -123,6 +127,7 @@ function PaymentCard({
             onChange={e => setAmount(e.target.value)}
             placeholder="e.g. 150000"
             min="100"
+            data-testid={`input-amount-${type.id}`}
           />
         </div>
         <Button
@@ -132,10 +137,20 @@ function PaymentCard({
             if (!amt || amt < 100) return
             onPay(type.id, amt, { student_id: studentId, payer_name: payerName, payer_email: payerEmail })
           }}
-          disabled={!amount || parseFloat(amount) < 100}
+          disabled={disabled || !amount || parseFloat(amount) < 100}
+          data-testid={`button-pay-${type.id}`}
         >
-          <CreditCard className="h-4 w-4" />
-          Pay ₦{amount ? parseInt(amount).toLocaleString() : '0'}
+          {disabled ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Redirecting...
+            </>
+          ) : (
+            <>
+              <CreditCard className="h-4 w-4" />
+              Pay ₦{amount ? parseInt(amount).toLocaleString() : '0'}
+            </>
+          )}
         </Button>
       </CardContent>
     </Card>
@@ -144,77 +159,36 @@ function PaymentCard({
 
 function PaymentsContent() {
   const { toast } = useToast()
-  const router = useRouter()
   const [processing, setProcessing] = useState(false)
 
-  const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
-
-  const handlePay = (paymentType: string, amount: number, metadata: Record<string, string>) => {
-    if (!paystackKey) {
+  const handlePay = async (paymentType: string, amount: number, metadata: Record<string, string>) => {
+    setProcessing(true)
+    try {
+      const origin = window.location.origin
+      const res = await fetch('/api/paystack/initialize-general', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          payment_type: paymentType,
+          email: metadata.payer_email || 'payer@elyonschools.edu.ng',
+          payer_name: metadata.payer_name,
+          callback_url: `${origin}/payments/callback`,
+          student_id: metadata.student_id || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.authorization_url) {
+        throw new Error(data.error || 'Could not initialize payment')
+      }
+      window.location.href = data.authorization_url
+    } catch (err) {
       toast({
-        title: 'Payment not configured',
-        description: 'Please contact the school office to make payment.',
+        title: 'Could not start payment',
+        description: err instanceof Error ? err.message : 'Please try again or contact the school.',
         variant: 'destructive',
       })
-      return
-    }
-
-    const email = metadata.payer_email || 'payer@elyonschools.edu.ng'
-    const ref = `ELYON-${paymentType.toUpperCase()}-${Date.now()}`
-
-    setProcessing(true)
-
-    const loadPaystack = () => {
-      const handler = (window as any).PaystackPop.setup({
-        key: paystackKey,
-        email,
-        amount: amount * 100,
-        currency: 'NGN',
-        ref,
-        metadata: { payment_type: paymentType, ...metadata },
-        callback: async (response: any) => {
-          try {
-            const res = await fetch('/api/paystack/general', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                reference: response.reference,
-                amount,
-                payment_type: paymentType,
-                payer_name: metadata.payer_name,
-                payer_email: email,
-                metadata,
-              }),
-            })
-            const data = await res.json()
-            if (res.ok) {
-              router.push(
-                `/payments/receipt?ref=${response.reference}&amount=${amount}&type=${paymentType}&name=${encodeURIComponent(metadata.payer_name || '')}`
-              )
-            } else {
-              throw new Error(data.error)
-            }
-          } catch (err: any) {
-            toast({ title: 'Verification issue', description: err.message || 'Payment received but not verified. Contact the school.', variant: 'destructive' })
-          } finally {
-            setProcessing(false)
-          }
-        },
-        onClose: () => {
-          setProcessing(false)
-          toast({ title: 'Payment cancelled', description: 'You can complete payment at any time.' })
-        },
-      })
-      handler.openIframe()
-    }
-
-    if ((window as any).PaystackPop) {
-      loadPaystack()
-    } else {
-      const script = document.createElement('script')
-      script.src = 'https://js.paystack.co/v1/inline.js'
-      script.onload = loadPaystack
-      document.head.appendChild(script)
+      setProcessing(false)
     }
   }
 
@@ -238,20 +212,11 @@ function PaymentsContent() {
         </div>
       </section>
 
-      {processing && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
-          <div className="bg-background rounded-xl p-8 shadow-xl text-center">
-            <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
-            <p className="font-medium">Processing payment...</p>
-          </div>
-        </div>
-      )}
-
       <section className="py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-8 md:grid-cols-3">
             {paymentTypes.map(type => (
-              <PaymentCard key={type.id} type={type} onPay={handlePay} />
+              <PaymentCard key={type.id} type={type} onPay={handlePay} disabled={processing} />
             ))}
           </div>
 

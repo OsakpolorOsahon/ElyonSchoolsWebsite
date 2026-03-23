@@ -87,6 +87,12 @@ function FeesContent() {
     new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(n)
 
   useEffect(() => {
+    if (searchParams.get('payment_success') === 'true') {
+      toast({ title: 'Payment successful!', description: 'Your payment has been recorded.' })
+    }
+  }, [])
+
+  useEffect(() => {
     const load = async () => {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -147,79 +153,38 @@ function FeesContent() {
     return payments.filter(p => p.student_id === selectedChildId)
   }, [selectedChildId, payments])
 
-  const handlePayNow = () => {
+  const handlePayNow = async () => {
     if (!selectedChild || outstanding <= 0) return
 
-    const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
-    if (!paystackKey) {
-      toast({ title: 'Payment not configured', description: 'Please contact the school office.', variant: 'destructive' })
-      return
-    }
-
-    const email = userEmail || 'parent@elyonschools.edu.ng'
-    const ref = `ELYON-FEE-${selectedChild.admission_number}-${Date.now()}`
-
     setProcessing(true)
-
-    const loadPaystack = () => {
-      const handler = window.PaystackPop!.setup({
-        key: paystackKey,
-        email,
-        amount: outstanding * 100,
-        currency: 'NGN',
-        ref,
-        metadata: {
+    try {
+      const origin = window.location.origin
+      const res = await fetch('/api/paystack/initialize-general', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: outstanding,
           payment_type: 'school_fee',
+          email: userEmail || 'parent@elyonschools.edu.ng',
+          payer_name: profile?.full_name,
+          callback_url: `${origin}/parent/fees/callback`,
           student_id: selectedChild.id,
           student_name: selectedChild.profiles?.full_name,
           admission_number: selectedChild.admission_number,
-          payer_name: profile?.full_name,
-        },
-        callback: async (response: { reference: string }) => {
-          try {
-            const res = await fetch('/api/paystack/general', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                reference: response.reference,
-                amount: outstanding,
-                payment_type: 'school_fee',
-                payer_name: profile?.full_name,
-                payer_email: email,
-                metadata: {
-                  student_id: selectedChild.id,
-                  student_name: selectedChild.profiles?.full_name,
-                  admission_number: selectedChild.admission_number,
-                },
-              }),
-            })
-            if (res.ok) {
-              toast({ title: 'Payment successful!', description: 'Your payment has been recorded.' })
-              window.location.reload()
-            } else {
-              throw new Error('Verification failed')
-            }
-          } catch {
-            toast({ title: 'Payment issue', description: 'Payment received but verification pending. Contact the school.', variant: 'destructive' })
-          } finally {
-            setProcessing(false)
-          }
-        },
-        onClose: () => {
-          setProcessing(false)
-          toast({ title: 'Payment cancelled', description: 'You can complete payment at any time.' })
-        },
+        }),
       })
-      handler.openIframe()
-    }
-
-    if (window.PaystackPop) {
-      loadPaystack()
-    } else {
-      const script = document.createElement('script')
-      script.src = 'https://js.paystack.co/v1/inline.js'
-      script.onload = loadPaystack
-      document.head.appendChild(script)
+      const data = await res.json()
+      if (!res.ok || !data.authorization_url) {
+        throw new Error(data.error || 'Could not start payment')
+      }
+      window.location.href = data.authorization_url
+    } catch (err) {
+      toast({
+        title: 'Could not start payment',
+        description: err instanceof Error ? err.message : 'Please try again or contact the school.',
+        variant: 'destructive',
+      })
+      setProcessing(false)
     }
   }
 
@@ -244,7 +209,7 @@ function FeesContent() {
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
           <div className="bg-background rounded-xl p-8 shadow-xl text-center">
             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
-            <p className="font-medium">Processing payment...</p>
+            <p className="font-medium">Redirecting to payment...</p>
           </div>
         </div>
       )}
@@ -284,14 +249,29 @@ function FeesContent() {
         ) : (
           <>
             {settings && (
-              <div className="mb-4">
+              <div className="mb-4 flex items-center gap-2 flex-wrap">
                 <Badge variant="outline" className="text-sm" data-testid="badge-current-term">
                   {settings.current_term} Term {settings.current_year}
                 </Badge>
                 {selectedChild && (
-                  <span className="ml-2 text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground">
                     {selectedChild.profiles?.full_name} — {selectedChild.class}
                   </span>
+                )}
+                {status === 'paid' && (
+                  <Badge className="bg-green-100 text-green-800 border-green-200" data-testid="badge-status-paid">
+                    <CheckCircle className="h-3 w-3 mr-1" /> Paid
+                  </Badge>
+                )}
+                {status === 'partial' && (
+                  <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200" data-testid="badge-status-partial">
+                    Partial Payment
+                  </Badge>
+                )}
+                {status === 'unpaid' && (
+                  <Badge className="bg-red-100 text-red-800 border-red-200" data-testid="badge-status-unpaid">
+                    Unpaid
+                  </Badge>
                 )}
               </div>
             )}
@@ -335,8 +315,9 @@ function FeesContent() {
                         </p>
                       </div>
                     </div>
-                    <Button className="gap-2" onClick={handlePayNow} data-testid="button-pay-now">
-                      <CreditCard className="h-4 w-4" /> Pay Now
+                    <Button className="gap-2" onClick={handlePayNow} disabled={processing} data-testid="button-pay-now">
+                      {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                      {processing ? 'Redirecting...' : 'Pay Now'}
                     </Button>
                   </div>
                 </CardContent>
@@ -424,14 +405,6 @@ function FeesContent() {
       </main>
     </div>
   )
-}
-
-declare global {
-  interface Window {
-    PaystackPop?: {
-      setup: (config: Record<string, unknown>) => { openIframe: () => void }
-    }
-  }
 }
 
 export default function ParentFeesPage() {
