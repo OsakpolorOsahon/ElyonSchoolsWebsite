@@ -36,7 +36,7 @@ export default async function ParentDashboard() {
   const adminDb = createAdminClient()
 
   const [childrenResult, upcomingEventsResult, announcementsResult] = await Promise.all([
-    supabase
+    adminDb
       .from('students')
       .select('id, admission_number, class, profiles!profile_id(full_name)')
       .eq('parent_profile_id', session.user.id)
