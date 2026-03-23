@@ -15,6 +15,7 @@ interface Student {
   admission_number: string
   class: string
   gender: string | null
+  department: string | null
   profiles: { full_name: string } | null
 }
 
@@ -154,6 +155,7 @@ export default function ClassStudentsPage() {
                       <p className="text-sm text-muted-foreground">
                         {student.admission_number}
                         {student.gender && ` · ${student.gender}`}
+                        {student.department && ` · ${student.department}`}
                       </p>
                     </div>
                     {selectedExam && (
