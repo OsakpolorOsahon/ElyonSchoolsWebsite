@@ -23,6 +23,7 @@ interface StudentRecord {
   id: string
   admission_number: string
   class: string
+  department: string | null
   profiles: { full_name: string } | null
 }
 
@@ -52,7 +53,7 @@ export default async function TeacherDashboard() {
   if (assignedClasses.length > 0) {
     const { data } = await adminDb
       .from('students')
-      .select('id, admission_number, class, profiles!profile_id(full_name)')
+      .select('id, admission_number, class, department, profiles!profile_id(full_name)')
       .in('class', assignedClasses)
       .eq('status', 'active')
     students = (data || []) as unknown as StudentRecord[]
@@ -192,7 +193,9 @@ export default async function TeacherDashboard() {
                       </div>
                       <div>
                         <p className="text-sm font-medium">{s.profiles?.full_name || s.admission_number}</p>
-                        <p className="text-xs text-muted-foreground">{s.class} · {s.admission_number}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {s.class} · {s.admission_number}{s.department && ` · ${s.department}`}
+                        </p>
                       </div>
                     </div>
                   ))}

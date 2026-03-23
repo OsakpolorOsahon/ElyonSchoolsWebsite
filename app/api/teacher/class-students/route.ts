@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
   const { data: students, error } = await adminDb
     .from('students')
-    .select('id, admission_number, class, gender, profiles!profile_id(full_name)')
+    .select('id, admission_number, class, gender, department, profiles!profile_id(full_name)')
     .eq('class', className)
     .eq('status', 'active')
     .order('admission_number')
