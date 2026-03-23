@@ -43,9 +43,21 @@ export async function POST(request: NextRequest) {
 
     const metadata: Record<string, string> = { payment_type }
     if (payer_name) metadata.payer_name = payer_name
+    if (clientEmail) metadata.payer_email = clientEmail
     if (student_id) metadata.student_id = student_id
     if (student_name) metadata.student_name = student_name
     if (admission_number) metadata.admission_number = admission_number
+
+    if (clientCallbackUrl) {
+      try {
+        const cbOrigin = new URL(clientCallbackUrl).origin
+        if (cbOrigin !== origin) {
+          return NextResponse.json({ error: 'Invalid callback_url origin' }, { status: 400 })
+        }
+      } catch {
+        return NextResponse.json({ error: 'Invalid callback_url' }, { status: 400 })
+      }
+    }
 
     const initResponse = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',

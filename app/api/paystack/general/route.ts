@@ -37,11 +37,12 @@ export async function POST(request: NextRequest) {
     const paystackMeta = verifyData.data.metadata || {}
     const payment_type = bodyPaymentType || paystackMeta.payment_type
     const payer_name = bodyPayerName || paystackMeta.payer_name || null
-    const payer_email = bodyPayerEmail || verifyData.data.customer?.email || null
+    const payer_email = bodyPayerEmail || paystackMeta.payer_email || verifyData.data.customer?.email || null
 
     const student_id_from_body = bodyMetadata?.student_id
     const student_id_from_paystack = paystackMeta.student_id
-    const student_id = student_id_from_body || student_id_from_paystack
+    // In the redirect path, always prefer Paystack-verified metadata over any request-supplied value
+    const student_id = from_redirect ? student_id_from_paystack : (student_id_from_body || student_id_from_paystack)
 
     if (!payment_type) {
       return NextResponse.json({ error: 'Missing payment_type' }, { status: 400 })
