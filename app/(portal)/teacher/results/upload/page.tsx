@@ -143,6 +143,10 @@ export default function UploadResultsPage() {
     setSelectedSubject('')
   }, [selectedClass])
 
+  useEffect(() => {
+    setScoreErrors({})
+  }, [selectedSubject])
+
   const getGrade = (score: number): string => {
     if (score >= 70) return 'A'
     if (score >= 60) return 'B'
