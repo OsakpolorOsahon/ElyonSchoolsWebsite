@@ -170,7 +170,10 @@ export default function UploadResultsPage() {
         .eq('subject_id', selectedSubject)
         .in('student_id', studentIds)
 
-      if (cancelled) return
+      if (cancelled) {
+        setLoadingExisting(false)
+        return
+      }
 
       if (data && data.length > 0) {
         const newCa: Record<string, string> = {}
