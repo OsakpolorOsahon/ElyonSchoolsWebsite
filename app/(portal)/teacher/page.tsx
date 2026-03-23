@@ -19,6 +19,13 @@ export const metadata = {
   title: 'Teacher Dashboard - Elyon Schools',
 }
 
+interface StudentRecord {
+  id: string
+  admission_number: string
+  class: string
+  profiles: { full_name: string } | null
+}
+
 export default async function TeacherDashboard() {
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
@@ -39,21 +46,21 @@ export default async function TeacherDashboard() {
     .select('class')
     .eq('teacher_profile_id', session.user.id)
 
-  const assignedClasses = (classAssignments || []).map((a: any) => a.class)
+  const assignedClasses = (classAssignments || []).map(a => (a as { class: string }).class)
 
-  let students: any[] = []
+  let students: StudentRecord[] = []
   if (assignedClasses.length > 0) {
     const { data } = await adminDb
       .from('students')
       .select('id, admission_number, class, profiles!profile_id(full_name)')
       .in('class', assignedClasses)
       .eq('status', 'active')
-    students = data || []
+    students = (data || []) as unknown as StudentRecord[]
   }
 
   const classCounts = assignedClasses.map(cls => ({
     name: cls,
-    students: students.filter((s: any) => s.class === cls).length,
+    students: students.filter(s => s.class === cls).length,
   }))
 
   const [upcomingEventsResult, announcementsResult] = await Promise.all([
@@ -178,13 +185,13 @@ export default async function TeacherDashboard() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {students.slice(0, 5).map((s: any) => (
+                  {students.slice(0, 5).map(s => (
                     <div key={s.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
                       <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                         <Users className="h-4 w-4 text-primary" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{(s.profiles as any)?.full_name || s.admission_number}</p>
+                        <p className="text-sm font-medium">{s.profiles?.full_name || s.admission_number}</p>
                         <p className="text-xs text-muted-foreground">{s.class} · {s.admission_number}</p>
                       </div>
                     </div>

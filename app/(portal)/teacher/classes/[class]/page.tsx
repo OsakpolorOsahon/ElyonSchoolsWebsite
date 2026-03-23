@@ -62,8 +62,8 @@ export default function ClassStudentsPage() {
         return
       }
 
-      const [studentsJson, examsRes] = await Promise.all([
-        fetch(`/api/teacher/class-students?class=${encodeURIComponent(className)}`).then(r => r.json()),
+      const [studentsRes, examsRes] = await Promise.all([
+        fetch(`/api/teacher/class-students?class=${encodeURIComponent(className)}`),
         supabase
           .from('exams')
           .select('id, name, term, year, published')
@@ -71,6 +71,7 @@ export default function ClassStudentsPage() {
           .order('term'),
       ])
 
+      const studentsJson = studentsRes.ok ? await studentsRes.json() : { students: [] }
       setStudents((studentsJson.students || []) as unknown as Student[])
       setExams((examsRes.data || []) as Exam[])
       setLoading(false)
