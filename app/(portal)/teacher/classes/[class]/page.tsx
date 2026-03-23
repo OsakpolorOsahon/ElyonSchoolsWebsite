@@ -71,7 +71,12 @@ export default function ClassStudentsPage() {
           .order('term'),
       ])
 
-      const studentsJson = studentsRes.ok ? await studentsRes.json() : { students: [] }
+      if (!studentsRes.ok) {
+        if (studentsRes.status === 403) setAuthorized(false)
+        setLoading(false)
+        return
+      }
+      const studentsJson = await studentsRes.json()
       setStudents((studentsJson.students || []) as unknown as Student[])
       setExams((examsRes.data || []) as Exam[])
       setLoading(false)
