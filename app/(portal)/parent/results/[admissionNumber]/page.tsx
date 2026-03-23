@@ -16,8 +16,8 @@ interface Result {
   score: number
   grade: string | null
   exam_id: string
-  exams: { id: string; name: string; term: string; year: number; published: boolean }[] | null
-  subjects: { name: string; code: string }[] | null
+  exams: { id: string; name: string; term: string; year: number; published: boolean } | null
+  subjects: { name: string; code: string } | null
 }
 
 interface Student {
@@ -51,21 +51,20 @@ export default function ChildResultsPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
 
-      const { data: p } = await supabase.from('profiles').select('full_name').eq('id', session.user.id).single()
-      setProfile(p)
+      const [profileResult, studentRes] = await Promise.all([
+        supabase.from('profiles').select('full_name').eq('id', session.user.id).single(),
+        fetch(`/api/parent/child?admissionNumber=${encodeURIComponent(admissionNumber)}`),
+      ])
 
-      const { data: studentData } = await supabase
-        .from('students')
-        .select('id, admission_number, class, profiles!profile_id(full_name)')
-        .eq('admission_number', admissionNumber)
-        .eq('parent_profile_id', session.user.id)
-        .single()
+      setProfile(profileResult.data)
 
-      if (!studentData) {
+      if (!studentRes.ok) {
         setLoading(false)
         return
       }
-      setStudent(studentData as unknown as Student)
+
+      const { student: studentData } = await studentRes.json() as { student: Student }
+      setStudent(studentData)
 
       const { data: resultsData } = await supabase
         .from('student_results')
@@ -74,7 +73,7 @@ export default function ChildResultsPage() {
         .eq('exams.published', true)
         .order('created_at', { ascending: false })
 
-      setResults((resultsData || []) as Result[])
+      setResults((resultsData || []) as unknown as Result[])
       setLoading(false)
     }
     load()
@@ -83,7 +82,7 @@ export default function ChildResultsPage() {
   const termOptions = useMemo(() => {
     const terms = new Set<string>()
     results.forEach(r => {
-      const exam = r.exams?.[0]
+      const exam = r.exams
       if (exam) terms.add(`${exam.term} ${exam.year}`)
     })
     return Array.from(terms).sort().reverse()
@@ -91,11 +90,14 @@ export default function ChildResultsPage() {
 
   const filteredResults = useMemo(() => {
     if (termFilter === 'all') return results
-    return results.filter(r => { const exam = r.exams?.[0]; return exam && `${exam.term} ${exam.year}` === termFilter })
+    return results.filter(r => {
+      const exam = r.exams
+      return exam && `${exam.term} ${exam.year}` === termFilter
+    })
   }, [results, termFilter])
 
   const groupedByExam = filteredResults.reduce((acc, result) => {
-    const exam = result.exams?.[0]
+    const exam = result.exams
     const eId = exam?.id || 'unknown'
     const examKey = exam ? `${exam.term} ${exam.year} — ${exam.name}` : 'Unknown Exam'
     if (!acc[eId]) acc[eId] = { label: examKey, results: [] }
@@ -175,7 +177,7 @@ export default function ChildResultsPage() {
                         {examName}
                       </CardTitle>
                       <div className="flex items-center gap-4">
-                        {student && eId !== 'unknown' && (
+                        {eId !== 'unknown' && (
                           <Link href={`/report-card/${student.id}/${eId}`}>
                             <Button variant="outline" size="sm" className="gap-1" data-testid={`button-report-card-${eId}`}>
                               <FileText className="h-4 w-4" />
@@ -195,7 +197,7 @@ export default function ChildResultsPage() {
                       {examResults.map(result => (
                         <div key={result.id} className="p-3 bg-muted/40 rounded-lg" data-testid={`result-${result.id}`}>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-sm">{result.subjects?.[0]?.name}</span>
+                            <span className="font-medium text-sm">{result.subjects?.name}</span>
                             <Badge className={gradeColors[result.grade || 'F'] || gradeColors.F}>
                               {result.grade || 'F'}
                             </Badge>

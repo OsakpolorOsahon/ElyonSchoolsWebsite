@@ -16,8 +16,8 @@ interface Result {
   grade: string | null
   remarks: string | null
   exam_id: string
-  exams: { id: string; name: string; term: string; year: number; published: boolean }[] | null
-  subjects: { name: string; code: string }[] | null
+  exams: { id: string; name: string; term: string; year: number; published: boolean } | null
+  subjects: { name: string; code: string } | null
 }
 
 const gradeColors: Record<string, string> = {
@@ -68,7 +68,7 @@ export default function StudentResultsPage() {
         .eq('exams.published', true)
         .order('created_at', { ascending: false })
 
-      setResults((data || []) as Result[])
+      setResults((data || []) as unknown as Result[])
       setLoading(false)
     }
     load()
@@ -77,7 +77,7 @@ export default function StudentResultsPage() {
   const termOptions = useMemo(() => {
     const terms = new Set<string>()
     results.forEach(r => {
-      const exam = r.exams?.[0]
+      const exam = r.exams
       if (exam) terms.add(`${exam.term} ${exam.year}`)
     })
     return Array.from(terms).sort().reverse()
@@ -85,11 +85,14 @@ export default function StudentResultsPage() {
 
   const filteredResults = useMemo(() => {
     if (termFilter === 'all') return results
-    return results.filter(r => { const exam = r.exams?.[0]; return exam && `${exam.term} ${exam.year}` === termFilter })
+    return results.filter(r => {
+      const exam = r.exams
+      return exam && `${exam.term} ${exam.year}` === termFilter
+    })
   }, [results, termFilter])
 
   const groupedByExam = filteredResults.reduce((acc, result) => {
-    const exam = result.exams?.[0]
+    const exam = result.exams
     const examId = exam?.id || 'unknown'
     const examKey = exam ? `${exam.term} ${exam.year} — ${exam.name}` : 'Unknown Exam'
     if (!acc[examId]) acc[examId] = { label: examKey, results: [] }
@@ -180,7 +183,7 @@ export default function StudentResultsPage() {
                       {examResults.map(result => (
                         <div key={result.id} className="p-3 bg-muted/40 rounded-lg" data-testid={`result-${result.id}`}>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-sm">{result.subjects?.[0]?.name || 'Unknown'}</span>
+                            <span className="font-medium text-sm">{result.subjects?.name || 'Unknown'}</span>
                             <Badge className={gradeColors[result.grade || 'F'] || gradeColors.F}>
                               {result.grade || 'F'}
                             </Badge>
