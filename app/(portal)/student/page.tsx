@@ -201,7 +201,8 @@ export default async function StudentDashboard() {
             <CardContent>
               {results && results.length > 0 ? (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {results.map((result: { score: number; grade: string; subjects: { name: string } | null }, index: number) => (
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {(results as any[]).map((result, index: number) => (
                     <div key={index} className="p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">{result.subjects?.name || 'Subject'}</span>
