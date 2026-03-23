@@ -74,7 +74,6 @@ export default async function AdminDashboard() {
     { count: newPaymentsCount },
     { data: recentPaymentsList },
     latestExamResult,
-    resultsDataResult,
   ] = await Promise.all([
     adminDb.from('admissions').select('*', { count: 'exact', head: true }).eq('status', 'processing'),
     adminDb.from('students').select('*', { count: 'exact', head: true }).eq('status', 'active'),
@@ -86,7 +85,6 @@ export default async function AdminDashboard() {
       .order('created_at', { ascending: false })
       .limit(5),
     adminDb.from('exams').select('id, name, term, year').order('year', { ascending: false }).order('created_at', { ascending: false }).limit(1).single(),
-    adminDb.from('student_results').select('student_id, students!inner(class)'),
   ])
 
   const ALL_CLASSES = [
@@ -96,21 +94,49 @@ export default async function AdminDashboard() {
     'SSS 1', 'SSS 2', 'SSS 3',
   ]
 
+  const SSS_CLASSES = new Set(['SSS 1', 'SSS 2', 'SSS 3'])
+
   let latestExam: { id: string; name: string; term: string; year: number } | null = latestExamResult.data
   let classStatuses: { class: string; hasResults: boolean }[] = []
 
   if (latestExam) {
-    const { data: examResults } = await adminDb
-      .from('student_results')
-      .select('student_id, students!inner(class)')
-      .eq('exam_id', latestExam.id)
+    const [activeStudentsRes, subjectsRes, examResultRowsRes] = await Promise.all([
+      adminDb.from('students').select('id, class, department').eq('status', 'active'),
+      adminDb.from('subjects').select('id, applicable_classes, applicable_departments'),
+      adminDb.from('student_results').select('student_id, subject_id').eq('exam_id', latestExam.id),
+    ])
 
-    const classesWithResults = new Set<string>()
-    for (const r of (examResults || [])) {
-      const studentClass = (r as unknown as { student_id: string; students: { class: string } }).students?.class
-      if (studentClass) classesWithResults.add(studentClass)
-    }
-    classStatuses = ALL_CLASSES.map(cls => ({ class: cls, hasResults: classesWithResults.has(cls) }))
+    const activeStudents = activeStudentsRes.data || []
+    const allSubjects = (subjectsRes.data || []) as { id: string; applicable_classes: string[]; applicable_departments: string[] }[]
+    const examResultRows = examResultRowsRes.data || []
+
+    const submittedPairs = new Set(examResultRows.map(r => `${r.student_id}:${r.subject_id}`))
+
+    classStatuses = ALL_CLASSES.map(cls => {
+      const classStudents = activeStudents.filter(s => s.class === cls)
+      if (classStudents.length === 0) return { class: cls, hasResults: false }
+
+      let totalExpected = 0
+      let totalActual = 0
+
+      for (const student of classStudents) {
+        const applicable = allSubjects.filter(subject => {
+          const classes = subject.applicable_classes || []
+          if (classes.length > 0 && !classes.includes(cls)) return false
+          if (SSS_CLASSES.has(cls)) {
+            const depts = subject.applicable_departments || []
+            if (depts.length > 0) {
+              if (!student.department || !depts.includes(student.department)) return false
+            }
+          }
+          return true
+        })
+        totalExpected += applicable.length
+        totalActual += applicable.filter(s => submittedPairs.has(`${student.id}:${s.id}`)).length
+      }
+
+      return { class: cls, hasResults: totalExpected > 0 && totalActual >= totalExpected }
+    })
   }
 
   const totalRevenue = allPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0

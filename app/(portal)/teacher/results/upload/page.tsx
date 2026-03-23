@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Upload, Save } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Loader2, ArrowLeft, Upload, Save, Pencil } from 'lucide-react'
 
 interface Student {
   id: string
@@ -57,6 +58,8 @@ export default function UploadResultsPage() {
   const [examScores, setExamScores] = useState<Record<string, string>>({})
   const [remarks, setRemarks] = useState<Record<string, string>>({})
   const [scoreErrors, setScoreErrors] = useState<Record<string, string>>({})
+  const [isEditing, setIsEditing] = useState(false)
+  const [loadingExisting, setLoadingExisting] = useState(false)
 
   const classStudents = allStudents.filter(s => s.class === selectedClass)
 
@@ -145,7 +148,49 @@ export default function UploadResultsPage() {
 
   useEffect(() => {
     setScoreErrors({})
+    setIsEditing(false)
   }, [selectedSubject])
+
+  useEffect(() => {
+    if (!selectedClass || !selectedExam || !selectedSubject) return
+    const studentIds = students.map(s => s.id)
+    if (studentIds.length === 0) return
+
+    const fetchExisting = async () => {
+      setLoadingExisting(true)
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('student_results')
+        .select('student_id, ca_score, exam_score, remarks')
+        .eq('exam_id', selectedExam)
+        .eq('subject_id', selectedSubject)
+        .in('student_id', studentIds)
+
+      if (data && data.length > 0) {
+        const newCa: Record<string, string> = {}
+        const newExam: Record<string, string> = {}
+        const newRemarks: Record<string, string> = {}
+        for (const row of data) {
+          newCa[row.student_id] = row.ca_score != null ? String(row.ca_score) : ''
+          newExam[row.student_id] = row.exam_score != null ? String(row.exam_score) : ''
+          newRemarks[row.student_id] = row.remarks || ''
+        }
+        setCaScores(newCa)
+        setExamScores(newExam)
+        setRemarks(newRemarks)
+        setScoreErrors({})
+        setIsEditing(true)
+      } else {
+        setCaScores({})
+        setExamScores({})
+        setRemarks({})
+        setScoreErrors({})
+        setIsEditing(false)
+      }
+      setLoadingExisting(false)
+    }
+    fetchExisting()
+  }, [selectedClass, selectedExam, selectedSubject, students])
 
   const getGrade = (score: number): string => {
     if (score >= 70) return 'A'
@@ -241,10 +286,11 @@ export default function UploadResultsPage() {
 
       if (error) throw error
 
-      toast({ title: 'Results saved!', description: `${studentIds.length} result${studentIds.length !== 1 ? 's' : ''} saved successfully.` })
+      toast({ title: isEditing ? 'Results updated!' : 'Results saved!', description: `${studentIds.length} result${studentIds.length !== 1 ? 's' : ''} ${isEditing ? 'updated' : 'saved'} successfully.` })
       setCaScores({})
       setExamScores({})
       setRemarks({})
+      setIsEditing(false)
     } catch (err: any) {
       toast({ title: 'Error saving results', description: err.message || 'Something went wrong.', variant: 'destructive' })
     } finally {
@@ -349,7 +395,15 @@ export default function UploadResultsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Step 2 — Enter CA & Exam Scores</CardTitle>
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle>Step 2 — Enter CA &amp; Exam Scores</CardTitle>
+                  {isEditing && (
+                    <Badge variant="secondary" className="gap-1 shrink-0">
+                      <Pencil className="h-3 w-3" />
+                      Editing saved scores
+                    </Badge>
+                  )}
+                </div>
                 <CardDescription>
                   {selectedClass
                     ? `${students.length} student${students.length !== 1 ? 's' : ''} in ${selectedClass}${
@@ -451,9 +505,13 @@ export default function UploadResultsPage() {
             </Card>
 
             {students.length > 0 && (
-              <Button type="submit" disabled={isSubmitting || hasScoreErrors} className="gap-2 w-full sm:w-auto" data-testid="button-save-results">
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                {isSubmitting ? 'Saving Results...' : 'Save Results'}
+              <Button type="submit" disabled={isSubmitting || hasScoreErrors || loadingExisting} className="gap-2 w-full sm:w-auto" data-testid="button-save-results">
+                {isSubmitting || loadingExisting
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : isEditing
+                  ? <Pencil className="h-4 w-4" />
+                  : <Save className="h-4 w-4" />}
+                {isSubmitting ? 'Saving...' : loadingExisting ? 'Loading...' : isEditing ? 'Update Results' : 'Save Results'}
               </Button>
             )}
           </form>
