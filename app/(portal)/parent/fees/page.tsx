@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, ArrowLeft, CreditCard, Wallet, TrendingDown, CheckCircle, AlertTriangle } from 'lucide-react'
+import { Loader2, ArrowLeft, CreditCard, Wallet, TrendingDown, CheckCircle, AlertTriangle, ShieldCheck } from 'lucide-react'
 
 interface Child {
   id: string
@@ -80,7 +80,7 @@ function FeesContent() {
   const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
   const [settings, setSettings] = useState<{ current_term: string; current_year: number } | null>(null)
-  const [processing, setProcessing] = useState(false)
+  const [processingId, setProcessingId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState('')
 
   const formatAmount = (n: number) =>
@@ -140,6 +140,16 @@ function FeesContent() {
 
   const outstanding = Math.max(0, expectedTotal - paidTotal)
 
+  // Per fee-type: sum of payments matching that specific payment_type
+  const paidByType = useMemo(() => {
+    const map: Record<string, number> = {}
+    childPayments.forEach(p => {
+      const type = p.payment_type || ''
+      map[type] = (map[type] || 0) + Number(p.amount)
+    })
+    return map
+  }, [childPayments])
+
   const status = expectedTotal === 0
     ? (paidTotal > 0 ? 'paid' : 'none')
     : outstanding <= 0
@@ -153,18 +163,21 @@ function FeesContent() {
     return payments.filter(p => p.student_id === selectedChildId)
   }, [selectedChildId, payments])
 
-  const handlePayNow = async () => {
-    if (!selectedChild || outstanding <= 0) return
-
-    setProcessing(true)
+  const initPayment = async (
+    paymentType: string,
+    amount: number,
+    itemId: string,
+  ) => {
+    if (!selectedChild || amount <= 0) return
+    setProcessingId(itemId)
     try {
       const origin = window.location.origin
       const res = await fetch('/api/paystack/initialize-general', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: outstanding,
-          payment_type: 'school_fee',
+          amount,
+          payment_type: paymentType,
           email: userEmail || 'parent@elyonschools.edu.ng',
           payer_name: profile?.full_name,
           callback_url: `${origin}/parent/fees/callback`,
@@ -184,8 +197,16 @@ function FeesContent() {
         description: err instanceof Error ? err.message : 'Please try again or contact the school.',
         variant: 'destructive',
       })
-      setProcessing(false)
+      setProcessingId(null)
     }
+  }
+
+  const handlePayAll = () => initPayment('school_fee', outstanding, 'pay-all')
+
+  const handlePayItem = (fee: FeeStructure) => {
+    const paidForItem = paidByType[fee.fee_type] || 0
+    const remaining = Math.min(Math.max(0, Number(fee.amount) - paidForItem), outstanding)
+    initPayment(fee.fee_type, remaining, fee.id)
   }
 
   if (loading) {
@@ -205,7 +226,7 @@ function FeesContent() {
         role="parent"
       />
 
-      {processing && (
+      {processingId && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
           <div className="bg-background rounded-xl p-8 shadow-xl text-center">
             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
@@ -311,13 +332,18 @@ function FeesContent() {
                       <div>
                         <p className="font-medium">Outstanding Balance: {formatAmount(outstanding)}</p>
                         <p className="text-sm text-muted-foreground">
-                          Pay the outstanding balance for {selectedChild?.profiles?.full_name} ({settings?.current_term} Term {settings?.current_year})
+                          Pay the full outstanding balance for {selectedChild?.profiles?.full_name} ({settings?.current_term} Term {settings?.current_year})
                         </p>
                       </div>
                     </div>
-                    <Button className="gap-2" onClick={handlePayNow} disabled={processing} data-testid="button-pay-now">
-                      {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-                      {processing ? 'Redirecting...' : 'Pay Now'}
+                    <Button
+                      className="gap-2"
+                      onClick={handlePayAll}
+                      disabled={!!processingId}
+                      data-testid="button-pay-now"
+                    >
+                      {processingId === 'pay-all' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                      {processingId === 'pay-all' ? 'Redirecting...' : 'Pay All Outstanding'}
                     </Button>
                   </div>
                 </CardContent>
@@ -341,14 +367,74 @@ function FeesContent() {
                   <CardTitle className="text-base">Fee Breakdown — {selectedChild?.class}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {childFees.map(f => (
-                      <div key={f.id} className="flex justify-between py-2 border-b border-dashed last:border-0" data-testid={`fee-item-${f.id}`}>
-                        <span className="text-sm">{feeTypeLabels[f.fee_type] || f.fee_type}</span>
-                        <span className="text-sm font-medium">{formatAmount(Number(f.amount))}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between pt-2 font-bold">
+                  <div className="space-y-1">
+                    {childFees.map(f => {
+                      const feeAmount = Number(f.amount)
+                      const paidForItem = paidByType[f.fee_type] || 0
+                      const remainingForItem = Math.max(0, feeAmount - paidForItem)
+                      const itemFullyPaid = paidForItem >= feeAmount
+                      // Covered by a lump-sum school_fee payment (outstanding is 0 but specific type not paid)
+                      const coveredByLump = !itemFullyPaid && outstanding <= 0
+
+                      return (
+                        <div
+                          key={f.id}
+                          className="flex items-center justify-between gap-3 py-3 border-b border-dashed last:border-0"
+                          data-testid={`fee-item-${f.id}`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            {itemFullyPaid && (
+                              <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                            )}
+                            <span className={`text-sm ${itemFullyPaid ? 'text-muted-foreground line-through' : ''}`}>
+                              {feeTypeLabels[f.fee_type] || f.fee_type}
+                            </span>
+                            {paidForItem > 0 && !itemFullyPaid && (
+                              <Badge className="text-xs bg-yellow-100 text-yellow-800 border-yellow-200 flex-shrink-0">
+                                {formatAmount(paidForItem)} paid
+                              </Badge>
+                            )}
+                            {coveredByLump && (
+                              <Badge className="text-xs bg-green-100 text-green-800 border-green-200 flex-shrink-0">
+                                <ShieldCheck className="h-3 w-3 mr-1" />Covered
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className={`text-sm font-medium ${itemFullyPaid ? 'text-muted-foreground' : ''}`}>
+                              {formatAmount(feeAmount)}
+                            </span>
+
+                            {itemFullyPaid ? (
+                              <Badge className="bg-green-100 text-green-800 border-green-200 text-xs" data-testid={`badge-paid-${f.id}`}>
+                                Paid
+                              </Badge>
+                            ) : coveredByLump ? null : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs gap-1 border-primary/40 text-primary hover:bg-primary/5"
+                                onClick={() => handlePayItem(f)}
+                                disabled={!!processingId}
+                                data-testid={`button-pay-item-${f.id}`}
+                              >
+                                {processingId === f.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <CreditCard className="h-3 w-3" />
+                                )}
+                                {paidForItem > 0
+                                  ? `Pay ${formatAmount(remainingForItem)}`
+                                  : `Pay ${formatAmount(feeAmount)}`}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                    <div className="flex justify-between pt-3 font-bold">
                       <span>Total</span>
                       <span>{formatAmount(expectedTotal)}</span>
                     </div>
