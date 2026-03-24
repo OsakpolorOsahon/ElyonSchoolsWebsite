@@ -74,7 +74,7 @@ export default async function ParentDashboard() {
         role="parent"
       />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-6 py-8 animate-fade-up">
         {announcements && announcements.length > 0 && (
           <Card className="mb-6 border-primary/20 bg-primary/5">
             <CardHeader className="pb-3">

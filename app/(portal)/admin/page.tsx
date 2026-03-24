@@ -170,8 +170,8 @@ export default async function AdminDashboard() {
         role="admin"
       />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <main className="mx-auto max-w-7xl px-6 py-8 animate-fade-up">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8 stagger-children">
           {stats.map((stat) => (
             <Link key={stat.name} href={stat.href}>
               <Card className="hover-elevate">

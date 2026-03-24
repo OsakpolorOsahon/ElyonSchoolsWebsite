@@ -136,7 +136,7 @@ export default async function HomePage() {
           priority
         />
         <div className="relative z-20 mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8 lg:py-40">
-          <div className="max-w-2xl">
+          <div className="max-w-2xl animate-fade-up">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-accent/90 px-4 py-2 text-sm font-medium text-accent-foreground">
               <Star className="h-4 w-4" />
               Celebrating 30 Years of Excellence
@@ -169,7 +169,7 @@ export default async function HomePage() {
 
       <section className="py-16 bg-muted/30">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-6 lg:grid-cols-4 stagger-children">
             {stats.map((stat) => (
               <Card key={stat.id} className="text-center hover-elevate">
                 <CardContent className="pt-6">
@@ -197,7 +197,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-3 stagger-children">
             {schoolLevels.map((level) => (
               <Card key={level.name} className="relative overflow-hidden hover-elevate group">
                 <div className={`absolute top-0 left-0 right-0 h-2 ${level.color}`} />
@@ -303,7 +303,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-3 stagger-children">
             {events.map((event, index) => (
               <Card key={index} className="hover-elevate">
                 <CardContent className="pt-6">
@@ -352,7 +352,7 @@ export default async function HomePage() {
           </div>
 
           {news.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-3 stagger-children">
               {news.map((post) => (
                 <Card key={post.id} className="hover-elevate flex flex-col">
                   <CardContent className="pt-6 flex flex-col flex-1">
@@ -405,7 +405,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 stagger-children">
             {gallery.length > 0 ? (
               gallery.map((item) => (
                 <div key={item.id} className="relative aspect-square rounded-lg overflow-hidden group" data-testid={`gallery-item-${item.id}`}>

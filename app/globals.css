@@ -7,8 +7,10 @@
   --foreground: 133 45% 15%;
   --card: 0 0% 98%;
   --card-foreground: 133 45% 15%;
+  --card-border: 0 0% 92%;
   --popover: 0 0% 98%;
   --popover-foreground: 133 45% 15%;
+  --popover-border: 0 0% 92%;
   --primary: 133 65% 28%;
   --primary-foreground: 0 0% 100%;
   --secondary: 133 58% 42%;
@@ -36,6 +38,22 @@
   --chart-3: 133 45% 25%;
   --chart-4: 50 85% 38%;
   --chart-5: 133 55% 20%;
+
+  /* Elevation */
+  --button-outline: rgba(0,0,0, .10);
+  --badge-outline: rgba(0,0,0, .05);
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .08);
+  --opaque-button-border-intensity: -8;
+
+  /* Border color utilities */
+  --primary-border: hsl(133 65% 20%);
+  --secondary-border: hsl(133 58% 34%);
+  --muted-border: hsl(0 0% 84%);
+  --accent-border: hsl(50 100% 42%);
+  --destructive-border: hsl(0 72% 30%);
+  --sidebar-primary-border: hsl(133 65% 20%);
+  --sidebar-accent-border: hsl(133 8% 82%);
 }
 
 .dark {
@@ -43,8 +61,10 @@
   --foreground: 133 20% 92%;
   --card: 0 0% 7%;
   --card-foreground: 133 20% 92%;
+  --card-border: 0 0% 11%;
   --popover: 0 0% 11%;
   --popover-foreground: 133 20% 92%;
+  --popover-border: 0 0% 14%;
   --primary: 133 65% 28%;
   --primary-foreground: 133 65% 98%;
   --secondary: 133 58% 42%;
@@ -71,6 +91,22 @@
   --chart-3: 133 50% 75%;
   --chart-4: 50 85% 62%;
   --chart-5: 133 55% 80%;
+
+  /* Elevation */
+  --button-outline: rgba(255,255,255, .10);
+  --badge-outline: rgba(255,255,255, .05);
+  --elevate-1: rgba(255,255,255, .04);
+  --elevate-2: rgba(255,255,255, .09);
+  --opaque-button-border-intensity: 9;
+
+  /* Border color utilities */
+  --primary-border: hsl(133 65% 36%);
+  --secondary-border: hsl(133 58% 50%);
+  --muted-border: hsl(0 0% 21%);
+  --accent-border: hsl(50 100% 58%);
+  --destructive-border: hsl(0 72% 40%);
+  --sidebar-primary-border: hsl(133 65% 36%);
+  --sidebar-accent-border: hsl(133 8% 22%);
 }
 
 @layer base {
@@ -80,5 +116,165 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* ============================================================
+   Animation Keyframes
+   ============================================================ */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-from-top {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer utilities {
+
+  /* ---- Animation utilities ---- */
+
+  .animate-fade-up {
+    animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.35s ease-out both;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-slide-from-right {
+    animation: slide-from-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-slide-from-top {
+    animation: slide-from-top 0.3s ease-out both;
+  }
+
+  /* ---- Stagger system ----
+   * Apply .stagger-children to any grid or flex container.
+   * Every direct child fades up with an incrementing delay.
+   */
+  .stagger-children > * {
+    animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .stagger-children > *:nth-child(1)    { animation-delay: 0ms;   }
+  .stagger-children > *:nth-child(2)    { animation-delay: 65ms;  }
+  .stagger-children > *:nth-child(3)    { animation-delay: 130ms; }
+  .stagger-children > *:nth-child(4)    { animation-delay: 195ms; }
+  .stagger-children > *:nth-child(5)    { animation-delay: 260ms; }
+  .stagger-children > *:nth-child(6)    { animation-delay: 325ms; }
+  .stagger-children > *:nth-child(7)    { animation-delay: 390ms; }
+  .stagger-children > *:nth-child(8)    { animation-delay: 455ms; }
+  .stagger-children > *:nth-child(9)    { animation-delay: 520ms; }
+  .stagger-children > *:nth-child(10)   { animation-delay: 585ms; }
+  .stagger-children > *:nth-child(11)   { animation-delay: 650ms; }
+  .stagger-children > *:nth-child(12)   { animation-delay: 715ms; }
+  .stagger-children > *:nth-child(n+13) { animation-delay: 780ms; }
+
+  /* ---- Elevation System ---- */
+
+  .no-default-hover-elevate {}
+  .no-default-active-elevate {}
+
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: -1;
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  .border.toggle-elevate::before {
+    inset: -1px;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: 999;
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after {
+    inset: -1px;
   }
 }

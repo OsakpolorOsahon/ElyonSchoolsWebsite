@@ -134,7 +134,7 @@ export default async function StudentDashboard() {
         role="student"
       />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-6 py-8 animate-fade-up">
         {announcements && announcements.length > 0 && (
           <Card className="mb-6 border-primary/20 bg-primary/5">
             <CardHeader className="pb-3">
@@ -157,7 +157,7 @@ export default async function StudentDashboard() {
           </Card>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-3 mb-8">
+        <div className="grid gap-6 lg:grid-cols-3 mb-8 stagger-children">
           <Card className="lg:col-span-1">
             <CardContent className="pt-6">
               <div className="text-center">

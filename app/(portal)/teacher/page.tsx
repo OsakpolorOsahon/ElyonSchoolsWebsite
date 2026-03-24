@@ -91,7 +91,7 @@ export default async function TeacherDashboard() {
         role="teacher"
       />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-6 py-8 animate-fade-up">
         <div className="mb-8">
           <Link href="/teacher/results/upload">
             <Card className="bg-primary text-primary-foreground hover-elevate">
@@ -138,7 +138,7 @@ export default async function TeacherDashboard() {
         {classCounts.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">My Classes</h2>
-            <div className="grid gap-6 lg:grid-cols-3">
+            <div className="grid gap-6 lg:grid-cols-3 stagger-children">
               {classCounts.map((cls) => (
                 <Card key={cls.name} className="hover-elevate">
                   <CardContent className="pt-6">

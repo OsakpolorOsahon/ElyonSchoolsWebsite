@@ -170,7 +170,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 stagger-children">
             {values.map((value) => (
               <Card key={value.name} className="text-center hover-elevate">
                 <CardContent className="pt-6">

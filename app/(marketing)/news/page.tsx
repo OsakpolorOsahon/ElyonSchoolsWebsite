@@ -164,7 +164,7 @@ export default async function NewsPage() {
             {featuredNews.length > 0 && (
               <div className="mb-10">
                 <h3 className="text-lg font-semibold text-muted-foreground mb-4">Featured Stories</h3>
-                <div className="grid gap-6 lg:grid-cols-2">
+                <div className="grid gap-6 lg:grid-cols-2 stagger-children">
                   {featuredNews.map((article: any) => (
                     <Card key={article.id} className="hover-elevate">
                       <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-t-lg" />

@@ -145,7 +145,7 @@ export default function AdmissionsPage() {
             </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 stagger-children">
             {admissionSteps.map((step) => (
               <Card key={step.step} className="relative hover-elevate">
                 <CardContent className="pt-6">

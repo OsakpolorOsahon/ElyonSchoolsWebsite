@@ -141,7 +141,7 @@ export default async function GalleryPage() {
             </TabsList>
 
             <TabsContent value="all">
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
                 {galleryItems.map((item) => (
                   <GalleryCard key={item.id} item={item} />
                 ))}
@@ -150,7 +150,7 @@ export default async function GalleryPage() {
 
             {categories.slice(1).map((category) => (
               <TabsContent key={category.id} value={category.id}>
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
                   {galleryItems
                     .filter((item) => item.category === category.id)
                     .map((item) => (
