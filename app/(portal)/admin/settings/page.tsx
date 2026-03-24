@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -8,12 +8,30 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Settings, Save } from 'lucide-react'
+import { Loader2, ArrowLeft, Settings, Save, AlertTriangle } from 'lucide-react'
 
-const currentYear = new Date().getFullYear()
-const yearOptions = Array.from({ length: 7 }, (_, i) => currentYear - 2 + i)
+const TERM_ORDER: Record<string, number> = { First: 1, Second: 2, Third: 3 }
+
+function isRollback(
+  savedTerm: string, savedYear: number,
+  newTerm: string, newYear: number
+): boolean {
+  if (newYear < savedYear) return true
+  if (newYear === savedYear && TERM_ORDER[newTerm] < TERM_ORDER[savedTerm]) return true
+  return false
+}
 
 export default function AdminSettingsPage() {
   const { toast } = useToast()
@@ -22,10 +40,12 @@ export default function AdminSettingsPage() {
   const [profile, setProfile] = useState<any>(null)
   const [form, setForm] = useState({
     current_term: 'First',
-    current_year: String(currentYear),
+    current_year: String(new Date().getFullYear()),
     school_name: 'Elyon Schools',
     principal_name: '',
   })
+  const savedSettings = useRef<{ term: string; year: number } | null>(null)
+  const [showRollbackDialog, setShowRollbackDialog] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -48,26 +68,29 @@ export default function AdminSettingsPage() {
           school_name: settings.school_name,
           principal_name: settings.principal_name || '',
         })
+        savedSettings.current = { term: settings.current_term, year: settings.current_year }
       }
       setLoading(false)
     }
     load()
   }, [])
 
-  async function handleSave() {
+  async function performSave() {
     setSaving(true)
     try {
       const supabase = createClient()
+      const newYear = parseInt(form.current_year)
       const { error } = await supabase
         .from('academic_settings')
         .upsert({
           singleton_key: true,
           current_term: form.current_term,
-          current_year: parseInt(form.current_year),
+          current_year: newYear,
           school_name: form.school_name,
           principal_name: form.principal_name,
         }, { onConflict: 'singleton_key' })
       if (error) throw error
+      savedSettings.current = { term: form.current_term, year: newYear }
       toast({ title: 'Settings saved', description: 'Academic settings have been updated.' })
     } catch (err: any) {
       toast({ title: 'Error', description: err.message || 'Failed to save settings', variant: 'destructive' })
@@ -75,6 +98,30 @@ export default function AdminSettingsPage() {
       setSaving(false)
     }
   }
+
+  function handleSave() {
+    const newYear = parseInt(form.current_year)
+    if (isNaN(newYear) || newYear < 1900 || newYear > 2200) {
+      toast({ title: 'Invalid year', description: 'Please enter a valid 4-digit year.', variant: 'destructive' })
+      return
+    }
+
+    if (
+      savedSettings.current &&
+      isRollback(savedSettings.current.term, savedSettings.current.year, form.current_term, newYear)
+    ) {
+      setShowRollbackDialog(true)
+      return
+    }
+
+    performSave()
+  }
+
+  const saved = savedSettings.current
+  const newYear = parseInt(form.current_year)
+  const rollbackDescription = saved
+    ? `You are changing the academic period from ${saved.term} Term ${saved.year} to ${form.current_term} Term ${isNaN(newYear) ? form.current_year : newYear}. This is a step backwards and may cause incorrect fee balances and term labels across all parent and student portals.`
+    : ''
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -124,17 +171,17 @@ export default function AdminSettingsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Current Year</Label>
-                  <Select value={form.current_year} onValueChange={v => setForm(f => ({ ...f, current_year: v }))}>
-                    <SelectTrigger data-testid="select-current-year">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {yearOptions.map(y => (
-                        <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="currentYear">Current Year</Label>
+                  <Input
+                    id="currentYear"
+                    type="number"
+                    min={1900}
+                    max={2200}
+                    value={form.current_year}
+                    onChange={e => setForm(f => ({ ...f, current_year: e.target.value }))}
+                    placeholder="e.g. 2026"
+                    data-testid="input-current-year"
+                  />
                 </div>
               </div>
 
@@ -167,6 +214,32 @@ export default function AdminSettingsPage() {
           </Card>
         )}
       </main>
+
+      <AlertDialog open={showRollbackDialog} onOpenChange={setShowRollbackDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Warning: Setting Academic Period Backwards
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm leading-relaxed">
+              {rollbackDescription}
+              <br /><br />
+              Are you sure you want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-rollback-cancel">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={performSave}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-rollback-confirm"
+            >
+              Yes, proceed
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
