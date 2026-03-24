@@ -436,7 +436,7 @@ export default function UploadResultsPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 px-3 text-xs font-semibold text-muted-foreground">
+                    <div className="hidden sm:grid grid-cols-[1fr_80px_80px_60px] gap-2 px-3 text-xs font-semibold text-muted-foreground">
                       <span>Student</span>
                       <span className="text-center">CA (0-40)</span>
                       <span className="text-center">Exam (0-60)</span>
@@ -450,7 +450,56 @@ export default function UploadResultsPage() {
                       const examError = scoreErrors[`${student.id}:exam`] || ''
                       return (
                         <div key={student.id} className="p-3 bg-muted/30 rounded-lg space-y-2">
-                          <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-start">
+                          {/* Mobile layout: name on top, inputs in a 3-column row below */}
+                          <div className="sm:hidden space-y-2">
+                            <div>
+                              <p className="font-medium">{student.profiles?.full_name || 'Unknown'}</p>
+                              <p className="text-xs text-muted-foreground">{student.admission_number}</p>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 items-start">
+                              <div className="space-y-1">
+                                <p className="text-xs text-center text-muted-foreground font-medium">CA (0-40)</p>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="40"
+                                  step="0.5"
+                                  className={`text-center h-9 ${caError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                                  placeholder="CA"
+                                  value={caScores[student.id] || ''}
+                                  onChange={e => handleCaChange(student.id, e.target.value)}
+                                />
+                                {caError && (
+                                  <p className="text-xs text-destructive text-center leading-none">{caError}</p>
+                                )}
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-xs text-center text-muted-foreground font-medium">Exam (0-60)</p>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="60"
+                                  step="0.5"
+                                  className={`text-center h-9 ${examError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                                  placeholder="Exam"
+                                  value={examScores[student.id] || ''}
+                                  onChange={e => handleExamChange(student.id, e.target.value)}
+                                />
+                                {examError && (
+                                  <p className="text-xs text-destructive text-center leading-none">{examError}</p>
+                                )}
+                              </div>
+                              <div className="text-center pt-5">
+                                {total !== null && !caError && !examError && (
+                                  <span className="text-sm font-bold text-primary" data-testid={`text-total-${student.id}`}>
+                                    {total} {getGrade(total)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          {/* Desktop layout: original 4-column grid */}
+                          <div className="hidden sm:grid grid-cols-[1fr_80px_80px_60px] gap-2 items-start">
                             <div className="min-w-0 pt-1">
                               <p className="font-medium truncate">{student.profiles?.full_name || 'Unknown'}</p>
                               <p className="text-xs text-muted-foreground">{student.admission_number}</p>

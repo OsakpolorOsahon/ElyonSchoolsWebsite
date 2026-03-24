@@ -191,7 +191,7 @@ export default function ReportCardPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-x-8 gap-y-2 mb-6 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mb-6 text-sm">
               <div className="flex gap-2">
                 <span className="font-semibold text-gray-600 w-36 shrink-0">Student Name:</span>
                 <span className="font-medium border-b border-dotted border-gray-400 flex-1" data-testid="text-student-name">

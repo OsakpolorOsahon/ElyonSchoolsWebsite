@@ -582,7 +582,7 @@ export default function AdminStudentsPage() {
               return (
                 <Card key={student.id} data-testid={`card-student-${student.id}`}>
                   <CardContent className="py-4">
-                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                       <div className="flex items-center gap-4 min-w-0">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
                           <Users className="h-5 w-5 text-primary" />

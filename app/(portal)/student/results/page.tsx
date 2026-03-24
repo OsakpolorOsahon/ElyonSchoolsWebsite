@@ -157,7 +157,7 @@ export default function StudentResultsPage() {
               return (
                 <Card key={examId}>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <CardTitle className="flex items-center gap-2">
                         <Trophy className="h-5 w-5 text-primary" />
                         {examName}
@@ -167,7 +167,7 @@ export default function StudentResultsPage() {
                           <Link href={`/report-card/${studentId}/${examId}`}>
                             <Button variant="outline" size="sm" className="gap-1" data-testid={`button-report-card-${examId}`}>
                               <FileText className="h-4 w-4" />
-                              View / Print Report Card
+                              Report Card
                             </Button>
                           </Link>
                         )}

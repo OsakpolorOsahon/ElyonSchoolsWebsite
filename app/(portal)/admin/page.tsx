@@ -341,7 +341,7 @@ export default async function AdminDashboard() {
         </div>
         {latestExam && classStatuses.length > 0 && (
           <Card className="mt-8">
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <ClipboardList className="h-5 w-5" />
@@ -357,7 +357,7 @@ export default async function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-7 gap-3" data-testid="grid-results-status">
+              <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 sm:gap-3" data-testid="grid-results-status">
                 {classStatuses.map(cs => (
                   <Link key={cs.class} href={`/admin/students?class=${encodeURIComponent(cs.class)}`}>
                     <div

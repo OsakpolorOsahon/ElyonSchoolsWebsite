@@ -139,7 +139,7 @@ export default function AdminAnnouncementsPage() {
       />
 
       <main className="mx-auto max-w-5xl px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div className="flex items-center gap-4">
             <Link href="/admin">
               <Button variant="ghost" size="sm" className="gap-1">
