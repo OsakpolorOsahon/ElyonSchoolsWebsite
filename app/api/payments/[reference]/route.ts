@@ -52,22 +52,26 @@ export async function GET(
 
     const PUBLIC_RECEIPT_TYPES = ['application_fee', 'admission_fee', 'donation']
 
-    if (!session) {
-      if (isUUID || !PUBLIC_RECEIPT_TYPES.includes(payment.payment_type) || payment.status !== 'success') {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-      }
+    // Public payment types accessed by Paystack reference string are viewable by anyone
+    // who has the reference — the reference itself is the access key for anonymous payments.
+    // UUID lookups always require authentication (used in portal receipt links).
+    if (!isUUID && PUBLIC_RECEIPT_TYPES.includes(payment.payment_type) && payment.status === 'success') {
       return NextResponse.json({
         payment: {
           id: payment.id,
           amount: payment.amount,
           status: payment.status,
           payment_type: payment.payment_type,
-          payer_name: payment.payer_name ? payment.payer_name.split(' ').map((w: string) => w[0] + '***').join(' ') : 'N/A',
+          payer_name: payment.payer_name || 'N/A',
           reference: payment.reference,
           created_at: payment.created_at,
           method: payment.method,
         }
       })
+    }
+
+    if (!session) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     const { data: profile } = await adminDb.from('profiles').select('role').eq('id', session.user.id).single()

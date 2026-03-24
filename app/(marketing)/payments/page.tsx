@@ -8,18 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { CreditCard, GraduationCap, Heart, FileText, Loader2, Shield, CheckCircle } from 'lucide-react'
+import { CreditCard, Heart, FileText, Loader2, Shield, CheckCircle } from 'lucide-react'
 
 const paymentTypes = [
-  {
-    id: 'school_fee',
-    title: 'School Fees',
-    description: 'Pay tuition and other school fees for enrolled students',
-    icon: GraduationCap,
-    color: 'text-primary',
-    bg: 'bg-primary/10',
-    fields: ['student_id', 'amount'],
-  },
   {
     id: 'application_fee',
     title: 'Application Fee',
@@ -205,7 +196,7 @@ function PaymentsContent() {
               Make a Payment
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-              Pay school fees, donations, and other charges securely online via Paystack.
+              Make donations or pay application fees securely online via Paystack.
               All payments are encrypted and protected.
             </p>
           </div>
@@ -214,7 +205,7 @@ function PaymentsContent() {
 
       <section className="py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-2 max-w-3xl mx-auto">
             {paymentTypes.map(type => (
               <PaymentCard key={type.id} type={type} onPay={handlePay} disabled={processing} />
             ))}
