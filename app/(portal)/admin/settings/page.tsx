@@ -101,8 +101,8 @@ export default function AdminSettingsPage() {
 
   function handleSave() {
     const newYear = parseInt(form.current_year)
-    if (isNaN(newYear) || newYear < 1900 || newYear > 2200) {
-      toast({ title: 'Invalid year', description: 'Please enter a valid 4-digit year.', variant: 'destructive' })
+    if (isNaN(newYear)) {
+      toast({ title: 'Invalid year', description: 'Please enter a valid year.', variant: 'destructive' })
       return
     }
 
@@ -175,8 +175,6 @@ export default function AdminSettingsPage() {
                   <Input
                     id="currentYear"
                     type="number"
-                    min={1900}
-                    max={2200}
                     value={form.current_year}
                     onChange={e => setForm(f => ({ ...f, current_year: e.target.value }))}
                     placeholder="e.g. 2026"
