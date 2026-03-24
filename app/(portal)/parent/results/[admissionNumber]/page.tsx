@@ -181,7 +181,7 @@ export default function ChildResultsPage() {
                           <Link href={`/report-card/${student.id}/${eId}`}>
                             <Button variant="outline" size="sm" className="gap-1" data-testid={`button-report-card-${eId}`}>
                               <FileText className="h-4 w-4" />
-                              Report Card
+                              View Report Card
                             </Button>
                           </Link>
                         )}
