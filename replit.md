@@ -65,10 +65,11 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - `student_results` — Results linked to student, exam, subject with `remarks` for teacher comments
 
 ### New Feature Tables
-- `academic_settings` — Single-row config: `current_term`, `current_year`, `school_name`, `principal_name`
+- `academic_settings` — Single-row config: `current_term`, `current_year`, `school_name`, `principal_name`, `principal_signature_url`
 - `fee_structures` — Fee definitions per class/term/year/type with `amount`
 - `staff_profiles` — Teacher profiles: `subject_specialty`, `qualification`, `phone`, `bio`
-- `report_card_comments` — Principal's comments per student per exam
+- `report_card_comments` — Principal's comments per student per exam with `teacher_comment` column
+- `scholarships` — Student scholarships & fee waivers: `student_id`, `name`, `coverage_type` (full/percentage/fixed), `coverage_value`, `fee_types` TEXT[] (null=all fees), `applies_to_term`, `applies_to_year`, `active`, `notes`, `created_by`
 
 ### Other Tables
 - `announcements` — School announcements with `target_audience`, `is_published`
@@ -113,6 +114,8 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - `POST /api/report-card/[studentId]/[examId]` — Admin only: upsert principal's comment per student per exam
 - `GET/POST/DELETE /api/admin/fee-structures` — Admin: CRUD for fee structures. Server-side validation: class/term/fee_type allowlists, year 2000-2100, amount > 0. Unique constraint on (class, term, year, fee_type)
 - `POST /api/admin/payments` — Admin: record offline payments (cash/bank_transfer). Validates student_id, amount, payment_type allowlist, method. Auto-generates reference if not provided
+- `GET/POST/PATCH/DELETE /api/admin/scholarships` — Admin: full CRUD for student scholarships. GET supports ?student_id= filter. Validates coverage_type, percentage ≤ 100, positive values
+- `POST/DELETE /api/admin/signature` — Admin: upload/delete principal signature to Supabase Storage. Upserts URL to `academic_settings`
 
 ### Admin Portal (`/admin`)
 - Dashboard with live stats + **new payments notification badge** + "New" badges on recent payments
@@ -132,6 +135,8 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - Events management (list + create new event)
 - **Payments** (`/admin/payments`) — Revenue summary card, Payment Records tab with filter by type (All/Admission Fee/School Fee/Donation/Offline), Outstanding Fees tab (per-student balance vs fee structures for current term, color badges: green=paid/amber=partial/red=unpaid, CSV export), Record Offline Payment dialog (student search, amount, type, method, date, reference, notes). Receipt buttons for successful payments
 - **Fee Structures** (`/admin/fee-structures`) — CRUD for fee definitions per class/term/year/type (tuition, pta_levy, books, uniform, technology_fee, sports_fee, lab_fee, exam_fee). Grouped by class with totals. Filter by class and term
+- **Scholarships** (`/admin/scholarships`) — Manage scholarships and fee waivers per student. Coverage types: full (100%), percentage (e.g. 50%), or fixed amount (e.g. ₦25,000). Can target all fees or specific fee types. Optionally restrict to a specific term/year. Toggle active/inactive, edit, delete. Also accessible via "Scholarship" button on each student card in the Students page
+- **Principal Signature** (`/admin/settings`) — Upload/replace/remove principal's signature image (PNG/JPG, max 2 MB), stored at `gallery/signatures/principal.png`
 
 ### Teacher Portal (`/teacher`)
 - Dashboard with assigned students and upcoming events (live data)
@@ -150,14 +155,14 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - Dashboard with real profile data (name, class, admission number)
 - **Announcements section** — shows published announcements targeting 'all' or 'students'
 - Recent results with grade badges
-- **Fee status card** — Shows current term expected fees, amount paid, outstanding balance with color-coded status badge (green=paid, amber=partial, red=unpaid)
+- **Fee status card** — Shows current term expected fees (after scholarship discount if any), amount paid, outstanding balance with color-coded status badge (green=paid, amber=partial, red=unpaid). Shows scholarship name and credit amount when applicable
 - Upcoming events
 - Full results page (`/student/results`) — grouped by exam with averages, published-only filter, term selector, "View Report Card" link per exam
 
 ### Parent Portal (`/parent`)
 - Dashboard with **child selector** — tabs for 2-3 children, dropdown for more. All data filters to selected child
 - **Announcements section** — shows published announcements targeting 'all' or 'parents'
-- **Fees page** (`/parent/fees`) — Current term fee breakdown by child's class, expected/paid/outstanding summary cards, "Pay Now" Paystack button for outstanding balance, payment history with receipt links
+- **Fees page** (`/parent/fees`) — Current term fee breakdown by child's class. Shows scholarship discount notice when active (scholarship name + credit amount). Expected fees shown after scholarship deduction (original struck through). Fee breakdown table has "Scholarship" badge on applicable items. Outstanding balance and "Pay All" button. Payment history with receipt links
 - Child results page (`/parent/results/[admissionNumber]`) — published-only filter, term selector, "View Report Card" link per exam
 - Payment history page (`/parent/payments`) — includes child-linked offline payments, **Receipt** links to dedicated receipt page
 

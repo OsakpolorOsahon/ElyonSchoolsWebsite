@@ -10,7 +10,9 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, ArrowLeft, CreditCard, Wallet, TrendingDown, CheckCircle, AlertTriangle, ShieldCheck } from 'lucide-react'
+import { calcScholarshipCredit } from '@/lib/scholarship'
+import type { FeeStructureItem, Scholarship } from '@/lib/scholarship'
+import { Loader2, ArrowLeft, CreditCard, Wallet, TrendingDown, CheckCircle, AlertTriangle, ShieldCheck, Award } from 'lucide-react'
 
 interface Child {
   id: string
@@ -82,6 +84,7 @@ function FeesContent() {
   const [settings, setSettings] = useState<{ current_term: string; current_year: number } | null>(null)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState('')
+  const [scholarshipsByChild, setScholarshipsByChild] = useState<Record<string, Scholarship | null>>({})
 
   const formatAmount = (n: number) =>
     new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(n)
@@ -111,6 +114,7 @@ function FeesContent() {
       setSettings(data.settings)
       setFeeStructures((data.feeStructures || []) as FeeStructure[])
       setPayments((data.payments || []) as Payment[])
+      setScholarshipsByChild(data.scholarshipsByChild || {})
       setLoading(false)
     }
     load()
@@ -125,6 +129,15 @@ function FeesContent() {
 
   const expectedTotal = useMemo(() => childFees.reduce((s, f) => s + Number(f.amount), 0), [childFees])
 
+  const activeScholarship = selectedChildId ? (scholarshipsByChild[selectedChildId] ?? null) : null
+
+  const scholarshipCredit = useMemo(() => {
+    if (!activeScholarship || !settings) return 0
+    return calcScholarshipCredit(childFees as FeeStructureItem[], activeScholarship, settings.current_term, settings.current_year)
+  }, [childFees, activeScholarship, settings])
+
+  const effectiveExpected = Math.max(0, expectedTotal - scholarshipCredit)
+
   const childPayments = useMemo(() => {
     if (!selectedChild || !settings) return []
     return payments.filter(p =>
@@ -138,9 +151,8 @@ function FeesContent() {
 
   const paidTotal = useMemo(() => childPayments.reduce((s, p) => s + Number(p.amount), 0), [childPayments])
 
-  const outstanding = Math.max(0, expectedTotal - paidTotal)
+  const outstanding = Math.max(0, effectiveExpected - paidTotal)
 
-  // Per fee-type: sum of payments matching that specific payment_type
   const paidByType = useMemo(() => {
     const map: Record<string, number> = {}
     childPayments.forEach(p => {
@@ -297,12 +309,34 @@ function FeesContent() {
               </div>
             )}
 
+            {activeScholarship && scholarshipCredit > 0 && (
+              <Card className="mb-4 border-primary/30 bg-primary/5" data-testid="card-scholarship-notice">
+                <CardContent className="py-3">
+                  <div className="flex items-center gap-3">
+                    <Award className="h-5 w-5 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-primary text-sm">Scholarship Applied: {activeScholarship.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Fee reduction of {formatAmount(scholarshipCredit)} applied to {selectedChild?.profiles?.full_name}&apos;s fees this term.
+                      </p>
+                    </div>
+                    <Badge className="ml-auto bg-primary/10 text-primary border-primary/20 shrink-0" data-testid="badge-scholarship-credit">
+                      -{formatAmount(scholarshipCredit)}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="grid gap-4 md:grid-cols-3 mb-6">
               <Card>
                 <CardContent className="pt-6 text-center">
                   <Wallet className="h-8 w-8 mx-auto mb-2 text-blue-500" />
                   <p className="text-sm text-muted-foreground">Expected Fees</p>
-                  <p className="text-2xl font-bold" data-testid="text-expected-total">{formatAmount(expectedTotal)}</p>
+                  <p className="text-2xl font-bold" data-testid="text-expected-total">{formatAmount(effectiveExpected)}</p>
+                  {scholarshipCredit > 0 && (
+                    <p className="text-xs text-muted-foreground line-through mt-0.5">{formatAmount(expectedTotal)}</p>
+                  )}
                 </CardContent>
               </Card>
               <Card>
@@ -373,8 +407,12 @@ function FeesContent() {
                       const paidForItem = paidByType[f.fee_type] || 0
                       const remainingForItem = Math.max(0, feeAmount - paidForItem)
                       const itemFullyPaid = paidForItem >= feeAmount
-                      // Covered by a lump-sum school_fee payment (outstanding is 0 but specific type not paid)
                       const coveredByLump = !itemFullyPaid && outstanding <= 0
+
+                      const hasTypeFilter = activeScholarship && Array.isArray(activeScholarship.fee_types) && activeScholarship.fee_types.length > 0
+                      const isCoveredByScholarship = activeScholarship && (
+                        !hasTypeFilter || activeScholarship.fee_types!.includes(f.fee_type)
+                      )
 
                       return (
                         <div
@@ -397,6 +435,11 @@ function FeesContent() {
                             {coveredByLump && (
                               <Badge className="text-xs bg-green-100 text-green-800 border-green-200 flex-shrink-0">
                                 <ShieldCheck className="h-3 w-3 mr-1" />Covered
+                              </Badge>
+                            )}
+                            {!coveredByLump && !itemFullyPaid && isCoveredByScholarship && scholarshipCredit > 0 && (
+                              <Badge className="text-xs bg-primary/10 text-primary border-primary/20 flex-shrink-0">
+                                <Award className="h-3 w-3 mr-1" />Scholarship
                               </Badge>
                             )}
                           </div>
@@ -434,9 +477,19 @@ function FeesContent() {
                       )
                     })}
 
+                    {scholarshipCredit > 0 && (
+                      <div className="flex justify-between py-2 text-sm text-primary font-medium border-b border-dashed">
+                        <span className="flex items-center gap-1.5">
+                          <Award className="h-4 w-4" />
+                          Scholarship Discount ({activeScholarship?.name})
+                        </span>
+                        <span>-{formatAmount(scholarshipCredit)}</span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between pt-3 font-bold">
-                      <span>Total</span>
-                      <span>{formatAmount(expectedTotal)}</span>
+                      <span>Total {scholarshipCredit > 0 ? '(after scholarship)' : ''}</span>
+                      <span>{formatAmount(effectiveExpected)}</span>
                     </div>
                   </div>
                 </CardContent>

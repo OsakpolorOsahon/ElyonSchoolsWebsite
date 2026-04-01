@@ -314,6 +314,24 @@ VALUES (TRUE, 'First', 2025, 'Elyon Schools')
 ON CONFLICT (singleton_key) DO NOTHING;
 
 -- ----------------------------------------------------------
+-- scholarships
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS scholarships (
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  student_id       UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  name             TEXT NOT NULL,
+  coverage_type    TEXT NOT NULL CHECK (coverage_type IN ('full', 'percentage', 'fixed')),
+  coverage_value   DECIMAL(10, 2) NOT NULL DEFAULT 100,
+  fee_types        TEXT[],
+  applies_to_term  TEXT,
+  applies_to_year  INTEGER,
+  active           BOOLEAN NOT NULL DEFAULT TRUE,
+  notes            TEXT,
+  created_by       UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ----------------------------------------------------------
 -- fee_structures
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS fee_structures (
@@ -1044,3 +1062,19 @@ CREATE POLICY "Admins can delete gallery images"
 -- Migration: Add CA and Exam score breakdown to student_results (for existing databases)
 ALTER TABLE student_results ADD COLUMN IF NOT EXISTS ca_score DECIMAL(5,2) DEFAULT 0 CHECK (ca_score >= 0 AND ca_score <= 40);
 ALTER TABLE student_results ADD COLUMN IF NOT EXISTS exam_score DECIMAL(5,2) DEFAULT 0 CHECK (exam_score >= 0 AND exam_score <= 60);
+
+-- Migration: Create scholarships table (for existing databases)
+CREATE TABLE IF NOT EXISTS scholarships (
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  student_id       UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  name             TEXT NOT NULL,
+  coverage_type    TEXT NOT NULL CHECK (coverage_type IN ('full', 'percentage', 'fixed')),
+  coverage_value   DECIMAL(10, 2) NOT NULL DEFAULT 100,
+  fee_types        TEXT[],
+  applies_to_term  TEXT,
+  applies_to_year  INTEGER,
+  active           BOOLEAN NOT NULL DEFAULT TRUE,
+  notes            TEXT,
+  created_by       UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at       TIMESTAMPTZ DEFAULT NOW()
+);

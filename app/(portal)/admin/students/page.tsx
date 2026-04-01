@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Users, Search, UserPlus, ArrowUpRight, GraduationCap, ChevronUp, FileText, Banknote, History, Pencil, Trash2 } from 'lucide-react'
+import { Loader2, ArrowLeft, Users, Search, UserPlus, ArrowUpRight, GraduationCap, ChevronUp, FileText, Banknote, History, Pencil, Trash2, Award } from 'lucide-react'
 
 interface Student {
   id: string
@@ -123,6 +123,21 @@ export default function AdminStudentsPage() {
   const [editForm, setEditForm] = useState({ admission_number: '', class: '', gender: '', parent_profile_id: '' })
   const [editSaving, setEditSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const [scholarshipDialogOpen, setScholarshipDialogOpen] = useState(false)
+  const [scholarshipTarget, setScholarshipTarget] = useState<Student | null>(null)
+  const [scholarshipList, setScholarshipList] = useState<{ id: string; name: string; active: boolean }[]>([])
+  const [scholarshipLoading, setScholarshipLoading] = useState(false)
+  const [scholarshipSaving, setScholarshipSaving] = useState(false)
+  const [scholarshipForm, setScholarshipForm] = useState({
+    name: '',
+    coverage_type: 'percentage' as 'full' | 'percentage' | 'fixed',
+    coverage_value: '',
+    fee_types: [] as string[],
+    applies_to_term: '',
+    applies_to_year: '',
+    notes: '',
+  })
 
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
   const [paymentSaving, setPaymentSaving] = useState(false)
@@ -423,6 +438,107 @@ export default function AdminStudentsPage() {
     }
   }
 
+  async function openScholarshipDialog(student: Student) {
+    setScholarshipTarget(student)
+    setScholarshipList([])
+    setScholarshipLoading(true)
+    setScholarshipForm({
+      name: '',
+      coverage_type: 'percentage',
+      coverage_value: '',
+      fee_types: [],
+      applies_to_term: '',
+      applies_to_year: '',
+      notes: '',
+    })
+    setScholarshipDialogOpen(true)
+    try {
+      const res = await fetch(`/api/admin/scholarships?student_id=${student.id}`)
+      const data = await res.json()
+      setScholarshipList(data.scholarships || [])
+    } catch {
+      toast({ title: 'Error', description: 'Failed to load scholarships', variant: 'destructive' })
+    } finally {
+      setScholarshipLoading(false)
+    }
+  }
+
+  async function handleScholarshipSave() {
+    if (!scholarshipTarget || !scholarshipForm.name.trim() || !scholarshipForm.coverage_type) {
+      toast({ title: 'Missing fields', description: 'Scholarship name and coverage type are required.', variant: 'destructive' })
+      return
+    }
+    const val = parseFloat(scholarshipForm.coverage_value)
+    if (scholarshipForm.coverage_type !== 'full' && (isNaN(val) || val <= 0)) {
+      toast({ title: 'Invalid value', description: 'Enter a valid coverage value.', variant: 'destructive' })
+      return
+    }
+    setScholarshipSaving(true)
+    try {
+      const res = await fetch('/api/admin/scholarships', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_id: scholarshipTarget.id,
+          name: scholarshipForm.name.trim(),
+          coverage_type: scholarshipForm.coverage_type,
+          coverage_value: scholarshipForm.coverage_type === 'full' ? 100 : val,
+          fee_types: scholarshipForm.fee_types.length > 0 ? scholarshipForm.fee_types : [],
+          applies_to_term: scholarshipForm.applies_to_term || null,
+          applies_to_year: scholarshipForm.applies_to_year || null,
+          notes: scholarshipForm.notes.trim() || null,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast({ title: 'Scholarship added', description: `"${scholarshipForm.name}" assigned to ${scholarshipTarget.profiles?.full_name}.` })
+      const refreshRes = await fetch(`/api/admin/scholarships?student_id=${scholarshipTarget.id}`)
+      const refreshData = await refreshRes.json()
+      setScholarshipList(refreshData.scholarships || [])
+      setScholarshipForm({ name: '', coverage_type: 'percentage', coverage_value: '', fee_types: [], applies_to_term: '', applies_to_year: '', notes: '' })
+    } catch (err) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to save', variant: 'destructive' })
+    } finally {
+      setScholarshipSaving(false)
+    }
+  }
+
+  async function handleScholarshipToggle(id: string, active: boolean) {
+    try {
+      const res = await fetch('/api/admin/scholarships', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, active: !active }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      if (scholarshipTarget) {
+        const refreshRes = await fetch(`/api/admin/scholarships?student_id=${scholarshipTarget.id}`)
+        const refreshData = await refreshRes.json()
+        setScholarshipList(refreshData.scholarships || [])
+      }
+    } catch (err) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to update', variant: 'destructive' })
+    }
+  }
+
+  async function handleScholarshipDelete(id: string) {
+    if (!confirm('Remove this scholarship?')) return
+    try {
+      const res = await fetch(`/api/admin/scholarships?id=${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast({ title: 'Removed', description: 'Scholarship removed.' })
+      if (scholarshipTarget) {
+        const refreshRes = await fetch(`/api/admin/scholarships?student_id=${scholarshipTarget.id}`)
+        const refreshData = await refreshRes.json()
+        setScholarshipList(refreshData.scholarships || [])
+      }
+    } catch (err) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to delete', variant: 'destructive' })
+    }
+  }
+
   function openPaymentDialog(student: Student) {
     setPaymentForm({
       student_id: student.id,
@@ -652,6 +768,18 @@ export default function AdminStudentsPage() {
                           >
                             <Banknote className="h-3 w-3" />
                             Payment
+                          </Button>
+                        )}
+                        {student.status === 'active' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1"
+                            onClick={() => openScholarshipDialog(student)}
+                            data-testid={`button-scholarship-${student.id}`}
+                          >
+                            <Award className="h-3 w-3" />
+                            Scholarship
                           </Button>
                         )}
                         {selectedExam && (
@@ -1187,6 +1315,168 @@ export default function AdminStudentsPage() {
               {editSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Save Changes
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Scholarship Dialog */}
+      <Dialog open={scholarshipDialogOpen} onOpenChange={setScholarshipDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              Scholarships — {scholarshipTarget?.profiles?.full_name}
+            </DialogTitle>
+            <DialogDescription>
+              {scholarshipTarget?.admission_number} · {scholarshipTarget?.class}
+            </DialogDescription>
+          </DialogHeader>
+
+          {scholarshipLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {scholarshipList.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Existing Scholarships</Label>
+                  {scholarshipList.map(s => (
+                    <div key={s.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Award className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">{s.name}</span>
+                        <Badge className={s.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>
+                          {s.active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleScholarshipToggle(s.id, s.active)}
+                          className="text-xs"
+                          data-testid={`button-toggle-sch-${s.id}`}
+                        >
+                          {s.active ? 'Deactivate' : 'Activate'}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:bg-destructive/10"
+                          onClick={() => handleScholarshipDelete(s.id)}
+                          data-testid={`button-delete-sch-${s.id}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="border-t pt-4">
+                    <Label className="text-sm font-semibold">Add Another Scholarship</Label>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="sch-name">Scholarship Name *</Label>
+                <Input
+                  id="sch-name"
+                  placeholder="e.g. Academic Excellence Award"
+                  value={scholarshipForm.name}
+                  onChange={e => setScholarshipForm(f => ({ ...f, name: e.target.value }))}
+                  data-testid="input-sch-name"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Coverage Type *</Label>
+                  <Select
+                    value={scholarshipForm.coverage_type}
+                    onValueChange={v => setScholarshipForm(f => ({ ...f, coverage_type: v as 'full' | 'percentage' | 'fixed', coverage_value: v === 'full' ? '100' : '' }))}
+                  >
+                    <SelectTrigger data-testid="select-sch-coverage-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full">Full (100%)</SelectItem>
+                      <SelectItem value="percentage">Percentage (%)</SelectItem>
+                      <SelectItem value="fixed">Fixed Amount (₦)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {scholarshipForm.coverage_type !== 'full' && (
+                  <div className="space-y-2">
+                    <Label>{scholarshipForm.coverage_type === 'percentage' ? 'Percentage' : 'Amount (₦)'} *</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max={scholarshipForm.coverage_type === 'percentage' ? 100 : undefined}
+                      placeholder={scholarshipForm.coverage_type === 'percentage' ? '50' : '25000'}
+                      value={scholarshipForm.coverage_value}
+                      onChange={e => setScholarshipForm(f => ({ ...f, coverage_value: e.target.value }))}
+                      data-testid="input-sch-value"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Restrict to specific fee types (optional — leave empty for all fees)</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { value: 'tuition', label: 'Tuition' },
+                    { value: 'pta_levy', label: 'PTA Levy' },
+                    { value: 'books', label: 'Books' },
+                    { value: 'uniform', label: 'Uniform' },
+                    { value: 'exam_fee', label: 'Exam Fee' },
+                    { value: 'school_fee', label: 'School Fee' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setScholarshipForm(f => ({
+                        ...f,
+                        fee_types: f.fee_types.includes(opt.value)
+                          ? f.fee_types.filter(t => t !== opt.value)
+                          : [...f.fee_types, opt.value],
+                      }))}
+                      className={`px-2 py-1 rounded-full text-xs font-medium border transition-colors ${
+                        scholarshipForm.fee_types.includes(opt.value)
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-muted text-muted-foreground border-border'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Notes (optional)</Label>
+                <Textarea
+                  placeholder="Any notes about this scholarship..."
+                  value={scholarshipForm.notes}
+                  onChange={e => setScholarshipForm(f => ({ ...f, notes: e.target.value }))}
+                  data-testid="input-sch-notes"
+                  className="min-h-[60px]"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScholarshipDialogOpen(false)}>
+              Close
+            </Button>
+            {!scholarshipLoading && (
+              <Button onClick={handleScholarshipSave} disabled={scholarshipSaving} data-testid="button-save-scholarship">
+                {scholarshipSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Award className="h-4 w-4 mr-2" />}
+                Add Scholarship
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

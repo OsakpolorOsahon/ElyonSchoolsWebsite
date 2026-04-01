@@ -6,6 +6,7 @@ import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { calcScholarshipCredit } from '@/lib/scholarship'
 import { 
   Calendar,
   FileText,
@@ -17,6 +18,7 @@ import {
   Wallet,
   CheckCircle,
   AlertTriangle,
+  Award,
 } from 'lucide-react'
 
 export const metadata = {
@@ -87,32 +89,55 @@ export default async function StudentDashboard() {
 
   let feeExpected = 0
   let feePaid = 0
+  let feeScholarshipCredit = 0
   let feeStatus: 'paid' | 'partial' | 'unpaid' | 'none' = 'none'
+  let activeScholarshipName: string | null = null
 
   if (studentRecord && settings) {
-    const { data: fees } = await adminDb
-      .from('fee_structures')
-      .select('amount')
-      .eq('class', studentRecord.class)
-      .eq('term', settings.current_term)
-      .eq('year', settings.current_year)
+    const [feesResult, paymentsResult, scholarshipsResult] = await Promise.all([
+      adminDb
+        .from('fee_structures')
+        .select('id, fee_type, amount')
+        .eq('class', studentRecord.class)
+        .eq('term', settings.current_term)
+        .eq('year', settings.current_year),
+      adminDb
+        .from('payments')
+        .select('amount, payment_type')
+        .eq('student_id', studentRecord.id)
+        .eq('status', 'success')
+        .eq('term', settings.current_term)
+        .eq('year', settings.current_year),
+      adminDb
+        .from('scholarships')
+        .select('id, name, coverage_type, coverage_value, fee_types, applies_to_term, applies_to_year, active, student_id, notes, created_at, created_by')
+        .eq('student_id', studentRecord.id)
+        .eq('active', true),
+    ])
 
-    feeExpected = (fees || []).reduce((s: number, f: { amount: number }) => s + Number(f.amount), 0)
+    const fees = (feesResult.data || []) as { id: string; fee_type: string; amount: number }[]
+    feeExpected = fees.reduce((s, f) => s + Number(f.amount), 0)
 
-    const { data: payments } = await adminDb
-      .from('payments')
-      .select('amount, payment_type')
-      .eq('student_id', studentRecord.id)
-      .eq('status', 'success')
-      .eq('term', settings.current_term)
-      .eq('year', settings.current_year)
+    const feePayments = (paymentsResult.data || []).filter((p: { payment_type: string }) => FEE_RELEVANT_TYPES.includes(p.payment_type || ''))
+    feePaid = feePayments.reduce((s: number, p: { amount: number }) => s + Number(p.amount), 0)
 
-    const feePayments = (payments || []).filter((p: { amount: number; payment_type: string }) => FEE_RELEVANT_TYPES.includes(p.payment_type || ''))
-    feePaid = feePayments.reduce((s: number, p: { amount: number; payment_type: string }) => s + Number(p.amount), 0)
+    let bestCredit = 0
+    let bestScholarship = null
+    for (const s of (scholarshipsResult.data || [])) {
+      const credit = calcScholarshipCredit(fees, s as Parameters<typeof calcScholarshipCredit>[1], settings.current_term, settings.current_year)
+      if (credit > bestCredit) {
+        bestCredit = credit
+        bestScholarship = s
+      }
+    }
+    feeScholarshipCredit = bestCredit
+    activeScholarshipName = bestScholarship?.name || null
+
+    const effectiveExpected = Math.max(0, feeExpected - feeScholarshipCredit)
 
     if (feeExpected === 0) {
       feeStatus = feePaid > 0 ? 'paid' : 'none'
-    } else if (feeExpected - feePaid <= 0) {
+    } else if (effectiveExpected - feePaid <= 0) {
       feeStatus = 'paid'
     } else if (feePaid > 0) {
       feeStatus = 'partial'
@@ -121,7 +146,8 @@ export default async function StudentDashboard() {
     }
   }
 
-  const feeOutstanding = Math.max(0, feeExpected - feePaid)
+  const effectiveFeeExpected = Math.max(0, feeExpected - feeScholarshipCredit)
+  const feeOutstanding = Math.max(0, effectiveFeeExpected - feePaid)
 
   const formatAmount = (n: number) =>
     new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(n)
@@ -240,10 +266,21 @@ export default async function StudentDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {activeScholarshipName && feeScholarshipCredit > 0 && (
+                <div className="flex items-center gap-2 mb-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                  <Award className="h-4 w-4 text-primary flex-shrink-0" />
+                  <span className="text-sm text-primary font-medium">
+                    Scholarship: {activeScholarshipName} — {formatAmount(feeScholarshipCredit)} discount applied
+                  </span>
+                </div>
+              )}
               <div className="grid gap-4 sm:grid-cols-3 mb-4">
                 <div className="text-center p-3 bg-muted/50 rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1">Expected</p>
-                  <p className="text-lg font-bold" data-testid="text-fee-expected">{formatAmount(feeExpected)}</p>
+                  <p className="text-lg font-bold" data-testid="text-fee-expected">{formatAmount(effectiveFeeExpected)}</p>
+                  {feeScholarshipCredit > 0 && (
+                    <p className="text-xs text-muted-foreground line-through">{formatAmount(feeExpected)}</p>
+                  )}
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1">Paid</p>
