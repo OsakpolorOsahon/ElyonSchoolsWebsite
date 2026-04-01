@@ -376,6 +376,24 @@ CREATE TABLE IF NOT EXISTS report_card_comments (
 ALTER TABLE report_card_comments ADD COLUMN IF NOT EXISTS teacher_comment TEXT;
 
 
+-- ----------------------------------------------------------
+-- attendance_records
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS attendance_records (
+  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  student_id   UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  date         DATE NOT NULL,
+  status       TEXT NOT NULL CHECK (status IN ('present', 'absent', 'late', 'excused')),
+  notes        TEXT,
+  recorded_by  UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  class        TEXT NOT NULL,
+  term         TEXT NOT NULL,
+  year         INTEGER NOT NULL,
+  created_at   TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(student_id, date)
+);
+
+
 -- ============================================================
 -- SECTION 4: INDEXES
 -- ============================================================
@@ -441,6 +459,11 @@ CREATE INDEX IF NOT EXISTS idx_payments_term_year                    ON payments
 CREATE INDEX IF NOT EXISTS idx_staff_profiles_profile_id             ON staff_profiles(profile_id);
 
 CREATE INDEX IF NOT EXISTS idx_report_card_comments_student_exam     ON report_card_comments(student_id, exam_id);
+
+CREATE INDEX IF NOT EXISTS idx_attendance_student_id                  ON attendance_records(student_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_class_date                  ON attendance_records(class, date);
+CREATE INDEX IF NOT EXISTS idx_attendance_student_date                ON attendance_records(student_id, date);
+CREATE INDEX IF NOT EXISTS idx_attendance_term_year                   ON attendance_records(term, year);
 
 
 -- ============================================================
@@ -998,6 +1021,44 @@ CREATE POLICY "Parents can view child payments"
   );
 
 
+-- ----------------------------------------------------------
+-- attendance_records
+-- ----------------------------------------------------------
+DROP POLICY IF EXISTS "Admins can manage attendance"                ON attendance_records;
+DROP POLICY IF EXISTS "Teachers can manage their class attendance"  ON attendance_records;
+DROP POLICY IF EXISTS "Students can view own attendance"            ON attendance_records;
+DROP POLICY IF EXISTS "Parents can view children attendance"        ON attendance_records;
+
+CREATE POLICY "Admins can manage attendance"
+  ON attendance_records FOR ALL
+  USING (get_user_role(auth.uid()) = 'admin');
+
+CREATE POLICY "Teachers can manage their class attendance"
+  ON attendance_records FOR ALL
+  USING (
+    class IN (
+      SELECT ct.class FROM class_teacher ct WHERE ct.teacher_profile_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    class IN (
+      SELECT ct.class FROM class_teacher ct WHERE ct.teacher_profile_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Students can view own attendance"
+  ON attendance_records FOR SELECT
+  USING (
+    student_id IN (SELECT id FROM students WHERE profile_id = auth.uid())
+  );
+
+CREATE POLICY "Parents can view children attendance"
+  ON attendance_records FOR SELECT
+  USING (
+    student_id IN (SELECT id FROM students WHERE parent_profile_id = auth.uid())
+  );
+
+
 -- ============================================================
 -- SECTION 8: STORAGE
 -- ============================================================
@@ -1102,6 +1163,58 @@ CREATE POLICY "Students can view own scholarships"
 
 CREATE POLICY "Parents can view children scholarships"
   ON scholarships FOR SELECT
+  USING (
+    student_id IN (SELECT id FROM students WHERE parent_profile_id = auth.uid())
+  );
+
+-- Migration: Create attendance_records table (for existing databases)
+CREATE TABLE IF NOT EXISTS attendance_records (
+  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  student_id   UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  date         DATE NOT NULL,
+  status       TEXT NOT NULL CHECK (status IN ('present', 'absent', 'late', 'excused')),
+  notes        TEXT,
+  recorded_by  UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  class        TEXT NOT NULL,
+  term         TEXT NOT NULL,
+  year         INTEGER NOT NULL,
+  created_at   TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(student_id, date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_attendance_student_id  ON attendance_records(student_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_class_date  ON attendance_records(class, date);
+CREATE INDEX IF NOT EXISTS idx_attendance_student_date ON attendance_records(student_id, date);
+CREATE INDEX IF NOT EXISTS idx_attendance_term_year   ON attendance_records(term, year);
+
+ALTER TABLE attendance_records ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins can manage attendance"                ON attendance_records;
+DROP POLICY IF EXISTS "Teachers can manage their class attendance"  ON attendance_records;
+DROP POLICY IF EXISTS "Students can view own attendance"            ON attendance_records;
+DROP POLICY IF EXISTS "Parents can view children attendance"        ON attendance_records;
+
+CREATE POLICY "Admins can manage attendance"
+  ON attendance_records FOR ALL
+  USING (get_user_role(auth.uid()) = 'admin');
+
+CREATE POLICY "Teachers can manage their class attendance"
+  ON attendance_records FOR ALL
+  USING (
+    class IN (SELECT ct.class FROM class_teacher ct WHERE ct.teacher_profile_id = auth.uid())
+  )
+  WITH CHECK (
+    class IN (SELECT ct.class FROM class_teacher ct WHERE ct.teacher_profile_id = auth.uid())
+  );
+
+CREATE POLICY "Students can view own attendance"
+  ON attendance_records FOR SELECT
+  USING (
+    student_id IN (SELECT id FROM students WHERE profile_id = auth.uid())
+  );
+
+CREATE POLICY "Parents can view children attendance"
+  ON attendance_records FOR SELECT
   USING (
     student_id IN (SELECT id FROM students WHERE parent_profile_id = auth.uid())
   );

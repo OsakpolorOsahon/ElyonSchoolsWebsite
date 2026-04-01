@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Clock,
   Megaphone,
+  ClipboardList,
 } from 'lucide-react'
 
 export const metadata = {
@@ -92,7 +93,7 @@ export default async function TeacherDashboard() {
       />
 
       <main className="mx-auto max-w-7xl px-6 py-8 animate-fade-up">
-        <div className="mb-8">
+        <div className="mb-8 grid gap-4 sm:grid-cols-2">
           <Link href="/teacher/results/upload">
             <Card className="bg-primary text-primary-foreground hover-elevate">
               <CardContent className="pt-6">
@@ -105,6 +106,24 @@ export default async function TeacherDashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Upload className="h-6 w-6" />
+                    <ArrowRight className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/teacher/attendance">
+            <Card className="bg-accent text-accent-foreground hover-elevate border-primary/20">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-semibold">Take Attendance</p>
+                    <p className="text-sm opacity-80">
+                      Record daily attendance for your class
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ClipboardList className="h-6 w-6" />
                     <ArrowRight className="h-5 w-5" />
                   </div>
                 </div>
@@ -155,6 +174,12 @@ export default async function TeacherDashboard() {
                       <Button size="sm" variant="outline" className="flex-1" asChild>
                         <Link href={`/teacher/classes/${encodeURIComponent(cls.name)}`}>
                           View Students
+                        </Link>
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1" asChild>
+                        <Link href="/teacher/attendance">
+                          <ClipboardList className="h-3.5 w-3.5 mr-1" />
+                          Attendance
                         </Link>
                       </Button>
                       <Button size="sm" className="flex-1" asChild>

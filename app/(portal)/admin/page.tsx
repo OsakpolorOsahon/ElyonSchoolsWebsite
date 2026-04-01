@@ -45,6 +45,7 @@ const quickActions = [
   { name: 'All Students', icon: Users, href: '/admin/students', description: 'View & enrol students' },
   { name: 'Fee Structures', icon: Banknote, href: '/admin/fee-structures', description: 'Manage term fees by class' },
   { name: 'Scholarships', icon: Award, href: '/admin/scholarships', description: 'Manage student scholarships & awards' },
+  { name: 'Attendance', icon: ClipboardList, href: '/admin/attendance', description: 'View attendance across all classes' },
   { name: 'Staff Profiles', icon: UserCog, href: '/admin/staff', description: 'Teacher bios & qualifications' },
   { name: 'Class Teachers', icon: BookOpen, href: '/admin/class-teachers', description: 'Assign teachers to classes' },
   { name: 'Settings', icon: Settings, href: '/admin/settings', description: 'Academic term & school config' },

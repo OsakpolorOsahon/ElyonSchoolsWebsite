@@ -13,6 +13,7 @@ import {
   User,
   Megaphone,
   Wallet,
+  ClipboardList,
 } from 'lucide-react'
 import ParentChildSelector from '@/components/portal/ParentChildSelector'
 
@@ -117,7 +118,7 @@ export default async function ParentDashboard() {
                         <p className="text-xs text-muted-foreground">{children[0].admission_number}</p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button size="sm" variant="outline" className="flex-1" asChild>
                         <Link href={`/parent/results/${encodeURIComponent(children[0].admission_number)}`}>
                           <FileText className="h-4 w-4 mr-1" />
@@ -128,6 +129,12 @@ export default async function ParentDashboard() {
                         <Link href={`/parent/fees?child=${children[0].id}`}>
                           <Wallet className="h-4 w-4 mr-1" />
                           Fees
+                        </Link>
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1" asChild>
+                        <Link href={`/parent/attendance?child=${children[0].id}`}>
+                          <ClipboardList className="h-4 w-4 mr-1" />
+                          Attendance
                         </Link>
                       </Button>
                       <Button size="sm" className="flex-1" asChild>

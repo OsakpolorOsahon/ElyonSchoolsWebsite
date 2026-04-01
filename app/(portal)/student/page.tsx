@@ -19,6 +19,8 @@ import {
   CheckCircle,
   AlertTriangle,
   Award,
+  ClipboardList,
+  ArrowRight,
 } from 'lucide-react'
 
 export const metadata = {
@@ -321,6 +323,25 @@ export default async function StudentDashboard() {
             </CardContent>
           </Card>
         )}
+
+        <Link href="/student/attendance" className="block mb-8">
+          <Card className="hover-elevate border-primary/20 bg-primary/5 cursor-pointer">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                    <ClipboardList className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">My Attendance</p>
+                    <p className="text-sm text-muted-foreground">View your attendance record and rate</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
 
         <Card>
           <CardHeader>

@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { User, FileText, CreditCard, Wallet } from 'lucide-react'
+import { User, FileText, CreditCard, Wallet, ClipboardList } from 'lucide-react'
 
 interface Child {
   id: string
@@ -73,7 +73,7 @@ function ChildCard({ child }: { child: Child }) {
             <p className="text-xs text-muted-foreground">{child.admission_number}</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" className="flex-1" asChild>
             <Link href={`/parent/results/${encodeURIComponent(child.admission_number)}`}>
               <FileText className="h-4 w-4 mr-1" />
@@ -84,6 +84,12 @@ function ChildCard({ child }: { child: Child }) {
             <Link href={`/parent/fees?child=${child.id}`}>
               <Wallet className="h-4 w-4 mr-1" />
               Fees
+            </Link>
+          </Button>
+          <Button size="sm" variant="outline" className="flex-1" asChild>
+            <Link href={`/parent/attendance?child=${child.id}`}>
+              <ClipboardList className="h-4 w-4 mr-1" />
+              Attendance
             </Link>
           </Button>
           <Button size="sm" className="flex-1" asChild>

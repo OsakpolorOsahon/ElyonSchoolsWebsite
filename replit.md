@@ -70,6 +70,7 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - `staff_profiles` — Teacher profiles: `subject_specialty`, `qualification`, `phone`, `bio`
 - `report_card_comments` — Principal's comments per student per exam with `teacher_comment` column
 - `scholarships` — Student scholarships & fee waivers: `student_id`, `name`, `coverage_type` (full/percentage/fixed), `coverage_value`, `fee_types` TEXT[] (null=all fees), `applies_to_term`, `applies_to_year`, `active`, `notes`, `created_by`
+- `attendance_records` — Daily attendance: `student_id`, `date` (DATE), `status` (present/absent/late/excused), `notes`, `recorded_by`, `class`, `term`, `year`. Unique constraint on (student_id, date). Indexed on (class, date), (student_id, date), (term, year)
 
 ### Other Tables
 - `announcements` — School announcements with `target_audience`, `is_published`
@@ -116,6 +117,12 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - `POST /api/admin/payments` — Admin: record offline payments (cash/bank_transfer). Validates student_id, amount, payment_type allowlist, method. Auto-generates reference if not provided
 - `GET/POST/PATCH/DELETE /api/admin/scholarships` — Admin: full CRUD for student scholarships. GET supports ?student_id= filter. Validates coverage_type, percentage ≤ 100, positive values
 - `POST/DELETE /api/admin/signature` — Admin: upload/delete principal signature to Supabase Storage. Upserts URL to `academic_settings`
+- `GET /api/admin/attendance` — Admin: view all attendance records. Filters: class, term, year, date, student_id
+- `GET/POST /api/teacher/attendance` — Teacher: GET fetches class roster + existing records for a date; POST bulk-upserts attendance records for a date
+- `GET /api/parent/attendance` — Parent: view attendance for a specific child (must own the student). Filters: term, year
+- `GET /api/student/attendance` — Student: view own attendance records. Filters: term, year
+- `GET /api/parent/children` — Parent: list all active children linked to account
+- `GET /api/settings` — Public: returns current_term and current_year from academic_settings
 
 ### Admin Portal (`/admin`)
 - Dashboard with live stats + **new payments notification badge** + "New" badges on recent payments
@@ -137,11 +144,13 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - **Fee Structures** (`/admin/fee-structures`) — CRUD for fee definitions per class/term/year/type (tuition, pta_levy, books, uniform, technology_fee, sports_fee, lab_fee, exam_fee). Grouped by class with totals. Filter by class and term
 - **Scholarships** (`/admin/scholarships`) — Manage scholarships and fee waivers per student. Coverage types: full (100%), percentage (e.g. 50%), or fixed amount (e.g. ₦25,000). Can target all fees or specific fee types. Optionally restrict to a specific term/year. Toggle active/inactive, edit, delete. Also accessible via "Scholarship" button on each student card in the Students page
 - **Principal Signature** (`/admin/settings`) — Upload/replace/remove principal's signature image (PNG/JPG, max 2 MB), stored at `gallery/signatures/principal.png`
+- **Attendance** (`/admin/attendance`) — View attendance across all classes. Filter by class, term, year, specific date. Per-student summary table with Present/Absent/Late/Excused counts and attendance rate percentage
 
 ### Teacher Portal (`/teacher`)
-- Dashboard with assigned students and upcoming events (live data)
+- Dashboard with assigned students and upcoming events (live data). Quick action cards: Upload Results + **Take Attendance**
 - Class view page (`/teacher/classes/[class]`) — exam selector + "View Report Card" links per student
 - Results upload page (`/teacher/results/upload`) — select exam/subject, enter scores + remarks per student. Subjects are filtered by `applicable_classes` and `applicable_departments` (SSS classes only) — empty arrays mean "applies to all"
+- **Attendance** (`/teacher/attendance`) — Date picker (defaults to today), see full class roster, click status buttons (Present/Absent/Late/Excused) per student, bulk "Mark All" shortcuts, summary bar, save button. Pre-fills from existing records. Uses current term/year from `/api/settings`
 
 ### Admin Portal — Edit & Delete Coverage (Task #12)
 - **Students** (`/admin/students`): Edit button (admission_number, gender, parent link) + Delete button per student card. API (`/api/admin/students`): PATCH extended + DELETE added.
@@ -156,15 +165,18 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - **Announcements section** — shows published announcements targeting 'all' or 'students'
 - Recent results with grade badges
 - **Fee status card** — Shows current term expected fees (after scholarship discount if any), amount paid, outstanding balance with color-coded status badge (green=paid, amber=partial, red=unpaid). Shows scholarship name and credit amount when applicable
+- **My Attendance card** — clickable card linking to `/student/attendance`
 - Upcoming events
 - Full results page (`/student/results`) — grouped by exam with averages, published-only filter, term selector, "View Report Card" link per exam
+- **Attendance** (`/student/attendance`) — Filter by term/year. Summary bar with Present/Absent/Late/Excused counts and attendance rate. Records grouped by month in descending order
 
 ### Parent Portal (`/parent`)
-- Dashboard with **child selector** — tabs for 2-3 children, dropdown for more. All data filters to selected child
+- Dashboard with **child selector** — tabs for 2-3 children, dropdown for more. All data filters to selected child. Buttons: Results, Fees, **Attendance**, Payments
 - **Announcements section** — shows published announcements targeting 'all' or 'parents'
 - **Fees page** (`/parent/fees`) — Current term fee breakdown by child's class. Shows scholarship discount notice when active (scholarship name + credit amount). Expected fees shown after scholarship deduction (original struck through). Fee breakdown table has "Scholarship" badge on applicable items. Outstanding balance and "Pay All" button. Payment history with receipt links
 - Child results page (`/parent/results/[admissionNumber]`) — published-only filter, term selector, "View Report Card" link per exam
 - Payment history page (`/parent/payments`) — includes child-linked offline payments, **Receipt** links to dedicated receipt page
+- **Attendance** (`/parent/attendance`) — Select child (pill buttons), filter by term/year. Summary: Present/Absent/Late/Excused counts and attendance rate. Records grouped by month with status icons
 
 ### Report Card (`/report-card/[studentId]/[examId]`)
 - Print-optimized report card page with school logo, student info, results table, grades, teacher remarks
@@ -188,3 +200,11 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 3. Set all environment variables in Replit Secrets
 4. Ensure `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` and `PAYSTACK_SECRET_KEY` are set for payments to work
 5. Ensure `NEXT_PUBLIC_SITE_URL` is set to the production URL for invite emails to work
+
+## Pending DB Migrations (run in Supabase SQL Editor)
+
+For existing databases, run the migration blocks at the bottom of `supabase/setup.sql`:
+1. `ALTER TABLE report_card_comments ADD COLUMN IF NOT EXISTS teacher_comment TEXT;`
+2. `ALTER TABLE academic_settings ADD COLUMN IF NOT EXISTS principal_signature_url TEXT DEFAULT NULL;`
+3. Scholarships table + index + RLS (migration block in setup.sql)
+4. **Attendance records table** + indexes + RLS (migration block at bottom of setup.sql) — required for Task #3
