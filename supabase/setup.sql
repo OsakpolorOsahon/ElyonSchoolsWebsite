@@ -346,10 +346,13 @@ CREATE TABLE IF NOT EXISTS report_card_comments (
   student_id        UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
   exam_id           UUID NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
   principal_comment TEXT,
+  teacher_comment   TEXT,
   created_at        TIMESTAMPTZ DEFAULT NOW(),
   updated_at        TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(student_id, exam_id)
 );
+-- Migration: add teacher_comment if upgrading from older schema
+ALTER TABLE report_card_comments ADD COLUMN IF NOT EXISTS teacher_comment TEXT;
 
 
 -- ============================================================
@@ -912,10 +915,11 @@ CREATE POLICY "Admins can manage staff profiles"
 -- ----------------------------------------------------------
 -- report_card_comments
 -- ----------------------------------------------------------
-DROP POLICY IF EXISTS "Students can view own report card comments"    ON report_card_comments;
-DROP POLICY IF EXISTS "Parents can view children report card comments" ON report_card_comments;
-DROP POLICY IF EXISTS "Teachers can view class report card comments"   ON report_card_comments;
-DROP POLICY IF EXISTS "Admins can manage report card comments"         ON report_card_comments;
+DROP POLICY IF EXISTS "Students can view own report card comments"      ON report_card_comments;
+DROP POLICY IF EXISTS "Parents can view children report card comments"  ON report_card_comments;
+DROP POLICY IF EXISTS "Teachers can view class report card comments"    ON report_card_comments;
+DROP POLICY IF EXISTS "Teachers can upsert class report card comments"  ON report_card_comments;
+DROP POLICY IF EXISTS "Admins can manage report card comments"          ON report_card_comments;
 
 CREATE POLICY "Students can view own report card comments"
   ON report_card_comments FOR SELECT
@@ -932,6 +936,23 @@ CREATE POLICY "Parents can view children report card comments"
 CREATE POLICY "Teachers can view class report card comments"
   ON report_card_comments FOR SELECT
   USING (
+    student_id IN (
+      SELECT s.id FROM students s
+      INNER JOIN class_teacher ct ON ct.class = s.class
+      WHERE ct.teacher_profile_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Teachers can upsert class report card comments"
+  ON report_card_comments FOR ALL
+  USING (
+    student_id IN (
+      SELECT s.id FROM students s
+      INNER JOIN class_teacher ct ON ct.class = s.class
+      WHERE ct.teacher_profile_id = auth.uid()
+    )
+  )
+  WITH CHECK (
     student_id IN (
       SELECT s.id FROM students s
       INNER JOIN class_teacher ct ON ct.class = s.class

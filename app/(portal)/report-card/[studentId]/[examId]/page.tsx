@@ -40,6 +40,8 @@ interface ReportData {
   school_name: string
   principal_name: string
   principal_comment: string
+  teacher_comment: string
+  teacher_name: string
   viewer_role: string
 }
 
@@ -58,6 +60,8 @@ export default function ReportCardPage() {
   const [error, setError] = useState<string | null>(null)
   const [comment, setComment] = useState('')
   const [savingComment, setSavingComment] = useState(false)
+  const [teacherComment, setTeacherComment] = useState('')
+  const [savingTeacherComment, setSavingTeacherComment] = useState(false)
   const [generatingPdf, setGeneratingPdf] = useState(false)
 
   useEffect(() => {
@@ -71,6 +75,7 @@ export default function ReportCardPage() {
         const d: ReportData = await res.json()
         setData(d)
         setComment(d.principal_comment)
+        setTeacherComment(d.teacher_comment)
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : 'Unknown error'
         setError(msg)
@@ -102,6 +107,27 @@ export default function ReportCardPage() {
     }
   }
 
+  const handleSaveTeacherComment = async () => {
+    setSavingTeacherComment(true)
+    try {
+      const res = await fetch(`/api/report-card/${studentId}/${examId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teacher_comment: teacherComment }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error)
+      }
+      toast({ title: 'Comment saved', description: "Your comment has been saved to the report card." })
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Unknown error'
+      toast({ title: 'Error', description: msg, variant: 'destructive' })
+    } finally {
+      setSavingTeacherComment(false)
+    }
+  }
+
   const handleDownload = async () => {
     if (!data) return
     setGeneratingPdf(true)
@@ -130,13 +156,14 @@ export default function ReportCardPage() {
     )
   }
 
-  const { student, exam, results, school_name, principal_name, viewer_role } = data
+  const { student, exam, results, school_name, principal_name, teacher_name, viewer_role } = data
   const scoredResults = results.filter(r => r.score !== null)
   const totalScore = scoredResults.reduce((s, r) => s + (r.score ?? 0), 0)
   const average = scoredResults.length > 0 ? totalScore / scoredResults.length : 0
   const totalGradePoints = scoredResults.reduce((s, r) => s + (gradePoints[r.grade || 'F'] || 0), 0)
 
   const isAdmin = viewer_role === 'admin'
+  const isTeacher = viewer_role === 'teacher'
   const SSS_CLASSES = ['SSS 1', 'SSS 2', 'SSS 3']
   const showDept = SSS_CLASSES.includes(student.class)
 
@@ -317,6 +344,41 @@ export default function ReportCardPage() {
             </div>
 
             <div className="border-t-2 border-green-700 pt-4 mt-6 space-y-4">
+
+              {/* Teacher's Comment */}
+              <div>
+                <p className="text-sm font-semibold text-gray-600 mb-1">Class Teacher&apos;s Comment:</p>
+                {isTeacher ? (
+                  <div data-pdf-hide className="space-y-2">
+                    <Textarea
+                      value={teacherComment}
+                      onChange={e => setTeacherComment(e.target.value)}
+                      placeholder="Enter your comment for this student..."
+                      className="min-h-[80px]"
+                      data-testid="textarea-teacher-comment"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleSaveTeacherComment}
+                      disabled={savingTeacherComment}
+                      className="gap-2"
+                      data-testid="button-save-teacher-comment"
+                    >
+                      {savingTeacherComment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                      Save Comment
+                    </Button>
+                  </div>
+                ) : null}
+                <p
+                  className={`text-sm italic text-gray-700 border-b border-dotted border-gray-400 min-h-[24px] pb-1 ${isTeacher ? 'hidden' : ''}`}
+                  {...(isTeacher ? { 'data-pdf-show': 'true' } : {})}
+                  data-testid="text-teacher-comment"
+                >
+                  {teacherComment || '—'}
+                </p>
+              </div>
+
+              {/* Principal's Comment */}
               <div>
                 <p className="text-sm font-semibold text-gray-600 mb-1">Principal&apos;s Comment:</p>
                 {isAdmin ? (
@@ -349,15 +411,18 @@ export default function ReportCardPage() {
                 </p>
               </div>
 
+              {/* Teacher name and Principal signature */}
               <div className="grid grid-cols-2 gap-8 pt-4">
-                <div className="text-center">
-                  <div className="border-b border-gray-400 mb-1 h-12"></div>
-                  <p className="text-xs text-gray-500">Class Teacher&apos;s Signature</p>
+                <div>
+                  <p className="text-xs text-gray-500 font-semibold mb-1">Class Teacher</p>
+                  <p className="text-sm font-medium text-gray-700">
+                    {teacher_name || '—'}
+                  </p>
                 </div>
                 <div className="text-center">
                   <div className="border-b border-gray-400 mb-1 h-12"></div>
                   <p className="text-xs text-gray-500">
-                    {principal_name ? `${principal_name} — ` : ''}Principal&apos;s Signature & School Stamp
+                    {principal_name ? `${principal_name} — ` : ''}Principal&apos;s Signature &amp; School Stamp
                   </p>
                 </div>
               </div>

@@ -123,7 +123,7 @@ export async function GET(
     }
   }
 
-  const [resultsRes, subjectsRes, settingsRes, commentRes] = await Promise.all([
+  const [resultsRes, subjectsRes, settingsRes, commentRes, classTeacherRes] = await Promise.all([
     adminDb
       .from('student_results')
       .select('id, score, ca_score, exam_score, grade, remarks, subject_id, subjects(id, name, code)')
@@ -141,9 +141,14 @@ export async function GET(
       .single(),
     adminDb
       .from('report_card_comments')
-      .select('principal_comment')
+      .select('principal_comment, teacher_comment')
       .eq('student_id', studentId)
       .eq('exam_id', examId)
+      .single(),
+    adminDb
+      .from('class_teacher')
+      .select('teacher_profile_id, profiles!teacher_profile_id(full_name)')
+      .eq('class', student.class)
       .single(),
   ])
 
@@ -151,6 +156,10 @@ export async function GET(
   const allSubjects = (subjectsRes.data || []) as SubjectRow[]
   const settings = settingsRes.data
   const commentData = commentRes.data
+  const classTeacherData = classTeacherRes.data as unknown as {
+    teacher_profile_id: string
+    profiles: { full_name: string } | null
+  } | null
 
   const applicableSubjects = allSubjects.filter(subject => {
     const classes = subject.applicable_classes || []
@@ -198,6 +207,8 @@ export async function GET(
     school_name: settings?.school_name || 'Elyon Schools',
     principal_name: settings?.principal_name || '',
     principal_comment: commentData?.principal_comment || '',
+    teacher_comment: commentData?.teacher_comment || '',
+    teacher_name: classTeacherData?.profiles?.full_name || '',
     viewer_role: role,
   })
 }
@@ -222,31 +233,85 @@ export async function POST(
     .eq('id', session.user.id)
     .single()
 
-  if (!profile || profile.role !== 'admin') {
-    return NextResponse.json({ error: 'Only admins can edit principal comments' }, { status: 403 })
+  if (!profile) {
+    return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+  }
+
+  const role = profile.role as string
+
+  if (role !== 'admin' && role !== 'teacher') {
+    return NextResponse.json({ error: 'Only admins and teachers can add comments' }, { status: 403 })
   }
 
   const body = await request.json()
-  const { principal_comment } = body
 
-  if (typeof principal_comment !== 'string') {
-    return NextResponse.json({ error: 'principal_comment must be a string' }, { status: 400 })
+  if (role === 'teacher') {
+    const { teacher_comment } = body
+    if (typeof teacher_comment !== 'string') {
+      return NextResponse.json({ error: 'teacher_comment must be a string' }, { status: 400 })
+    }
+
+    const { data: studentData } = await adminDb
+      .from('students')
+      .select('class')
+      .eq('id', studentId)
+      .single()
+
+    if (!studentData) {
+      return NextResponse.json({ error: 'Student not found' }, { status: 404 })
+    }
+
+    const { data: teacherClasses } = await adminDb
+      .from('class_teacher')
+      .select('class')
+      .eq('teacher_profile_id', session.user.id)
+    const assignedClasses = (teacherClasses || []).map(c => c.class as string)
+
+    if (!assignedClasses.includes((studentData as { class: string }).class)) {
+      return NextResponse.json({ error: 'Access denied — you are not the class teacher for this student' }, { status: 403 })
+    }
+
+    const { error } = await adminDb
+      .from('report_card_comments')
+      .upsert(
+        {
+          student_id: studentId,
+          exam_id: examId,
+          teacher_comment: teacher_comment.trim(),
+        },
+        { onConflict: 'student_id,exam_id' }
+      )
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
   }
 
-  const { error } = await adminDb
-    .from('report_card_comments')
-    .upsert(
-      {
-        student_id: studentId,
-        exam_id: examId,
-        principal_comment: principal_comment.trim(),
-      },
-      { onConflict: 'student_id,exam_id' }
-    )
+  if (role === 'admin') {
+    const { principal_comment } = body
+    if (typeof principal_comment !== 'string') {
+      return NextResponse.json({ error: 'principal_comment must be a string' }, { status: 400 })
+    }
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const { error } = await adminDb
+      .from('report_card_comments')
+      .upsert(
+        {
+          student_id: studentId,
+          exam_id: examId,
+          principal_comment: principal_comment.trim(),
+        },
+        { onConflict: 'student_id,exam_id' }
+      )
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
   }
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 }
