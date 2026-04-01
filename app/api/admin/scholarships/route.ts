@@ -58,6 +58,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Percentage cannot exceed 100' }, { status: 400 })
   }
 
+  const { data: studentRow, error: studentErr } = await ctx.adminDb
+    .from('students')
+    .select('id')
+    .eq('id', student_id)
+    .single()
+
+  if (studentErr || !studentRow) {
+    return NextResponse.json({ error: 'Student not found' }, { status: 404 })
+  }
+
   const { data, error } = await ctx.adminDb
     .from('scholarships')
     .insert({

@@ -1078,3 +1078,30 @@ CREATE TABLE IF NOT EXISTS scholarships (
   created_by       UUID REFERENCES profiles(id) ON DELETE SET NULL,
   created_at       TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Index for efficient lookup by student
+CREATE INDEX IF NOT EXISTS scholarships_student_idx ON scholarships (student_id);
+
+-- Enable RLS on scholarships
+ALTER TABLE scholarships ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for scholarships
+DROP POLICY IF EXISTS "Admins can manage scholarships"                ON scholarships;
+DROP POLICY IF EXISTS "Students can view own scholarships"            ON scholarships;
+DROP POLICY IF EXISTS "Parents can view children scholarships"        ON scholarships;
+
+CREATE POLICY "Admins can manage scholarships"
+  ON scholarships FOR ALL
+  USING (get_user_role(auth.uid()) = 'admin');
+
+CREATE POLICY "Students can view own scholarships"
+  ON scholarships FOR SELECT
+  USING (
+    student_id IN (SELECT id FROM students WHERE profile_id = auth.uid())
+  );
+
+CREATE POLICY "Parents can view children scholarships"
+  ON scholarships FOR SELECT
+  USING (
+    student_id IN (SELECT id FROM students WHERE parent_profile_id = auth.uid())
+  );

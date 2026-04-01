@@ -90,7 +90,7 @@ export default async function StudentDashboard() {
   let feeExpected = 0
   let feePaid = 0
   let feeScholarshipCredit = 0
-  let feeStatus: 'paid' | 'partial' | 'unpaid' | 'none' = 'none'
+  let feeStatus: 'paid' | 'cleared_by_scholarship' | 'partial' | 'unpaid' | 'none' = 'none'
   let activeScholarshipName: string | null = null
 
   if (studentRecord && settings) {
@@ -138,7 +138,7 @@ export default async function StudentDashboard() {
     if (feeExpected === 0) {
       feeStatus = feePaid > 0 ? 'paid' : 'none'
     } else if (effectiveExpected - feePaid <= 0) {
-      feeStatus = 'paid'
+      feeStatus = feeScholarshipCredit > 0 && feePaid < feeExpected ? 'cleared_by_scholarship' : 'paid'
     } else if (feePaid > 0) {
       feeStatus = 'partial'
     } else {
@@ -258,7 +258,7 @@ export default async function StudentDashboard() {
         </div>
 
         {studentRecord && settings && feeExpected > 0 && (
-          <Card className={`mb-8 ${feeStatus === 'paid' ? 'border-green-200' : feeStatus === 'partial' ? 'border-amber-200' : 'border-red-200'}`} data-testid="card-fee-status">
+          <Card className={`mb-8 ${feeStatus === 'paid' || feeStatus === 'cleared_by_scholarship' ? 'border-green-200' : feeStatus === 'partial' ? 'border-amber-200' : 'border-red-200'}`} data-testid="card-fee-status">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Wallet className="h-5 w-5" />
@@ -297,6 +297,11 @@ export default async function StudentDashboard() {
                 {feeStatus === 'paid' && (
                   <Badge className="bg-green-100 text-green-700 gap-1" data-testid="badge-fee-status">
                     <CheckCircle className="h-3 w-3" /> Fully Paid
+                  </Badge>
+                )}
+                {feeStatus === 'cleared_by_scholarship' && (
+                  <Badge className="bg-green-100 text-green-700 gap-1" data-testid="badge-fee-status">
+                    <Award className="h-3 w-3" /> Cleared by Scholarship
                   </Badge>
                 )}
                 {feeStatus === 'partial' && (

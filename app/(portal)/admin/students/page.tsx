@@ -126,9 +126,21 @@ export default function AdminStudentsPage() {
 
   const [scholarshipDialogOpen, setScholarshipDialogOpen] = useState(false)
   const [scholarshipTarget, setScholarshipTarget] = useState<Student | null>(null)
-  const [scholarshipList, setScholarshipList] = useState<{ id: string; name: string; active: boolean }[]>([])
+  interface ScholarshipRecord {
+    id: string
+    name: string
+    active: boolean
+    coverage_type: 'full' | 'percentage' | 'fixed'
+    coverage_value: number
+    fee_types: string[] | null
+    applies_to_term: string | null
+    applies_to_year: number | null
+    notes: string | null
+  }
+  const [scholarshipList, setScholarshipList] = useState<ScholarshipRecord[]>([])
   const [scholarshipLoading, setScholarshipLoading] = useState(false)
   const [scholarshipSaving, setScholarshipSaving] = useState(false)
+  const [editingScholarshipId, setEditingScholarshipId] = useState<string | null>(null)
   const [scholarshipForm, setScholarshipForm] = useState({
     name: '',
     coverage_type: 'percentage' as 'full' | 'percentage' | 'fixed',
@@ -438,10 +450,29 @@ export default function AdminStudentsPage() {
     }
   }
 
+  function openScholarshipEdit(s: ScholarshipRecord) {
+    setEditingScholarshipId(s.id)
+    setScholarshipForm({
+      name: s.name,
+      coverage_type: s.coverage_type,
+      coverage_value: s.coverage_type === 'full' ? '100' : String(s.coverage_value),
+      fee_types: s.fee_types || [],
+      applies_to_term: s.applies_to_term || '',
+      applies_to_year: s.applies_to_year ? String(s.applies_to_year) : '',
+      notes: s.notes || '',
+    })
+  }
+
+  function cancelScholarshipEdit() {
+    setEditingScholarshipId(null)
+    setScholarshipForm({ name: '', coverage_type: 'percentage', coverage_value: '', fee_types: [], applies_to_term: '', applies_to_year: '', notes: '' })
+  }
+
   async function openScholarshipDialog(student: Student) {
     setScholarshipTarget(student)
     setScholarshipList([])
     setScholarshipLoading(true)
+    setEditingScholarshipId(null)
     setScholarshipForm({
       name: '',
       coverage_type: 'percentage',
@@ -475,26 +506,43 @@ export default function AdminStudentsPage() {
     }
     setScholarshipSaving(true)
     try {
+      const isEditing = editingScholarshipId !== null
+      const payload = isEditing
+        ? {
+            id: editingScholarshipId,
+            name: scholarshipForm.name.trim(),
+            coverage_type: scholarshipForm.coverage_type,
+            coverage_value: scholarshipForm.coverage_type === 'full' ? 100 : val,
+            fee_types: scholarshipForm.fee_types.length > 0 ? scholarshipForm.fee_types : null,
+            applies_to_term: scholarshipForm.applies_to_term || null,
+            applies_to_year: scholarshipForm.applies_to_year || null,
+            notes: scholarshipForm.notes.trim() || null,
+          }
+        : {
+            student_id: scholarshipTarget.id,
+            name: scholarshipForm.name.trim(),
+            coverage_type: scholarshipForm.coverage_type,
+            coverage_value: scholarshipForm.coverage_type === 'full' ? 100 : val,
+            fee_types: scholarshipForm.fee_types.length > 0 ? scholarshipForm.fee_types : [],
+            applies_to_term: scholarshipForm.applies_to_term || null,
+            applies_to_year: scholarshipForm.applies_to_year || null,
+            notes: scholarshipForm.notes.trim() || null,
+          }
       const res = await fetch('/api/admin/scholarships', {
-        method: 'POST',
+        method: isEditing ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          student_id: scholarshipTarget.id,
-          name: scholarshipForm.name.trim(),
-          coverage_type: scholarshipForm.coverage_type,
-          coverage_value: scholarshipForm.coverage_type === 'full' ? 100 : val,
-          fee_types: scholarshipForm.fee_types.length > 0 ? scholarshipForm.fee_types : [],
-          applies_to_term: scholarshipForm.applies_to_term || null,
-          applies_to_year: scholarshipForm.applies_to_year || null,
-          notes: scholarshipForm.notes.trim() || null,
-        }),
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      toast({ title: 'Scholarship added', description: `"${scholarshipForm.name}" assigned to ${scholarshipTarget.profiles?.full_name}.` })
+      toast({
+        title: isEditing ? 'Scholarship updated' : 'Scholarship added',
+        description: `"${scholarshipForm.name}" ${isEditing ? 'updated' : `assigned to ${scholarshipTarget.profiles?.full_name}`}.`,
+      })
       const refreshRes = await fetch(`/api/admin/scholarships?student_id=${scholarshipTarget.id}`)
       const refreshData = await refreshRes.json()
       setScholarshipList(refreshData.scholarships || [])
+      setEditingScholarshipId(null)
       setScholarshipForm({ name: '', coverage_type: 'percentage', coverage_value: '', fee_types: [], applies_to_term: '', applies_to_year: '', notes: '' })
     } catch (err) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to save', variant: 'destructive' })
@@ -1342,7 +1390,7 @@ export default function AdminStudentsPage() {
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold">Existing Scholarships</Label>
                   {scholarshipList.map(s => (
-                    <div key={s.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={s.id} className={`flex items-center justify-between p-3 border rounded-lg ${editingScholarshipId === s.id ? 'border-primary bg-primary/5' : ''}`}>
                       <div className="flex items-center gap-2">
                         <Award className="h-4 w-4 text-primary" />
                         <span className="text-sm font-medium">{s.name}</span>
@@ -1351,6 +1399,15 @@ export default function AdminStudentsPage() {
                         </Badge>
                       </div>
                       <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => editingScholarshipId === s.id ? cancelScholarshipEdit() : openScholarshipEdit(s)}
+                          className="text-xs"
+                          data-testid={`button-edit-sch-${s.id}`}
+                        >
+                          {editingScholarshipId === s.id ? 'Cancel Edit' : <><Pencil className="h-3.5 w-3.5 mr-1" />Edit</>}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1373,7 +1430,9 @@ export default function AdminStudentsPage() {
                     </div>
                   ))}
                   <div className="border-t pt-4">
-                    <Label className="text-sm font-semibold">Add Another Scholarship</Label>
+                    <Label className="text-sm font-semibold">
+                      {editingScholarshipId ? 'Edit Scholarship' : 'Add Another Scholarship'}
+                    </Label>
                   </div>
                 </div>
               )}
@@ -1474,7 +1533,7 @@ export default function AdminStudentsPage() {
             {!scholarshipLoading && (
               <Button onClick={handleScholarshipSave} disabled={scholarshipSaving} data-testid="button-save-scholarship">
                 {scholarshipSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Award className="h-4 w-4 mr-2" />}
-                Add Scholarship
+                {editingScholarshipId ? 'Update Scholarship' : 'Add Scholarship'}
               </Button>
             )}
           </DialogFooter>
