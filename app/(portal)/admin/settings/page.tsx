@@ -84,9 +84,9 @@ export default function AdminSettingsPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg']
     if (!allowedTypes.includes(file.type)) {
-      toast({ title: 'Invalid file type', description: 'Please upload a PNG, JPG, or WebP image.', variant: 'destructive' })
+      toast({ title: 'Invalid file type', description: 'Please upload a PNG or JPG image.', variant: 'destructive' })
       return
     }
     if (file.size > 2 * 1024 * 1024) {
@@ -197,6 +197,7 @@ export default function AdminSettingsPage() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
+          <>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -269,7 +270,7 @@ export default function AdminSettingsPage() {
                 Principal&apos;s Signature
               </CardTitle>
               <CardDescription>
-                Upload a PNG, JPG, or WebP image of the principal&apos;s signature (max 2 MB). It will appear on every student report card.
+                Upload a PNG or JPG image of the principal&apos;s signature (max 2 MB). It will appear on every student report card.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -329,13 +330,14 @@ export default function AdminSettingsPage() {
               <input
                 ref={signatureInputRef}
                 type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp"
+                accept="image/png,image/jpeg,image/jpg"
                 className="hidden"
                 onChange={handleSignatureUpload}
                 data-testid="input-signature-file"
               />
             </CardContent>
           </Card>
+          </>
         )}
       </main>
 
