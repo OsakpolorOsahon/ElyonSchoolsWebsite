@@ -26,7 +26,8 @@ import {
   FileText,
   CheckCircle,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  CreditCard
 } from 'lucide-react'
 
 const steps = [
@@ -479,6 +480,16 @@ export default function ApplyPage() {
                       <p className="text-sm text-muted-foreground">{formData.guardianEmail}</p>
                     </CardContent>
                   </Card>
+                </div>
+
+                <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                  <div className="flex items-center gap-2 text-sm text-amber-800">
+                    <CreditCard className="h-4 w-4 flex-shrink-0" />
+                    <span>
+                      An application fee of <strong>₦5,000</strong> is required to submit this form.
+                      This fee is <strong>non-refundable</strong>.
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-start space-x-3 pt-4">
