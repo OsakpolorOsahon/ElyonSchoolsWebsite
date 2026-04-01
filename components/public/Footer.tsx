@@ -68,6 +68,9 @@ export function Footer() {
               Building tomorrow&apos;s leaders with excellence in academics, 
               character, and values.
             </p>
+            <p className="text-sm italic text-primary-foreground/70">
+              &ldquo;Hardwork and Determination&rdquo;
+            </p>
             
             <div className="space-y-3 text-sm">
               <div className="flex items-center gap-3">

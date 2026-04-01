@@ -122,7 +122,7 @@ export default function AboutPage() {
 
       <section className="py-20 bg-muted/30">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             <Card className="border-l-4 border-l-primary">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-4">
@@ -151,6 +151,24 @@ export default function AboutPage() {
                   To be the leading educational institution in Nigeria, recognized for academic 
                   excellence, character development, and producing graduates who are innovative, 
                   ethical, and globally competitive.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-l-4 border-l-amber-500">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10">
+                    <Award className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground">Our Motto</h3>
+                </div>
+                <p className="text-muted-foreground italic text-lg font-medium">
+                  &ldquo;Hardwork and Determination&rdquo;
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  The guiding principle that inspires every student, teacher, and staff member 
+                  to give their best every day.
                 </p>
               </CardContent>
             </Card>

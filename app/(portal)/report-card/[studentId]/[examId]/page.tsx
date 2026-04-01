@@ -182,7 +182,7 @@ export default function ReportCardPage() {
                     {school_name}
                   </h1>
                   <p className="text-sm text-gray-600 mt-1">Excellence in Education Since 1994</p>
-                  <p className="text-xs text-gray-500">Motto: &quot;Training a Child in the Way of the Lord&quot;</p>
+                  <p className="text-xs text-gray-500">Motto: &quot;Hardwork and Determination&quot;</p>
                 </div>
                 <div className="h-20 w-20" />
               </div>
