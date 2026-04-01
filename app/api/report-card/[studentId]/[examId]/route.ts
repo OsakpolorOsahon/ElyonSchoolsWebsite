@@ -136,7 +136,7 @@ export async function GET(
       .order('name'),
     adminDb
       .from('academic_settings')
-      .select('school_name, principal_name')
+      .select('school_name, principal_name, principal_signature_url')
       .eq('singleton_key', true)
       .single(),
     adminDb
@@ -206,6 +206,7 @@ export async function GET(
     results: assembledResults,
     school_name: settings?.school_name || 'Elyon Schools',
     principal_name: settings?.principal_name || '',
+    principal_signature_url: settings?.principal_signature_url || null,
     principal_comment: commentData?.principal_comment || '',
     teacher_comment: commentData?.teacher_comment || '',
     teacher_name: classTeacherData?.profiles?.full_name || '',

@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Settings, Save, AlertTriangle } from 'lucide-react'
+import { Loader2, ArrowLeft, Settings, Save, AlertTriangle, Upload, Trash2, ImageIcon } from 'lucide-react'
 
 const TERM_ORDER: Record<string, number> = { First: 1, Second: 2, Third: 3 }
 
@@ -46,6 +46,10 @@ export default function AdminSettingsPage() {
   })
   const savedSettings = useRef<{ term: string; year: number } | null>(null)
   const [showRollbackDialog, setShowRollbackDialog] = useState(false)
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null)
+  const [uploadingSignature, setUploadingSignature] = useState(false)
+  const [removingSignature, setRemovingSignature] = useState(false)
+  const signatureInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -68,12 +72,59 @@ export default function AdminSettingsPage() {
           school_name: settings.school_name,
           principal_name: settings.principal_name || '',
         })
+        setSignatureUrl(settings.principal_signature_url || null)
         savedSettings.current = { term: settings.current_term, year: settings.current_year }
       }
       setLoading(false)
     }
     load()
   }, [])
+
+  async function handleSignatureUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: 'Invalid file type', description: 'Please upload a PNG, JPG, or WebP image.', variant: 'destructive' })
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Signature image must be under 2 MB.', variant: 'destructive' })
+      return
+    }
+
+    setUploadingSignature(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/admin/signature', { method: 'POST', body: formData })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Upload failed')
+      setSignatureUrl(json.url)
+      toast({ title: 'Signature uploaded', description: "Principal's signature has been saved." })
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Upload failed', variant: 'destructive' })
+    } finally {
+      setUploadingSignature(false)
+      if (signatureInputRef.current) signatureInputRef.current.value = ''
+    }
+  }
+
+  async function handleSignatureRemove() {
+    setRemovingSignature(true)
+    try {
+      const res = await fetch('/api/admin/signature', { method: 'DELETE' })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Remove failed')
+      setSignatureUrl(null)
+      toast({ title: 'Signature removed', description: "Principal's signature has been removed." })
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Remove failed', variant: 'destructive' })
+    } finally {
+      setRemovingSignature(false)
+    }
+  }
 
   async function performSave() {
     setSaving(true)
@@ -208,6 +259,81 @@ export default function AdminSettingsPage() {
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {saving ? 'Saving...' : 'Save Settings'}
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ImageIcon className="h-5 w-5" />
+                Principal&apos;s Signature
+              </CardTitle>
+              <CardDescription>
+                Upload a PNG, JPG, or WebP image of the principal&apos;s signature (max 2 MB). It will appear on every student report card.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {signatureUrl ? (
+                <div className="flex flex-col items-start gap-3">
+                  <div className="border border-border rounded-md p-4 bg-muted/30 inline-block">
+                    <img
+                      src={signatureUrl}
+                      alt="Principal's Signature Preview"
+                      className="h-16 max-w-[240px] object-contain"
+                      data-testid="img-signature-preview"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => signatureInputRef.current?.click()}
+                      disabled={uploadingSignature || removingSignature}
+                      data-testid="button-replace-signature"
+                    >
+                      {uploadingSignature ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      {uploadingSignature ? 'Uploading...' : 'Replace'}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="gap-2"
+                      onClick={handleSignatureRemove}
+                      disabled={uploadingSignature || removingSignature}
+                      data-testid="button-remove-signature"
+                    >
+                      {removingSignature ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      {removingSignature ? 'Removing...' : 'Remove'}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-start gap-3">
+                  <div className="border-2 border-dashed border-border rounded-md p-6 text-center text-muted-foreground text-sm w-full max-w-xs">
+                    No signature uploaded yet
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => signatureInputRef.current?.click()}
+                    disabled={uploadingSignature}
+                    data-testid="button-upload-signature"
+                  >
+                    {uploadingSignature ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                    {uploadingSignature ? 'Uploading...' : 'Upload Signature'}
+                  </Button>
+                </div>
+              )}
+              <input
+                ref={signatureInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                className="hidden"
+                onChange={handleSignatureUpload}
+                data-testid="input-signature-file"
+              />
             </CardContent>
           </Card>
         )}

@@ -296,15 +296,18 @@ CREATE TABLE IF NOT EXISTS gallery_items (
 -- academic_settings  (single-row school config)
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS academic_settings (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  singleton_key   BOOLEAN NOT NULL DEFAULT TRUE UNIQUE CHECK (singleton_key = TRUE),
-  current_term    TEXT NOT NULL DEFAULT 'First',
-  current_year    INTEGER NOT NULL DEFAULT 2025,
-  school_name     TEXT NOT NULL DEFAULT 'Elyon Schools',
-  principal_name  TEXT DEFAULT '',
-  created_at      TIMESTAMPTZ DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ DEFAULT NOW()
+  id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  singleton_key           BOOLEAN NOT NULL DEFAULT TRUE UNIQUE CHECK (singleton_key = TRUE),
+  current_term            TEXT NOT NULL DEFAULT 'First',
+  current_year            INTEGER NOT NULL DEFAULT 2025,
+  school_name             TEXT NOT NULL DEFAULT 'Elyon Schools',
+  principal_name          TEXT DEFAULT '',
+  principal_signature_url TEXT DEFAULT NULL,
+  created_at              TIMESTAMPTZ DEFAULT NOW(),
+  updated_at              TIMESTAMPTZ DEFAULT NOW()
 );
+-- Migration: add principal_signature_url if upgrading from older schema
+ALTER TABLE academic_settings ADD COLUMN IF NOT EXISTS principal_signature_url TEXT DEFAULT NULL;
 
 INSERT INTO academic_settings (singleton_key, current_term, current_year, school_name)
 VALUES (TRUE, 'First', 2025, 'Elyon Schools')

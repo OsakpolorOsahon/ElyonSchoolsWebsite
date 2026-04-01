@@ -39,6 +39,7 @@ interface ReportData {
   results: ResultRow[]
   school_name: string
   principal_name: string
+  principal_signature_url: string | null
   principal_comment: string
   teacher_comment: string
   teacher_name: string
@@ -156,7 +157,7 @@ export default function ReportCardPage() {
     )
   }
 
-  const { student, exam, results, school_name, principal_name, teacher_name, viewer_role } = data
+  const { student, exam, results, school_name, principal_name, principal_signature_url, teacher_name, viewer_role } = data
   const scoredResults = results.filter(r => r.score !== null)
   const totalScore = scoredResults.reduce((s, r) => s + (r.score ?? 0), 0)
   const average = scoredResults.length > 0 ? totalScore / scoredResults.length : 0
@@ -420,7 +421,18 @@ export default function ReportCardPage() {
                   </p>
                 </div>
                 <div className="text-center">
-                  <div className="border-b border-gray-400 mb-1 h-12"></div>
+                  {principal_signature_url ? (
+                    <div className="flex justify-center mb-1">
+                      <img
+                        src={principal_signature_url}
+                        alt="Principal's Signature"
+                        className="h-12 max-w-[160px] object-contain"
+                        data-testid="img-principal-signature"
+                      />
+                    </div>
+                  ) : (
+                    <div className="border-b border-gray-400 mb-1 h-12"></div>
+                  )}
                   <p className="text-xs text-gray-500">
                     {principal_name ? `${principal_name} — ` : ''}Principal&apos;s Signature &amp; School Stamp
                   </p>
