@@ -28,7 +28,7 @@ const admissionSteps = [
   {
     step: 2,
     title: 'Pay Application Fee',
-    description: 'Submit the non-refundable application fee of ₦10,000 through our secure online payment system.',
+    description: 'Submit the non-refundable application fee of ₦5,000 through our secure online payment system.',
     icon: CreditCard,
   },
   {

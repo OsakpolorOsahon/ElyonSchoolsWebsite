@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const ADMISSION_FEE = 50000
+const ADMISSION_FEE = 5000
 
 export async function GET(request: NextRequest) {
   try {
