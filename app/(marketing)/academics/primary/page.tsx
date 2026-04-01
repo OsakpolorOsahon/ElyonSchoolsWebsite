@@ -9,7 +9,6 @@ import {
   Globe, 
   Microscope, 
   Palette, 
-  Music,
   Dumbbell,
   Languages,
   CheckCircle,
@@ -41,7 +40,6 @@ const subjects = [
   { icon: Globe, name: 'Social Studies', description: 'Nigerian history, geography, and civic education' },
   { icon: Languages, name: 'Nigerian Languages', description: 'Yoruba, Igbo, or Hausa language studies' },
   { icon: Palette, name: 'Creative Arts', description: 'Visual arts, crafts, and creative expression' },
-  { icon: Music, name: 'Music', description: 'Singing, instruments, and music appreciation' },
   { icon: Dumbbell, name: 'Physical Education', description: 'Sports, fitness, and healthy living' },
 ]
 
@@ -142,7 +140,7 @@ export default function PrimaryPage() {
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground">Our Curriculum</h2>
+            <h2 className="text-3xl font-bold text-foreground">Subjects</h2>
             <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
               A comprehensive curriculum aligned with national standards
             </p>
