@@ -15,6 +15,8 @@ import {
   BookOpen,
   Loader2,
   CalendarDays,
+  ChevronDown,
+  MessageSquare,
 } from 'lucide-react'
 
 type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused'
@@ -23,12 +25,6 @@ interface Student {
   id: string
   admission_number: string
   profiles: { full_name: string } | null
-}
-
-interface AttendanceRecord {
-  student_id: string
-  status: AttendanceStatus
-  notes?: string
 }
 
 const STATUS_CONFIG: Record<AttendanceStatus, { label: string; color: string; icon: React.ReactNode }> = {
@@ -44,11 +40,13 @@ function todayISO() {
 
 export default function TeacherAttendancePage() {
   const { toast } = useToast()
-  const [assignedClass, setAssignedClass] = useState<string | null>(null)
+  const [assignedClasses, setAssignedClasses] = useState<string[]>([])
+  const [activeClass, setActiveClass] = useState<string>('')
   const [students, setStudents] = useState<Student[]>([])
   const [date, setDate] = useState(todayISO())
   const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({})
   const [notes, setNotes] = useState<Record<string, string>>({})
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [currentTerm, setCurrentTerm] = useState('First')
@@ -65,10 +63,11 @@ export default function TeacherAttendancePage() {
     }
   }, [])
 
-  const fetchAttendance = useCallback(async (selectedDate: string) => {
+  const fetchAttendance = useCallback(async (selectedDate: string, selectedClass?: string) => {
     setLoading(true)
     try {
       const params = new URLSearchParams({ date: selectedDate })
+      if (selectedClass) params.set('class', selectedClass)
       const res = await fetch(`/api/teacher/attendance?${params}`)
       if (!res.ok) {
         const err = await res.json()
@@ -76,19 +75,19 @@ export default function TeacherAttendancePage() {
         return
       }
       const data = await res.json()
-      setAssignedClass(data.assignedClass)
+      setAssignedClasses(data.assignedClasses || [])
+      setActiveClass(data.activeClass || '')
       setStudents(data.students || [])
 
       // Pre-fill existing records
       const statusMap: Record<string, AttendanceStatus> = {}
       const notesMap: Record<string, string> = {}
-      for (const rec of (data.records || []) as AttendanceRecord[]) {
+      for (const rec of (data.records || []) as { student_id: string; status: AttendanceStatus; notes?: string }[]) {
         statusMap[rec.student_id] = rec.status
         if (rec.notes) notesMap[rec.student_id] = rec.notes
       }
-
       // Default all students to 'present' if no record exists
-      for (const s of (data.students || [])) {
+      for (const s of (data.students || []) as Student[]) {
         if (!statusMap[s.id]) statusMap[s.id] = 'present'
       }
       setAttendance(statusMap)
@@ -105,11 +104,29 @@ export default function TeacherAttendancePage() {
 
   const handleDateChange = (newDate: string) => {
     setDate(newDate)
-    fetchAttendance(newDate)
+    fetchAttendance(newDate, activeClass)
+  }
+
+  const handleClassChange = (cls: string) => {
+    setActiveClass(cls)
+    fetchAttendance(date, cls)
   }
 
   const setStatus = (studentId: string, status: AttendanceStatus) => {
     setAttendance(prev => ({ ...prev, [studentId]: status }))
+  }
+
+  const setNote = (studentId: string, note: string) => {
+    setNotes(prev => ({ ...prev, [studentId]: note }))
+  }
+
+  const toggleNotes = (studentId: string) => {
+    setExpandedNotes(prev => {
+      const next = new Set(prev)
+      if (next.has(studentId)) next.delete(studentId)
+      else next.add(studentId)
+      return next
+    })
   }
 
   const markAll = (status: AttendanceStatus) => {
@@ -129,14 +146,14 @@ export default function TeacherAttendancePage() {
       const res = await fetch('/api/teacher/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, term: currentTerm, year: currentYear, records }),
+        body: JSON.stringify({ date, term: currentTerm, year: currentYear, class: activeClass, records }),
       })
       if (!res.ok) {
         const err = await res.json()
         toast({ title: 'Save failed', description: err.error || 'Could not save attendance', variant: 'destructive' })
         return
       }
-      toast({ title: 'Attendance saved', description: `Attendance for ${date} has been recorded.` })
+      toast({ title: 'Attendance saved', description: `Attendance for ${date} recorded in ${activeClass}.` })
     } finally {
       setSaving(false)
     }
@@ -152,19 +169,19 @@ export default function TeacherAttendancePage() {
     <div className="min-h-screen bg-muted/30">
       <PortalHeader
         title="Attendance"
-        subtitle={assignedClass ? `Class: ${assignedClass}` : 'Loading...'}
+        subtitle={activeClass ? `Taking attendance for ${activeClass}` : 'Loading...'}
         role="teacher"
       />
 
       <main className="mx-auto max-w-5xl px-6 py-8 animate-fade-up">
-        {/* Date picker + Term info */}
+        {/* Controls: Date + Class selector */}
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="flex items-center gap-2 flex-1">
-                <CalendarDays className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <label className="text-sm font-medium block mb-1">Date</label>
+            <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Date</label>
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
                   <input
                     type="date"
                     value={date}
@@ -175,7 +192,34 @@ export default function TeacherAttendancePage() {
                   />
                 </div>
               </div>
-              <div className="text-sm text-muted-foreground">
+
+              {assignedClasses.length > 1 && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Class</label>
+                  <div className="relative">
+                    <select
+                      value={activeClass}
+                      onChange={e => handleClassChange(e.target.value)}
+                      data-testid="select-attendance-class"
+                      className="border border-input rounded-md px-3 py-1.5 text-sm bg-background appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      {assignedClasses.map(cls => (
+                        <option key={cls} value={cls}>{cls}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-2 top-2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  </div>
+                </div>
+              )}
+
+              {assignedClasses.length === 1 && activeClass && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Class</label>
+                  <p className="text-sm font-semibold text-foreground py-1.5">{activeClass}</p>
+                </div>
+              )}
+
+              <div className="text-sm text-muted-foreground sm:ml-auto pt-1 sm:pt-0 sm:pb-1.5">
                 <span className="font-medium">{currentTerm} Term</span> · {currentYear}
               </div>
             </div>
@@ -186,7 +230,7 @@ export default function TeacherAttendancePage() {
           <div className="flex items-center justify-center py-24">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-        ) : !assignedClass ? (
+        ) : assignedClasses.length === 0 ? (
           <Card>
             <CardContent className="py-16 text-center text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-30" />
@@ -198,7 +242,7 @@ export default function TeacherAttendancePage() {
           <Card>
             <CardContent className="py-16 text-center text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-30" />
-              <p>No students found in {assignedClass}.</p>
+              <p>No students found in {activeClass}.</p>
             </CardContent>
           </Card>
         ) : (
@@ -240,55 +284,86 @@ export default function TeacherAttendancePage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  {assignedClass} — {students.length} Student{students.length !== 1 ? 's' : ''}
+                  {activeClass} — {students.length} Student{students.length !== 1 ? 's' : ''}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y">
                   {students.map((student, idx) => {
                     const status = attendance[student.id] || 'present'
+                    const showNotes = expandedNotes.has(student.id)
                     return (
                       <div
                         key={student.id}
                         data-testid={`row-student-${student.id}`}
-                        className="flex flex-col sm:flex-row sm:items-center gap-3 px-6 py-4 hover:bg-muted/30 transition-colors"
+                        className="px-6 py-4 hover:bg-muted/30 transition-colors"
                       >
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 shrink-0 text-sm font-bold text-primary">
-                            {idx + 1}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 shrink-0 text-sm font-bold text-primary">
+                              {idx + 1}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm truncate">{student.profiles?.full_name || 'Unknown'}</p>
+                              <p className="text-xs text-muted-foreground">{student.admission_number}</p>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-sm truncate">{student.profiles?.full_name || 'Unknown'}</p>
-                            <p className="text-xs text-muted-foreground">{student.admission_number}</p>
-                          </div>
-                        </div>
 
-                        {/* Status buttons */}
-                        <div className="flex flex-wrap gap-1.5 sm:shrink-0">
-                          {(Object.keys(STATUS_CONFIG) as AttendanceStatus[]).map(s => (
+                          {/* Status buttons */}
+                          <div className="flex flex-wrap gap-1.5 sm:shrink-0">
+                            {(Object.keys(STATUS_CONFIG) as AttendanceStatus[]).map(s => (
+                              <button
+                                key={s}
+                                onClick={() => setStatus(student.id, s)}
+                                data-testid={`button-status-${s}-${student.id}`}
+                                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                                  status === s
+                                    ? STATUS_CONFIG[s].color + ' ring-2 ring-offset-1 ring-current'
+                                    : 'bg-muted/50 text-muted-foreground border-muted hover:bg-muted'
+                                }`}
+                              >
+                                {STATUS_CONFIG[s].icon}
+                                {STATUS_CONFIG[s].label}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Current status badge + notes toggle */}
+                          <div className="flex items-center gap-2 sm:shrink-0">
+                            <Badge
+                              data-testid={`badge-attendance-status-${student.id}`}
+                              className={`text-xs ${STATUS_CONFIG[status].color} border`}
+                            >
+                              {STATUS_CONFIG[status].label}
+                            </Badge>
                             <button
-                              key={s}
-                              onClick={() => setStatus(student.id, s)}
-                              data-testid={`button-status-${s}-${student.id}`}
-                              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                                status === s
-                                  ? STATUS_CONFIG[s].color + ' ring-2 ring-offset-1 ring-current'
-                                  : 'bg-muted/50 text-muted-foreground border-muted hover:bg-muted'
+                              onClick={() => toggleNotes(student.id)}
+                              data-testid={`button-notes-${student.id}`}
+                              title="Add/view note"
+                              className={`p-1.5 rounded-md transition-colors ${
+                                notes[student.id]
+                                  ? 'text-primary bg-primary/10'
+                                  : 'text-muted-foreground hover:bg-muted'
                               }`}
                             >
-                              {STATUS_CONFIG[s].icon}
-                              {STATUS_CONFIG[s].label}
+                              <MessageSquare className="h-3.5 w-3.5" />
                             </button>
-                          ))}
+                          </div>
                         </div>
 
-                        {/* Current status badge */}
-                        <Badge
-                          data-testid={`badge-attendance-status-${student.id}`}
-                          className={`text-xs shrink-0 ${STATUS_CONFIG[status].color} border`}
-                        >
-                          {STATUS_CONFIG[status].label}
-                        </Badge>
+                        {/* Expandable notes input */}
+                        {showNotes && (
+                          <div className="mt-3 pl-12">
+                            <input
+                              type="text"
+                              placeholder="Optional note (e.g. sick, left early...)"
+                              value={notes[student.id] || ''}
+                              onChange={e => setNote(student.id, e.target.value)}
+                              data-testid={`input-notes-${student.id}`}
+                              className="w-full border border-input rounded-md px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                          </div>
+                        )}
                       </div>
                     )
                   })}

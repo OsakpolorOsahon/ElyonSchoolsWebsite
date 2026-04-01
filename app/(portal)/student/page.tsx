@@ -80,6 +80,26 @@ export default async function StudentDashboard() {
       .single(),
   ])
 
+  // Fetch current-term attendance summary for the student
+  let attendanceSummary: { present: number; absent: number; late: number; excused: number; total: number; rate: number | null } | null = null
+  if (studentRecord && settingsResult.data) {
+    const { data: attRecords } = await adminDb
+      .from('attendance_records')
+      .select('status')
+      .eq('student_id', studentRecord.id)
+      .eq('term', settingsResult.data.current_term)
+      .eq('year', settingsResult.data.current_year)
+    if (attRecords && attRecords.length > 0) {
+      const present = attRecords.filter((r: { status: string }) => r.status === 'present').length
+      const absent = attRecords.filter((r: { status: string }) => r.status === 'absent').length
+      const late = attRecords.filter((r: { status: string }) => r.status === 'late').length
+      const excused = attRecords.filter((r: { status: string }) => r.status === 'excused').length
+      const total = attRecords.length
+      const rate = Math.round(((present + late) / total) * 100)
+      attendanceSummary = { present, absent, late, excused, total, rate }
+    }
+  }
+
   const results = resultsResult.data
   const upcomingEvents = eventsResult.data
   const announcements = announcementsResult.data
@@ -324,21 +344,56 @@ export default async function StudentDashboard() {
           </Card>
         )}
 
-        <Link href="/student/attendance" className="block mb-8">
+        {/* Attendance summary card */}
+        <Link href="/student/attendance" className="block mb-8" data-testid="card-attendance-link">
           <Card className="hover-elevate border-primary/20 bg-primary/5 cursor-pointer">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                    <ClipboardList className="h-6 w-6 text-primary" />
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ClipboardList className="h-5 w-5 text-primary" />
+                Attendance — {settings?.current_term} Term {settings?.current_year}
+                <ArrowRight className="h-4 w-4 text-primary ml-auto" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {attendanceSummary ? (
+                <div className="grid gap-3 sm:grid-cols-5">
+                  <div className="text-center p-3 rounded-lg bg-green-100 text-green-700">
+                    <CheckCircle className="h-4 w-4 mx-auto mb-1" />
+                    <p className="text-xl font-bold" data-testid="att-present">{attendanceSummary.present}</p>
+                    <p className="text-xs">Present</p>
                   </div>
-                  <div>
-                    <p className="font-semibold text-foreground">My Attendance</p>
-                    <p className="text-sm text-muted-foreground">View your attendance record and rate</p>
+                  <div className="text-center p-3 rounded-lg bg-red-100 text-red-700">
+                    <AlertTriangle className="h-4 w-4 mx-auto mb-1" />
+                    <p className="text-xl font-bold" data-testid="att-absent">{attendanceSummary.absent}</p>
+                    <p className="text-xs">Absent</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-amber-100 text-amber-700">
+                    <Clock className="h-4 w-4 mx-auto mb-1" />
+                    <p className="text-xl font-bold" data-testid="att-late">{attendanceSummary.late}</p>
+                    <p className="text-xs">Late</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-blue-100 text-blue-700">
+                    <BookOpen className="h-4 w-4 mx-auto mb-1" />
+                    <p className="text-xl font-bold" data-testid="att-excused">{attendanceSummary.excused}</p>
+                    <p className="text-xs">Excused</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-muted/70">
+                    <ClipboardList className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                    <p className={`text-xl font-bold ${
+                      attendanceSummary.rate !== null && attendanceSummary.rate >= 80 ? 'text-green-600' :
+                      attendanceSummary.rate !== null && attendanceSummary.rate >= 60 ? 'text-amber-600' : 'text-red-600'
+                    }`} data-testid="att-rate">
+                      {attendanceSummary.rate !== null ? `${attendanceSummary.rate}%` : '—'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Rate</p>
                   </div>
                 </div>
-                <ArrowRight className="h-5 w-5 text-primary" />
-              </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <ClipboardList className="h-5 w-5 text-muted-foreground opacity-50" />
+                  <p className="text-sm text-muted-foreground">No attendance records for this term yet.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </Link>

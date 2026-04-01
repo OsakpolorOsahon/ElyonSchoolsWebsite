@@ -545,6 +545,7 @@ ALTER TABLE academic_settings    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fee_structures       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE staff_profiles       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE report_card_comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE attendance_records   ENABLE ROW LEVEL SECURITY;
 
 
 -- ============================================================
