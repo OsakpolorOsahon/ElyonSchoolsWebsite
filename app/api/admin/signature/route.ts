@@ -81,17 +81,23 @@ export async function DELETE() {
 
   const adminDb = createAdminClient()
 
-  await adminDb.storage.from(STORAGE_BUCKET).remove([STORAGE_PATH])
+  const { error: storageError } = await adminDb.storage
+    .from(STORAGE_BUCKET)
+    .remove([STORAGE_PATH])
 
-  const { error } = await adminDb
+  if (storageError) {
+    return NextResponse.json({ error: `Failed to remove signature file: ${storageError.message}` }, { status: 500 })
+  }
+
+  const { error: dbError } = await adminDb
     .from('academic_settings')
     .upsert(
       { singleton_key: true, principal_signature_url: null },
       { onConflict: 'singleton_key' }
     )
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (dbError) {
+    return NextResponse.json({ error: dbError.message }, { status: 500 })
   }
 
   return NextResponse.json({ success: true })
