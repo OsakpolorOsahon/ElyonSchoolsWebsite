@@ -6,6 +6,8 @@ import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import {
   CheckCircle,
@@ -16,6 +18,7 @@ import {
   CalendarDays,
   ChevronDown,
   BarChart3,
+  User,
 } from 'lucide-react'
 
 type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused'
@@ -65,9 +68,11 @@ function AttendanceContent() {
     const res = await fetch('/api/parent/children')
     if (res.ok) {
       const data = await res.json()
-      const list = data.children || []
+      const list = (data.children || []) as Child[]
       setChildren(list)
-      const defaultId = preselectedChildId || (list[0]?.id ?? '')
+      const defaultId = preselectedChildId && list.some(c => c.id === preselectedChildId)
+        ? preselectedChildId
+        : (list[0]?.id ?? '')
       setSelectedChildId(defaultId)
       return defaultId
     }
@@ -120,9 +125,12 @@ function AttendanceContent() {
 
   const selectedChild = children.find(c => c.id === selectedChildId)
 
+  // Use tabs for 1–3 children, dropdown for 4+
+  const useTabs = children.length <= 3
+
   // Group by month
   const byMonth = records.reduce((acc, rec) => {
-    const month = rec.date.substring(0, 7) // YYYY-MM
+    const month = rec.date.substring(0, 7)
     if (!acc[month]) acc[month] = []
     acc[month].push(rec)
     return acc
@@ -139,30 +147,47 @@ function AttendanceContent() {
       />
 
       <main className="mx-auto max-w-4xl px-6 py-8 animate-fade-up">
-        {/* Child selector */}
+        {/* Child selector — tabs (1-3) or dropdown (4+), matching ParentChildSelector UX */}
         {children.length > 1 && (
-          <Card className="mb-6">
-            <CardContent className="pt-5 pb-5">
-              <label className="text-sm font-medium block mb-2">Select Child</label>
-              <div className="flex flex-wrap gap-2">
-                {children.map(child => (
-                  <button
-                    key={child.id}
-                    onClick={() => handleChildChange(child.id)}
-                    data-testid={`button-child-${child.id}`}
-                    className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-                      selectedChildId === child.id
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background text-foreground border-input hover:bg-muted'
-                    }`}
-                  >
-                    {child.profiles?.full_name || child.admission_number}
-                    <span className="ml-1.5 text-xs opacity-70">· {child.class}</span>
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="mb-6">
+            {useTabs ? (
+              <Tabs value={selectedChildId} onValueChange={handleChildChange}>
+                <TabsList data-testid="child-tabs">
+                  {children.map(c => (
+                    <TabsTrigger key={c.id} value={c.id} data-testid={`tab-child-${c.id}`}>
+                      {c.profiles?.full_name || c.admission_number}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            ) : (
+              <Select value={selectedChildId} onValueChange={handleChildChange}>
+                <SelectTrigger className="w-64" data-testid="select-child">
+                  <SelectValue placeholder="Select child" />
+                </SelectTrigger>
+                <SelectContent>
+                  {children.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.profiles?.full_name || c.admission_number} ({c.class})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        )}
+
+        {/* Selected child info (single child) */}
+        {children.length === 1 && selectedChild && (
+          <div className="flex items-center gap-3 mb-6 p-3 bg-muted/40 rounded-lg">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="font-medium text-sm">{selectedChild.profiles?.full_name || selectedChild.admission_number}</p>
+              <p className="text-xs text-muted-foreground">{selectedChild.class} · {selectedChild.admission_number}</p>
+            </div>
+          </div>
         )}
 
         {/* Filters */}
@@ -209,7 +234,7 @@ function AttendanceContent() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <CalendarDays className="h-4 w-4" />
-                {selectedChild.profiles?.full_name || selectedChild.admission_number} — Attendance Summary
+                {selectedChild.profiles?.full_name || selectedChild.admission_number} — Summary
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -245,6 +270,7 @@ function AttendanceContent() {
         ) : !selectedChild ? (
           <Card>
             <CardContent className="py-16 text-center text-muted-foreground">
+              <User className="h-12 w-12 mx-auto mb-4 opacity-30" />
               <p>No children linked to your account. Please contact the school administrator.</p>
             </CardContent>
           </Card>

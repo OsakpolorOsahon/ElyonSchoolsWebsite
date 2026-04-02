@@ -39,16 +39,16 @@ interface AttendanceRecord {
 }
 
 interface StudentSummary {
-  id: string
+  student_id: string
   name: string
-  admissionNumber: string
+  admission_number: string
   class: string
   present: number
   absent: number
   late: number
   excused: number
   total: number
-  records: AttendanceRecord[]
+  attendance_rate: number
 }
 
 const STATUS_CONFIG: Record<AttendanceStatus, { label: string; color: string; icon: React.ReactNode }> = {
@@ -70,6 +70,7 @@ const TERMS = ['First', 'Second', 'Third']
 export default function AdminAttendancePage() {
   const { toast } = useToast()
   const [records, setRecords] = useState<AttendanceRecord[]>([])
+  const [summary, setSummary] = useState<StudentSummary[]>([])
   const [loading, setLoading] = useState(false)
   const [filterClass, setFilterClass] = useState('')
   const [filterTerm, setFilterTerm] = useState('')
@@ -103,6 +104,7 @@ export default function AdminAttendancePage() {
       }
       const data = await res.json()
       setRecords(data.records || [])
+      setSummary(data.summary || [])
     } finally {
       setLoading(false)
     }
@@ -131,26 +133,12 @@ export default function AdminAttendancePage() {
     })
   }
 
-  // Compute per-student summary
-  const studentSummaryMap = records.reduce((acc, rec) => {
-    const key = rec.student_id
-    if (!acc[key]) {
-      acc[key] = {
-        id: rec.student_id,
-        name: rec.students?.profiles?.full_name || 'Unknown',
-        admissionNumber: rec.students?.admission_number || '',
-        class: rec.students?.class || rec.class,
-        present: 0, absent: 0, late: 0, excused: 0, total: 0,
-        records: [],
-      }
-    }
-    acc[key][rec.status] += 1
-    acc[key].total += 1
-    acc[key].records.push(rec)
+  // Build per-student records lookup for expandable rows
+  const recordsByStudent = records.reduce((acc, rec) => {
+    if (!acc[rec.student_id]) acc[rec.student_id] = []
+    acc[rec.student_id].push(rec)
     return acc
-  }, {} as Record<string, StudentSummary>)
-
-  const summaryRows = Object.values(studentSummaryMap).sort((a, b) => a.name.localeCompare(b.name))
+  }, {} as Record<string, AttendanceRecord[]>)
 
   const totalByStatus = records.reduce((acc, r) => {
     acc[r.status] = (acc[r.status] || 0) + 1
@@ -320,7 +308,7 @@ export default function AdminAttendancePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Student Summary ({summaryRows.length} student{summaryRows.length !== 1 ? 's' : ''})
+                Student Summary ({summary.length} student{summary.length !== 1 ? 's' : ''})
                 <span className="text-sm font-normal text-muted-foreground ml-1">— click a row to see daily records</span>
               </CardTitle>
             </CardHeader>
@@ -341,18 +329,16 @@ export default function AdminAttendancePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {summaryRows.map(row => {
-                      const attendanceRate = row.total > 0
-                        ? Math.round(((row.present + row.late) / row.total) * 100)
-                        : 0
-                      const isExpanded = expandedStudents.has(row.id)
-                      const sortedRecords = [...row.records].sort((a, b) => b.date.localeCompare(a.date))
+                    {summary.map(row => {
+                      const isExpanded = expandedStudents.has(row.student_id)
+                      const studentRecords = (recordsByStudent[row.student_id] || [])
+                        .sort((a, b) => b.date.localeCompare(a.date))
                       return (
                         <>
                           <tr
-                            key={row.id}
-                            data-testid={`row-summary-${row.id}`}
-                            onClick={() => toggleStudentExpand(row.id)}
+                            key={row.student_id}
+                            data-testid={`row-summary-${row.student_id}`}
+                            onClick={() => toggleStudentExpand(row.student_id)}
                             className="border-b hover:bg-muted/30 transition-colors cursor-pointer"
                           >
                             <td className="px-6 py-3">
@@ -360,7 +346,7 @@ export default function AdminAttendancePage() {
                             </td>
                             <td className="px-4 py-3">
                               <p className="font-medium">{row.name}</p>
-                              <p className="text-xs text-muted-foreground">{row.admissionNumber}</p>
+                              <p className="text-xs text-muted-foreground">{row.admission_number}</p>
                             </td>
                             <td className="px-4 py-3 text-muted-foreground">{row.class}</td>
                             <td className="px-4 py-3 text-center">
@@ -378,24 +364,24 @@ export default function AdminAttendancePage() {
                             <td className="px-4 py-3 text-center font-medium">{row.total}</td>
                             <td className="px-4 py-3 text-center">
                               <span className={`font-semibold ${
-                                attendanceRate >= 80 ? 'text-green-600' :
-                                attendanceRate >= 60 ? 'text-amber-600' : 'text-red-600'
-                              }`}>
-                                {attendanceRate}%
+                                row.attendance_rate >= 80 ? 'text-green-600' :
+                                row.attendance_rate >= 60 ? 'text-amber-600' : 'text-red-600'
+                              }`} data-testid={`rate-${row.student_id}`}>
+                                {row.attendance_rate}%
                               </span>
                             </td>
                           </tr>
 
                           {/* Expanded detail rows */}
                           {isExpanded && (
-                            <tr key={`${row.id}-detail`} className="border-b bg-muted/20">
+                            <tr key={`${row.student_id}-detail`} className="border-b bg-muted/20">
                               <td colSpan={9} className="px-8 py-3">
                                 <div className="space-y-1.5">
                                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                                    Daily Records ({sortedRecords.length})
+                                    Daily Records ({studentRecords.length})
                                   </p>
                                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                    {sortedRecords.map(rec => {
+                                    {studentRecords.map(rec => {
                                       const d = new Date(rec.date + 'T12:00:00')
                                       return (
                                         <div

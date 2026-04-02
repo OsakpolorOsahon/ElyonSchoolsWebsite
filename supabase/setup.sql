@@ -1037,13 +1037,19 @@ CREATE POLICY "Admins can manage attendance"
 CREATE POLICY "Teachers can manage their class attendance"
   ON attendance_records FOR ALL
   USING (
-    class IN (
-      SELECT ct.class FROM class_teacher ct WHERE ct.teacher_profile_id = auth.uid()
+    class IN (SELECT ct.class FROM class_teacher ct WHERE ct.teacher_profile_id = auth.uid())
+    AND student_id IN (
+      SELECT s.id FROM students s
+      INNER JOIN class_teacher ct ON ct.class = s.class
+      WHERE ct.teacher_profile_id = auth.uid()
     )
   )
   WITH CHECK (
-    class IN (
-      SELECT ct.class FROM class_teacher ct WHERE ct.teacher_profile_id = auth.uid()
+    class IN (SELECT ct.class FROM class_teacher ct WHERE ct.teacher_profile_id = auth.uid())
+    AND student_id IN (
+      SELECT s.id FROM students s
+      INNER JOIN class_teacher ct ON ct.class = s.class
+      WHERE ct.teacher_profile_id = auth.uid()
     )
   );
 
@@ -1203,9 +1209,19 @@ CREATE POLICY "Teachers can manage their class attendance"
   ON attendance_records FOR ALL
   USING (
     class IN (SELECT ct.class FROM class_teacher ct WHERE ct.teacher_profile_id = auth.uid())
+    AND student_id IN (
+      SELECT s.id FROM students s
+      INNER JOIN class_teacher ct ON ct.class = s.class
+      WHERE ct.teacher_profile_id = auth.uid()
+    )
   )
   WITH CHECK (
     class IN (SELECT ct.class FROM class_teacher ct WHERE ct.teacher_profile_id = auth.uid())
+    AND student_id IN (
+      SELECT s.id FROM students s
+      INNER JOIN class_teacher ct ON ct.class = s.class
+      WHERE ct.teacher_profile_id = auth.uid()
+    )
   );
 
 CREATE POLICY "Students can view own attendance"
