@@ -72,6 +72,9 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - `scholarships` — Student scholarships & fee waivers: `student_id`, `name`, `coverage_type` (full/percentage/fixed), `coverage_value`, `fee_types` TEXT[] (null=all fees), `applies_to_term`, `applies_to_year`, `active`, `notes`, `created_by`
 - `attendance_records` — Daily attendance: `student_id`, `date` (DATE), `status` (present/absent/late/excused), `notes`, `recorded_by`, `class`, `term`, `year`. Unique constraint on (student_id, date). Indexed on (class, date), (student_id, date), (term, year)
 
+### Schema additions (Task #4)
+- `students` table now has `full_name TEXT` (nullable) — stores student name for records without a portal login (e.g. auto-created from admission). Run migration: `ALTER TABLE students ADD COLUMN IF NOT EXISTS full_name TEXT;`
+
 ### Other Tables
 - `announcements` — School announcements with `target_audience`, `is_published`
 - `gallery_items` — Gallery photos with `storage_path` and `public_url` from Supabase Storage
@@ -103,7 +106,7 @@ The complete schema is in `supabase/setup.sql`. For existing installations, run 
 - `POST /api/admissions` — Create admission application
 - `POST /api/paystack/verify` — Verify Paystack admission payment + update admission status
 - `POST /api/paystack/general` — Verify general Paystack payments (school fees, donations, parent fee payments) + record to DB. Auto-links `student_id` and `term/year` from metadata/academic_settings
-- `GET/PATCH /api/admin/admissions` — Admin: list/update admissions (role-protected)
+- `GET/PATCH /api/admin/admissions` — Admin: list admissions + accept/reject. Acceptance (PATCH status=accepted) automatically: (1) creates/finds parent portal account via Supabase invite, (2) creates student record from admission data with generated admission number ELY/YYYY/NNNN, (3) Supabase invite email serves as acceptance notification (customise in Supabase Dashboard → Auth → Email Templates → Invite User)
 - `POST/PATCH /api/admin/students` — Admin: create student record (POST), update status/class/department (PATCH). Validates class against ALL_CLASSES whitelist, department restricted to SSS classes, graduation_year 1994-2100, transfer_note max 500 chars
 - `POST /api/admin/students/promote` — Admin: bulk end-of-year promotion. Moves each active student to next class (SSS 3 → graduated). Accepts `skipIds` for repeating students. Returns per-student error details for unknown classes
 - `GET/POST /api/admin/news` — Admin: manage news posts

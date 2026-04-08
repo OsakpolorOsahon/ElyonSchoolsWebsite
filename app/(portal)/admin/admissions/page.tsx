@@ -8,7 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, CheckCircle, XCircle, Clock, Filter } from 'lucide-react'
+import {
+  Loader2, ArrowLeft, CheckCircle, XCircle, Clock, Filter, Info,
+  UserPlus, GraduationCap, Mail,
+} from 'lucide-react'
 
 type AdmissionStatus = 'pending_payment' | 'processing' | 'accepted' | 'rejected'
 
@@ -21,6 +24,13 @@ interface Admission {
   amount: number
   paystack_reference: string | null
   created_at: string
+}
+
+interface AcceptanceResult {
+  admissionNumber: string
+  parentEmail: string
+  parentInvited: boolean
+  studentName: string
 }
 
 const statusConfig: Record<AdmissionStatus, { label: string; color: string; icon: any }> = {
@@ -37,6 +47,7 @@ export default function AdminAdmissionsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [profile, setProfile] = useState<any>(null)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [acceptanceResult, setAcceptanceResult] = useState<AcceptanceResult | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -59,18 +70,41 @@ export default function AdminAdmissionsPage() {
     setLoading(false)
   }
 
-  const updateStatus = async (id: string, status: AdmissionStatus) => {
+  const acceptAdmission = async (id: string) => {
+    setUpdating(id)
+    setAcceptanceResult(null)
+    const res = await fetch('/api/admin/admissions', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status: 'accepted' }),
+    })
+    const data = await res.json()
+
+    if (res.ok && data.success) {
+      setAdmissions(prev => prev.map(a => a.id === id ? { ...a, status: 'accepted' } : a))
+      setAcceptanceResult(data.created)
+    } else {
+      toast({
+        title: 'Acceptance failed',
+        description: data.error || 'Could not accept admission. No changes were made.',
+        variant: 'destructive',
+      })
+    }
+    setUpdating(null)
+  }
+
+  const rejectAdmission = async (id: string) => {
     setUpdating(id)
     const res = await fetch('/api/admin/admissions', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status }),
+      body: JSON.stringify({ id, status: 'rejected' }),
     })
     if (res.ok) {
-      setAdmissions(prev => prev.map(a => a.id === id ? { ...a, status } : a))
-      toast({ title: 'Status updated', description: `Application marked as ${status}` })
+      setAdmissions(prev => prev.map(a => a.id === id ? { ...a, status: 'rejected' } : a))
+      toast({ title: 'Application rejected', description: 'The application has been marked as rejected.' })
     } else {
-      toast({ title: 'Error', description: 'Failed to update status', variant: 'destructive' })
+      toast({ title: 'Error', description: 'Failed to reject application.', variant: 'destructive' })
     }
     setUpdating(null)
   }
@@ -101,13 +135,86 @@ export default function AdminAdmissionsPage() {
           <h2 className="text-xl font-semibold">All Admission Applications</h2>
         </div>
 
+        {/* Info banner about the invite email */}
+        <Card className="mb-6 border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex gap-3 items-start">
+              <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800 dark:text-blue-200">
+                <p className="font-semibold mb-1">Acceptance email is sent automatically via Supabase</p>
+                <p>
+                  When you accept an application, the guardian receives a Supabase invite email with a link to set up their parent portal account.
+                  To personalise this email as your school&apos;s acceptance letter, go to your{' '}
+                  <strong>Supabase Dashboard → Authentication → Email Templates → Invite User</strong>{' '}
+                  and customise the subject and body.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Acceptance success result */}
+        {acceptanceResult && (
+          <Card className="mb-6 border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800" data-testid="card-acceptance-result">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400 text-base">
+                <CheckCircle className="h-5 w-5" />
+                Application Accepted Successfully
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="flex items-start gap-3 p-3 bg-white dark:bg-muted/30 rounded-lg border">
+                  <GraduationCap className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Student Name</p>
+                    <p className="font-semibold text-sm" data-testid="result-student-name">{acceptanceResult.studentName}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-white dark:bg-muted/30 rounded-lg border">
+                  <GraduationCap className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Admission Number Issued</p>
+                    <p className="font-semibold text-sm font-mono" data-testid="result-admission-number">{acceptanceResult.admissionNumber}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-white dark:bg-muted/30 rounded-lg border">
+                  <Mail className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Parent Portal</p>
+                    <p className="font-semibold text-sm" data-testid="result-parent-email">{acceptanceResult.parentEmail}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {acceptanceResult.parentInvited
+                        ? 'Invite email sent — parent can now set up their account'
+                        : 'Existing parent account — student linked to their profile'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                The student record has been created. You can view and manage it in{' '}
+                <Link href="/admin/students" className="text-primary underline underline-offset-2">Admin → Students</Link>.
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-2 h-7 text-xs text-muted-foreground"
+                onClick={() => setAcceptanceResult(null)}
+              >
+                Dismiss
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex gap-2 mb-6 flex-wrap">
-          {['all', 'pending_payment', 'processing', 'accepted', 'rejected'].map(s => (
+          {(['all', 'pending_payment', 'processing', 'accepted', 'rejected'] as const).map(s => (
             <Button
               key={s}
               variant={filterStatus === s ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleFilter(s)}
+              data-testid={`button-filter-${s}`}
             >
               {s === 'all' ? 'All' : statusConfig[s as AdmissionStatus]?.label}
             </Button>
@@ -132,12 +239,12 @@ export default function AdminAdmissionsPage() {
               const IconComp = config.icon
               const studentName = `${admission.student_data.firstName || ''} ${admission.student_data.lastName || ''}`.trim()
               return (
-                <Card key={admission.id}>
+                <Card key={admission.id} data-testid={`card-admission-${admission.id}`}>
                   <CardContent className="pt-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-lg">{studentName}</h3>
+                          <h3 className="font-semibold text-lg" data-testid={`text-student-name-${admission.id}`}>{studentName}</h3>
                           <Badge className={config.color}>
                             <IconComp className="h-3 w-3 mr-1" />
                             {config.label}
@@ -159,20 +266,26 @@ export default function AdminAdmissionsPage() {
                           <Button
                             size="sm"
                             className="gap-1 bg-green-600 hover:bg-green-700"
-                            onClick={() => updateStatus(admission.id, 'accepted')}
+                            onClick={() => acceptAdmission(admission.id)}
                             disabled={updating === admission.id}
+                            data-testid={`button-accept-${admission.id}`}
                           >
-                            {updating === admission.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
+                            {updating === admission.id
+                              ? <Loader2 className="h-3 w-3 animate-spin" />
+                              : <UserPlus className="h-3 w-3" />}
                             Accept
                           </Button>
                           <Button
                             size="sm"
                             variant="destructive"
                             className="gap-1"
-                            onClick={() => updateStatus(admission.id, 'rejected')}
+                            onClick={() => rejectAdmission(admission.id)}
                             disabled={updating === admission.id}
+                            data-testid={`button-reject-${admission.id}`}
                           >
-                            {updating === admission.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
+                            {updating === admission.id
+                              ? <Loader2 className="h-3 w-3 animate-spin" />
+                              : <XCircle className="h-3 w-3" />}
                             Reject
                           </Button>
                         </div>

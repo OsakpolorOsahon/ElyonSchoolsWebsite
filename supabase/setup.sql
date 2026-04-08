@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS students (
   profile_id        UUID UNIQUE REFERENCES profiles(id) ON DELETE SET NULL,
   admission_number  TEXT NOT NULL UNIQUE,
   class             TEXT NOT NULL,
+  full_name         TEXT,
   dob               DATE,
   gender            TEXT,
   parent_profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
@@ -1173,6 +1174,10 @@ CREATE POLICY "Parents can view children scholarships"
   USING (
     student_id IN (SELECT id FROM students WHERE parent_profile_id = auth.uid())
   );
+
+-- Migration: Add full_name column to students (for existing databases)
+-- NOTE: Run this in Supabase SQL Editor if upgrading an existing database
+ALTER TABLE students ADD COLUMN IF NOT EXISTS full_name TEXT;
 
 -- Migration: Create attendance_records table (for existing databases)
 CREATE TABLE IF NOT EXISTS attendance_records (
