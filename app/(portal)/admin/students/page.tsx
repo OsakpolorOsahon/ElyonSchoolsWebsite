@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ArrowLeft, Users, Search, UserPlus, ArrowUpRight, GraduationCap, ChevronUp, FileText, Banknote, History, Pencil, Trash2, Award } from 'lucide-react'
+import { Loader2, ArrowLeft, Users, Search, UserPlus, ArrowUpRight, GraduationCap, ChevronUp, FileText, Banknote, History, Pencil, Trash2, Award, Mail } from 'lucide-react'
 
 interface Student {
   id: string
@@ -25,8 +25,9 @@ interface Student {
   graduation_year: number | null
   transfer_note: string | null
   repeating: boolean
-  profile_id: string
+  profile_id: string | null
   parent_profile_id: string | null
+  full_name: string | null
   profiles: { full_name: string } | null
 }
 
@@ -54,6 +55,10 @@ const ALL_CLASSES = [
 const SSS_CLASSES = ['SSS 1', 'SSS 2', 'SSS 3']
 const DEPARTMENTS = ['Science', 'Commercial', 'Art']
 
+function getStudentName(student: Student): string {
+  return student.profiles?.full_name || student.full_name || 'Unknown'
+}
+
 function getNextClass(currentClass: string): string | null {
   const idx = ALL_CLASSES.indexOf(currentClass)
   if (idx === -1 || idx === ALL_CLASSES.length - 1) return null
@@ -77,11 +82,9 @@ export default function AdminStudentsPage() {
   const [statusFilter, setStatusFilter] = useState('active')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [studentUsers, setStudentUsers] = useState<UserProfile[]>([])
   const [parentUsers, setParentUsers] = useState<UserProfile[]>([])
-  const [existingProfileIds, setExistingProfileIds] = useState<Set<string>>(new Set())
   const [form, setForm] = useState({
-    profile_id: '',
+    full_name: '',
     admission_number: '',
     class: '',
     gender: '',
@@ -164,6 +167,12 @@ export default function AdminStudentsPage() {
     date: new Date().toISOString().split('T')[0],
   })
 
+  // Invite to Portal dialog
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
+  const [inviteTarget, setInviteTarget] = useState<Student | null>(null)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteSaving, setInviteSaving] = useState(false)
+
   async function fetchStudents() {
     try {
       const res = await fetch('/api/admin/students')
@@ -174,8 +183,7 @@ export default function AdminStudentsPage() {
       }
       const list = (data.students || []) as Student[]
       setStudents(list)
-      setExistingProfileIds(new Set(list.map(s => s.profile_id).filter(Boolean)))
-    } catch (err) {
+    } catch {
       toast({ title: 'Error loading students', description: 'Could not reach the server. Please refresh.', variant: 'destructive' })
     }
   }
@@ -201,8 +209,9 @@ export default function AdminStudentsPage() {
     const q = search.toLowerCase()
     setFiltered(
       students.filter(s => {
+        const name = getStudentName(s)
         const matchesSearch =
-          s.profiles?.full_name?.toLowerCase().includes(q) ||
+          name.toLowerCase().includes(q) ||
           s.admission_number.toLowerCase().includes(q) ||
           s.class.toLowerCase().includes(q)
         const matchesStatus = statusFilter === 'all' || s.status === statusFilter
@@ -212,18 +221,18 @@ export default function AdminStudentsPage() {
   }, [search, students, statusFilter])
 
   async function openDialog() {
+    // Load parent users for the optional parent link
     const res = await fetch('/api/admin/users')
     const data = await res.json()
     const users: UserProfile[] = data.users || []
-    setStudentUsers(users.filter(u => u.role === 'student'))
     setParentUsers(users.filter(u => u.role === 'parent'))
-    setForm({ profile_id: '', admission_number: '', class: '', gender: '', parent_profile_id: '', department: '' })
+    setForm({ full_name: '', admission_number: '', class: '', gender: '', parent_profile_id: '', department: '' })
     setDialogOpen(true)
   }
 
   async function handleSave() {
-    if (!form.profile_id || !form.admission_number || !form.class) {
-      toast({ title: 'Missing fields', description: 'Student account, admission number and class are required.', variant: 'destructive' })
+    if (!form.full_name.trim() || !form.admission_number || !form.class) {
+      toast({ title: 'Missing fields', description: 'Student name, admission number and class are required.', variant: 'destructive' })
       return
     }
     setSaving(true)
@@ -231,11 +240,18 @@ export default function AdminStudentsPage() {
       const res = await fetch('/api/admin/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          full_name: form.full_name.trim(),
+          admission_number: form.admission_number,
+          class: form.class,
+          gender: form.gender || null,
+          parent_profile_id: form.parent_profile_id || null,
+          department: form.department || null,
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      toast({ title: 'Student added', description: 'Student record created successfully.' })
+      toast({ title: 'Student added', description: `${form.full_name.trim()} has been enrolled. Use "Invite to Portal" to give them portal access.` })
       setDialogOpen(false)
       await fetchStudents()
     } catch (err) {
@@ -243,6 +259,42 @@ export default function AdminStudentsPage() {
       toast({ title: 'Error', description: message, variant: 'destructive' })
     } finally {
       setSaving(false)
+    }
+  }
+
+  function openInviteDialog(student: Student) {
+    setInviteTarget(student)
+    setInviteEmail('')
+    setInviteDialogOpen(true)
+  }
+
+  async function handleInviteToPortal() {
+    if (!inviteTarget) return
+    const email = inviteEmail.trim()
+    if (!email || !email.includes('@')) {
+      toast({ title: 'Invalid email', description: 'Please enter a valid email address.', variant: 'destructive' })
+      return
+    }
+    setInviteSaving(true)
+    try {
+      const res = await fetch('/api/admin/students', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: inviteTarget.id, action: 'invite_to_portal', email }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast({
+        title: 'Invitation sent',
+        description: `Portal invite sent to ${email}. ${getStudentName(inviteTarget)} can now log in once they accept.`,
+      })
+      setInviteDialogOpen(false)
+      await fetchStudents()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to send invite'
+      toast({ title: 'Error', description: message, variant: 'destructive' })
+    } finally {
+      setInviteSaving(false)
     }
   }
 
@@ -304,7 +356,7 @@ export default function AdminStudentsPage() {
         title: nextClass ? 'Student promoted' : 'Student graduated',
         description: nextClass
           ? `Moved from ${promoteTarget.class} to ${nextClass}.`
-          : `${promoteTarget.profiles?.full_name || 'Student'} has been graduated.`,
+          : `${getStudentName(promoteTarget)} has been graduated.`,
       })
       setPromoteTarget(null)
       await fetchStudents()
@@ -355,8 +407,8 @@ export default function AdminStudentsPage() {
       toast({
         title: student.repeating ? 'Repeating cleared' : 'Marked as repeating',
         description: student.repeating
-          ? `${student.profiles?.full_name || 'Student'} will be promoted normally.`
-          : `${student.profiles?.full_name || 'Student'} will stay in ${student.class} during promotion.`,
+          ? `${getStudentName(student)} will be promoted normally.`
+          : `${getStudentName(student)} will stay in ${student.class} during promotion.`,
       })
       await fetchStudents()
     } catch (err) {
@@ -389,7 +441,6 @@ export default function AdminStudentsPage() {
       const res = await fetch('/api/admin/users')
       const data = await res.json()
       const users: UserProfile[] = data.users || []
-      setStudentUsers(users.filter(u => u.role === 'student'))
       setParentUsers(users.filter(u => u.role === 'parent'))
     }
     setEditForm({
@@ -434,7 +485,7 @@ export default function AdminStudentsPage() {
   }
 
   async function handleDeleteStudent(student: Student) {
-    if (!confirm(`Delete student "${student.profiles?.full_name || student.admission_number}" (${student.admission_number})?\n\nThis will permanently remove their student record. Associated results, payments, and report card comments may also be affected. This cannot be undone.`)) return
+    if (!confirm(`Delete student "${getStudentName(student)}" (${student.admission_number})?\n\nThis will permanently remove their student record. Associated results, payments, and report card comments may also be affected. This cannot be undone.`)) return
     setDeletingId(student.id)
     try {
       const res = await fetch(`/api/admin/students?id=${student.id}`, { method: 'DELETE' })
@@ -537,7 +588,7 @@ export default function AdminStudentsPage() {
       if (!res.ok) throw new Error(data.error)
       toast({
         title: isEditing ? 'Scholarship updated' : 'Scholarship added',
-        description: `"${scholarshipForm.name}" ${isEditing ? 'updated' : `assigned to ${scholarshipTarget.profiles?.full_name}`}.`,
+        description: `"${scholarshipForm.name}" ${isEditing ? 'updated' : `assigned to ${getStudentName(scholarshipTarget)}`}.`,
       })
       const refreshRes = await fetch(`/api/admin/scholarships?student_id=${scholarshipTarget.id}`)
       const refreshData = await refreshRes.json()
@@ -590,7 +641,7 @@ export default function AdminStudentsPage() {
   function openPaymentDialog(student: Student) {
     setPaymentForm({
       student_id: student.id,
-      student_name: student.profiles?.full_name || student.admission_number,
+      student_name: getStudentName(student),
       amount: '',
       payment_type: 'school_fee',
       method: 'cash',
@@ -638,7 +689,6 @@ export default function AdminStudentsPage() {
     }
   }
 
-  const availableStudentUsers = studentUsers.filter(u => !existingProfileIds.has(u.id))
   const isSSS = (cls: string) => SSS_CLASSES.includes(cls)
   const statusCounts = {
     all: students.length,
@@ -743,6 +793,7 @@ export default function AdminStudentsPage() {
           <div className="space-y-2">
             {filtered.map(student => {
               const nextClass = getNextClass(student.class)
+              const hasPortal = !!student.profile_id
               return (
                 <Card key={student.id} data-testid={`card-student-${student.id}`}>
                   <CardContent className="py-4">
@@ -752,12 +803,20 @@ export default function AdminStudentsPage() {
                           <Users className="h-5 w-5 text-primary" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold truncate">{student.profiles?.full_name || 'Unknown'}</p>
+                          <p className="font-semibold truncate">{getStudentName(student)}</p>
                           <p className="text-sm text-muted-foreground">
                             {student.admission_number} · {student.class}
                             {student.gender && ` · ${student.gender}`}
                             {student.department && ` · ${student.department}`}
                           </p>
+                          {!hasPortal && (
+                            <span
+                              className="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 mt-0.5"
+                              data-testid={`badge-no-portal-${student.id}`}
+                            >
+                              No portal login
+                            </span>
+                          )}
                           {student.status === 'graduated' && student.graduation_year && (
                             <p className="text-xs text-muted-foreground">Graduated {student.graduation_year}</p>
                           )}
@@ -770,6 +829,18 @@ export default function AdminStudentsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap shrink-0">
+                        {!hasPortal && student.status === 'active' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1 text-primary border-primary/40 hover:bg-primary/5"
+                            onClick={() => openInviteDialog(student)}
+                            data-testid={`button-invite-portal-${student.id}`}
+                          >
+                            <Mail className="h-3 w-3" />
+                            Invite to Portal
+                          </Button>
+                        )}
                         {student.status === 'active' && (
                           <>
                             <Button
@@ -889,30 +960,25 @@ export default function AdminStudentsPage() {
         )}
       </main>
 
-      {/* Add Student Dialog */}
+      {/* Add Student Dialog — name-only, no portal account required */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add Student Record</DialogTitle>
+            <DialogDescription>
+              Enter the student&apos;s details. You can invite them to the portal later using the &quot;Invite to Portal&quot; button.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Student Account *</Label>
-              <Select value={form.profile_id} onValueChange={v => setForm(f => ({ ...f, profile_id: v }))}>
-                <SelectTrigger data-testid="select-student-user">
-                  <SelectValue placeholder="Select student account..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableStudentUsers.length === 0 ? (
-                    <SelectItem value="__none__">No unregistered student accounts</SelectItem>
-                  ) : (
-                    availableStudentUsers.map(u => (
-                      <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">Only shows student accounts without a record yet</p>
+              <Label htmlFor="student_full_name">Full Name *</Label>
+              <Input
+                id="student_full_name"
+                placeholder="e.g. Chukwuemeka Okafor"
+                value={form.full_name}
+                onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
+                data-testid="input-student-full-name"
+              />
             </div>
 
             <div className="space-y-2">
@@ -993,13 +1059,47 @@ export default function AdminStudentsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Invite to Portal Dialog */}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Invite to Portal</DialogTitle>
+            <DialogDescription>
+              Send a portal invite to {inviteTarget ? getStudentName(inviteTarget) : 'this student'}.
+              Once they accept, they will be able to log in as a student.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="invite-email">Student Email Address *</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                placeholder="student@example.com"
+                value={inviteEmail}
+                onChange={e => setInviteEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleInviteToPortal()}
+                data-testid="input-invite-email"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleInviteToPortal} disabled={inviteSaving} data-testid="button-confirm-invite">
+              {inviteSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
+              Send Invite
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Change Status Dialog */}
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Change Student Status</DialogTitle>
             <DialogDescription>
-              {statusTarget?.profiles?.full_name} ({statusTarget?.admission_number})
+              {statusTarget ? getStudentName(statusTarget) : ''} ({statusTarget?.admission_number})
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -1065,7 +1165,7 @@ export default function AdminStudentsPage() {
               {promoteTarget && getNextClass(promoteTarget.class) ? 'Promote Student' : 'Graduate Student'}
             </DialogTitle>
             <DialogDescription>
-              {promoteTarget?.profiles?.full_name} ({promoteTarget?.admission_number})
+              {promoteTarget ? getStudentName(promoteTarget) : ''} ({promoteTarget?.admission_number})
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -1095,7 +1195,7 @@ export default function AdminStudentsPage() {
           <DialogHeader>
             <DialogTitle>Set Department</DialogTitle>
             <DialogDescription>
-              {deptTarget?.profiles?.full_name} ({deptTarget?.class})
+              {deptTarget ? getStudentName(deptTarget) : ''} ({deptTarget?.class})
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-2">
@@ -1213,12 +1313,14 @@ export default function AdminStudentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Results History Dialog */}
       <Dialog open={resultsDialogOpen} onOpenChange={setResultsDialogOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <History className="h-5 w-5" />
-              Results History — {resultsTarget?.profiles?.full_name || 'Student'}
+              Results History — {resultsTarget ? getStudentName(resultsTarget) : 'Student'}
             </DialogTitle>
             <DialogDescription>
               {resultsTarget?.admission_number} · {resultsTarget?.class}
@@ -1300,7 +1402,7 @@ export default function AdminStudentsPage() {
           <DialogHeader>
             <DialogTitle>Edit Student Details</DialogTitle>
             <DialogDescription>
-              {editTarget?.profiles?.full_name} — update admission number, class, gender, or parent link.
+              {editTarget ? getStudentName(editTarget) : ''} — update admission number, class, gender, or parent link.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -1373,7 +1475,7 @@ export default function AdminStudentsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Award className="h-5 w-5" />
-              Scholarships — {scholarshipTarget?.profiles?.full_name}
+              Scholarships — {scholarshipTarget ? getStudentName(scholarshipTarget) : ''}
             </DialogTitle>
             <DialogDescription>
               {scholarshipTarget?.admission_number} · {scholarshipTarget?.class}
@@ -1498,14 +1600,15 @@ export default function AdminStudentsPage() {
                       onClick={() => setScholarshipForm(f => ({
                         ...f,
                         fee_types: f.fee_types.includes(opt.value)
-                          ? f.fee_types.filter(t => t !== opt.value)
+                          ? f.fee_types.filter(x => x !== opt.value)
                           : [...f.fee_types, opt.value],
                       }))}
-                      className={`px-2 py-1 rounded-full text-xs font-medium border transition-colors ${
+                      className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
                         scholarshipForm.fee_types.includes(opt.value)
                           ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-muted text-muted-foreground border-border'
+                          : 'border-input text-muted-foreground hover:border-primary hover:text-foreground'
                       }`}
+                      data-testid={`toggle-fee-type-${opt.value}`}
                     >
                       {opt.label}
                     </button>
@@ -1513,30 +1616,56 @@ export default function AdminStudentsPage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Applies to Term</Label>
+                  <Select value={scholarshipForm.applies_to_term} onValueChange={v => setScholarshipForm(f => ({ ...f, applies_to_term: v === '__all__' ? '' : v }))}>
+                    <SelectTrigger data-testid="select-sch-term">
+                      <SelectValue placeholder="All terms" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">All terms</SelectItem>
+                      <SelectItem value="First">First Term</SelectItem>
+                      <SelectItem value="Second">Second Term</SelectItem>
+                      <SelectItem value="Third">Third Term</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Applies to Year</Label>
+                  <Input
+                    type="number"
+                    min="2020"
+                    max="2100"
+                    placeholder="All years"
+                    value={scholarshipForm.applies_to_year}
+                    onChange={e => setScholarshipForm(f => ({ ...f, applies_to_year: e.target.value }))}
+                    data-testid="input-sch-year"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label>Notes (optional)</Label>
+                <Label>Notes</Label>
                 <Textarea
-                  placeholder="Any notes about this scholarship..."
+                  placeholder="Optional notes about this scholarship..."
                   value={scholarshipForm.notes}
                   onChange={e => setScholarshipForm(f => ({ ...f, notes: e.target.value }))}
                   data-testid="input-sch-notes"
-                  className="min-h-[60px]"
                 />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                {editingScholarshipId && (
+                  <Button variant="outline" onClick={cancelScholarshipEdit}>Cancel Edit</Button>
+                )}
+                <Button onClick={handleScholarshipSave} disabled={scholarshipSaving} data-testid="button-save-scholarship">
+                  {scholarshipSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  {editingScholarshipId ? 'Update Scholarship' : 'Add Scholarship'}
+                </Button>
               </div>
             </div>
           )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setScholarshipDialogOpen(false)}>
-              Close
-            </Button>
-            {!scholarshipLoading && (
-              <Button onClick={handleScholarshipSave} disabled={scholarshipSaving} data-testid="button-save-scholarship">
-                {scholarshipSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Award className="h-4 w-4 mr-2" />}
-                {editingScholarshipId ? 'Update Scholarship' : 'Add Scholarship'}
-              </Button>
-            )}
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

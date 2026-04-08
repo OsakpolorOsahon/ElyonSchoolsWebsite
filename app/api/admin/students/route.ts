@@ -35,7 +35,7 @@ export async function GET() {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('students')
-    .select('id, admission_number, class, gender, status, department, graduation_year, transfer_note, repeating, profile_id, parent_profile_id, profiles!profile_id(full_name)')
+    .select('id, admission_number, class, gender, status, department, graduation_year, transfer_note, repeating, profile_id, parent_profile_id, full_name, profiles!profile_id(full_name)')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -47,10 +47,14 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { profile_id, admission_number, class: cls, gender, parent_profile_id, department } = body
+  const { profile_id, full_name, admission_number, class: cls, gender, parent_profile_id, department } = body
 
-  if (!profile_id || !admission_number || !cls) {
-    return NextResponse.json({ error: 'profile_id, admission_number and class are required' }, { status: 400 })
+  // Either a portal account (profile_id) or a direct name is required
+  if (!profile_id && !full_name?.trim()) {
+    return NextResponse.json({ error: 'Either a portal account or a student name is required' }, { status: 400 })
+  }
+  if (!admission_number || !cls) {
+    return NextResponse.json({ error: 'admission_number and class are required' }, { status: 400 })
   }
 
   if (!ALL_CLASSES.includes(cls)) {
@@ -67,25 +71,38 @@ export async function POST(request: NextRequest) {
 
   const supabase = createAdminClient()
 
-  const { data: existing } = await supabase
-    .from('students')
-    .select('id')
-    .eq('profile_id', profile_id)
-    .maybeSingle()
+  // If profile_id provided, check it's not already linked
+  if (profile_id) {
+    const { data: existing } = await supabase
+      .from('students')
+      .select('id')
+      .eq('profile_id', profile_id)
+      .maybeSingle()
 
-  if (existing) {
-    return NextResponse.json({ error: 'This student account is already linked to another student record.' }, { status: 400 })
+    if (existing) {
+      return NextResponse.json({ error: 'This student account is already linked to another student record.' }, { status: 400 })
+    }
   }
 
-  const { error } = await supabase.from('students').insert({
-    profile_id,
+  const insertPayload: Record<string, any> = {
     admission_number,
     class: cls,
     gender: gender || null,
     parent_profile_id: parent_profile_id || null,
     status: 'active',
     department: isSSS ? (department || null) : null,
-  })
+  }
+
+  if (profile_id) {
+    insertPayload.profile_id = profile_id
+    // When linked to a portal account, name is on the profile; clear full_name
+    insertPayload.full_name = null
+  } else {
+    insertPayload.full_name = full_name.trim()
+    insertPayload.profile_id = null
+  }
+
+  const { error } = await supabase.from('students').insert(insertPayload)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
@@ -96,11 +113,76 @@ export async function PATCH(request: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { id, status, class: cls, department, transfer_note, graduation_year, repeating } = body
+  const { id, action } = body
 
   if (!id || typeof id !== 'string') {
     return NextResponse.json({ error: 'Student id is required' }, { status: 400 })
   }
+
+  // Special action: invite student to portal and link the resulting profile
+  if (action === 'invite_to_portal') {
+    const { email } = body
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return NextResponse.json({ error: 'A valid email address is required' }, { status: 400 })
+    }
+
+    const supabase = createAdminClient()
+
+    // Fetch student to get their stored name
+    const { data: student, error: fetchErr } = await supabase
+      .from('students')
+      .select('id, full_name, profile_id')
+      .eq('id', id)
+      .single()
+
+    if (fetchErr || !student) {
+      return NextResponse.json({ error: 'Student not found' }, { status: 404 })
+    }
+
+    if (student.profile_id) {
+      return NextResponse.json({ error: 'This student already has a portal account' }, { status: 400 })
+    }
+
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:5000'
+
+    // Attempt to invite as a student portal user
+    const { data: inviteData, error: inviteErr } = await supabase.auth.admin.inviteUserByEmail(email, {
+      data: { full_name: student.full_name || '', role: 'student' },
+      redirectTo: `${siteUrl}/reset-password`,
+    })
+
+    if (inviteErr) {
+      return NextResponse.json({ error: `Failed to send invite: ${inviteErr.message}` }, { status: 500 })
+    }
+
+    const newUserId = inviteData.user.id
+
+    // Upsert profile row
+    await supabase.from('profiles').upsert({
+      id: newUserId,
+      full_name: student.full_name || '',
+      role: 'student',
+    })
+
+    // Link profile to student and clear stored full_name (profile now holds the name)
+    const { error: linkErr } = await supabase
+      .from('students')
+      .update({ profile_id: newUserId, full_name: null })
+      .eq('id', id)
+
+    if (linkErr) {
+      // Best-effort cleanup of the invite since we could not link
+      try {
+        await supabase.auth.admin.deleteUser(newUserId)
+      } catch { /* swallow */ }
+      return NextResponse.json({ error: `Invite sent but failed to link profile: ${linkErr.message}` }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, profileId: newUserId })
+  }
+
+  // Standard field updates
+  const { status, class: cls, department, transfer_note, graduation_year, repeating } = body
 
   if (status && !VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
