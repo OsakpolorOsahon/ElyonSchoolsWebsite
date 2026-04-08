@@ -15,17 +15,37 @@ async function verifyAdmin() {
   return session
 }
 
-/** Generate a unique admission number: ELY/YYYY/NNNN */
-async function generateAdmissionNumber(supabase: ReturnType<typeof createAdminClient>): Promise<string> {
-  const year = new Date().getFullYear()
-  const { count } = await supabase
-    .from('students')
-    .select('*', { count: 'exact', head: true })
-  const next = String((count ?? 0) + 1).padStart(4, '0')
-  return `ELY/${year}/${next}`
+/**
+ * Find an existing auth user by email using paginated listing.
+ * Returns their profile ID, or null if not found.
+ */
+async function findExistingUserByEmail(
+  supabase: ReturnType<typeof createAdminClient>,
+  email: string,
+): Promise<string | null> {
+  const normalised = email.toLowerCase()
+  let page = 1
+  const perPage = 1000
+
+  while (true) {
+    const { data: { users }, error } = await supabase.auth.admin.listUsers({ page, perPage })
+    if (error || !users) break
+
+    const match = users.find(u => u.email?.toLowerCase() === normalised)
+    if (match) return match.id
+
+    // If we got fewer results than perPage, we've exhausted the list
+    if (users.length < perPage) break
+    page++
+  }
+  return null
 }
 
-/** Find an existing auth user by email, or invite them as parent and return their profile ID. */
+/**
+ * Invite a new user as 'parent'. If they already exist (race condition),
+ * fall back to a paginated lookup and return their existing profile ID.
+ * Returns { profileId, invited }.
+ */
 async function findOrInviteParent(
   supabase: ReturnType<typeof createAdminClient>,
   email: string,
@@ -33,46 +53,63 @@ async function findOrInviteParent(
   siteUrl: string,
 ): Promise<{ profileId: string; invited: boolean }> {
 
-  // First check if a profile with this email already exists in auth.users
-  const { data: { users }, error: listErr } = await supabase.auth.admin.listUsers({ perPage: 1000 })
-  if (!listErr && users) {
-    const existing = users.find(u => u.email?.toLowerCase() === email.toLowerCase())
-    if (existing) {
-      // Ensure profile row exists (it should, but guard against edge cases)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, role')
-        .eq('id', existing.id)
-        .maybeSingle()
+  // 1. Deterministic scan first to avoid unnecessary duplicate invites
+  const existingId = await findExistingUserByEmail(supabase, email)
+  if (existingId) {
+    // Ensure the profile row exists with at least role = parent (don't downgrade admins/teachers)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('id', existingId)
+      .maybeSingle()
 
-      if (!profile) {
-        // Create the profile row if missing
-        await supabase.from('profiles').insert({
-          id: existing.id,
-          full_name: fullName,
-          role: 'parent',
-        })
-      }
-      return { profileId: existing.id, invited: false }
+    if (!profile) {
+      await supabase.from('profiles').insert({ id: existingId, full_name: fullName, role: 'parent' })
     }
+    return { profileId: existingId, invited: false }
   }
 
-  // User doesn't exist — invite them as a parent
+  // 2. User not found — attempt invite
   const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName, role: 'parent' },
     redirectTo: `${siteUrl}/reset-password`,
   })
 
-  if (error) throw new Error(`Failed to invite parent: ${error.message}`)
+  if (!error) {
+    // Upsert profile (invite trigger may race, ensure it's right)
+    await supabase.from('profiles').upsert({
+      id: data.user.id,
+      full_name: fullName,
+      role: 'parent',
+    })
+    return { profileId: data.user.id, invited: true }
+  }
 
-  // Upsert profile row (invite trigger may create it, but ensure it's correct)
-  await supabase.from('profiles').upsert({
-    id: data.user.id,
-    full_name: fullName,
-    role: 'parent',
-  })
+  // 3. If invite failed because user already registered (race condition between step 1 and 2),
+  //    do another paginated scan to find them.
+  const errMsg = error.message?.toLowerCase() ?? ''
+  const isAlreadyExists =
+    errMsg.includes('already registered') ||
+    errMsg.includes('already exists') ||
+    errMsg.includes('user already') ||
+    errMsg.includes('email address is already')
 
-  return { profileId: data.user.id, invited: true }
+  if (isAlreadyExists) {
+    const fallbackId = await findExistingUserByEmail(supabase, email)
+    if (fallbackId) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', fallbackId)
+        .maybeSingle()
+      if (!profile) {
+        await supabase.from('profiles').insert({ id: fallbackId, full_name: fullName, role: 'parent' })
+      }
+      return { profileId: fallbackId, invited: false }
+    }
+  }
+
+  throw new Error(`Failed to create parent portal account: ${error.message}`)
 }
 
 export async function GET(request: NextRequest) {
@@ -123,7 +160,7 @@ export async function PATCH(request: NextRequest) {
 
   const supabase = createAdminClient()
 
-  // For non-acceptance transitions, just update the status directly
+  // Non-acceptance transitions: simple status update
   if (status !== 'accepted') {
     const { error } = await supabase
       .from('admissions')
@@ -135,7 +172,8 @@ export async function PATCH(request: NextRequest) {
   }
 
   // === ACCEPTANCE FLOW ===
-  // Fetch the admission record
+
+  // 1. Fetch admission record
   const { data: admission, error: fetchErr } = await supabase
     .from('admissions')
     .select('*')
@@ -164,11 +202,18 @@ export async function PATCH(request: NextRequest) {
 
   const guardianFullName = [guardianData.firstName, guardianData.lastName].filter(Boolean).join(' ')
   const studentFullName = [studentData.firstName, studentData.middleName, studentData.lastName].filter(Boolean).join(' ')
-
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:5000'
 
+  // 2. Parse and validate dob
+  const dobRaw = studentData.dateOfBirth
+  const dob: string | null = dobRaw && /^\d{4}-\d{2}-\d{2}$/.test(dobRaw) ? dobRaw : null
+
+  // 3. Normalise gender
+  const genderRaw = (studentData.gender || '').toLowerCase()
+  const gender: string | null = genderRaw === 'male' ? 'Male' : genderRaw === 'female' ? 'Female' : null
+
   try {
-    // 1. Find or create the parent portal account
+    // 4. Find or invite the parent (non-transactional; must happen before DB transaction)
     const { profileId: parentProfileId, invited } = await findOrInviteParent(
       supabase,
       guardianEmail,
@@ -176,44 +221,21 @@ export async function PATCH(request: NextRequest) {
       siteUrl,
     )
 
-    // 2. Generate a unique admission number
-    const admissionNumber = await generateAdmissionNumber(supabase)
-
-    // 3. Parse date of birth
-    const dobRaw = studentData.dateOfBirth
-    const dob = dobRaw && /^\d{4}-\d{2}-\d{2}$/.test(dobRaw) ? dobRaw : null
-
-    // 4. Normalise gender
-    const genderRaw = (studentData.gender || '').toLowerCase()
-    const gender = genderRaw === 'male' ? 'Male' : genderRaw === 'female' ? 'Female' : null
-
-    // 5. Create the student record
-    const { error: studentErr } = await supabase.from('students').insert({
-      admission_number: admissionNumber,
-      class: admission.class_applied,
-      full_name: studentFullName,
-      dob,
-      gender,
-      parent_profile_id: parentProfileId,
-      status: 'active',
+    // 5. Atomically: create student record + update admission status via RPC
+    //    The RPC function also generates the admission number from a Postgres sequence.
+    //    If anything fails inside the function, the entire transaction rolls back.
+    const { data: admissionNumber, error: rpcErr } = await supabase.rpc('accept_admission_transaction', {
+      p_admission_id: id,
+      p_parent_profile_id: parentProfileId,
+      p_student_full_name: studentFullName,
+      p_class: admission.class_applied,
+      p_dob: dob,
+      p_gender: gender,
     })
 
-    if (studentErr) {
+    if (rpcErr) {
       return NextResponse.json(
-        { error: `Failed to create student record: ${studentErr.message}` },
-        { status: 500 }
-      )
-    }
-
-    // 6. Update admission status to accepted
-    const { error: updateErr } = await supabase
-      .from('admissions')
-      .update({ status: 'accepted' })
-      .eq('id', id)
-
-    if (updateErr) {
-      return NextResponse.json(
-        { error: `Student created but failed to update admission status: ${updateErr.message}` },
+        { error: `Could not complete acceptance: ${rpcErr.message}` },
         { status: 500 }
       )
     }
@@ -229,7 +251,7 @@ export async function PATCH(request: NextRequest) {
     })
 
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error during acceptance'
+    const message = err instanceof Error ? err.message : 'Unexpected error during acceptance'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

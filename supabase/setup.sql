@@ -487,6 +487,66 @@ RETURNS user_role AS $$
   SELECT role FROM profiles WHERE id = user_id;
 $$ LANGUAGE SQL SECURITY DEFINER STABLE;
 
+-- Sequence for generating concurrency-safe admission numbers
+CREATE SEQUENCE IF NOT EXISTS student_admission_seq START 1;
+
+-- RPC: accept_admission_transaction
+-- Atomically inserts a student record and updates the admission status in one transaction.
+-- Called by the admission acceptance API after the parent portal account is created.
+CREATE OR REPLACE FUNCTION accept_admission_transaction(
+  p_admission_id       UUID,
+  p_parent_profile_id  UUID,
+  p_student_full_name  TEXT,
+  p_class              TEXT,
+  p_dob                DATE,
+  p_gender             TEXT
+)
+RETURNS TEXT          -- returns the generated admission_number
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_seq         BIGINT;
+  v_adm_number  TEXT;
+BEGIN
+  -- Verify the admission exists and is still in 'processing' state
+  IF NOT EXISTS (
+    SELECT 1 FROM admissions
+    WHERE id = p_admission_id AND status = 'processing'
+  ) THEN
+    RAISE EXCEPTION 'Admission is not in processing state or does not exist';
+  END IF;
+
+  -- Generate a concurrency-safe admission number using a sequence
+  v_seq := nextval('student_admission_seq');
+  v_adm_number := 'ELY/' || TO_CHAR(NOW(), 'YYYY') || '/' || LPAD(v_seq::TEXT, 4, '0');
+
+  -- Insert the student record
+  INSERT INTO students (
+    admission_number,
+    class,
+    full_name,
+    dob,
+    gender,
+    parent_profile_id,
+    status
+  ) VALUES (
+    v_adm_number,
+    p_class,
+    p_student_full_name,
+    p_dob,
+    p_gender,
+    p_parent_profile_id,
+    'active'
+  );
+
+  -- Update admission status to accepted
+  UPDATE admissions SET status = 'accepted' WHERE id = p_admission_id;
+
+  RETURN v_adm_number;
+END;
+$$;
+
 -- Trigger: profiles
 DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
 CREATE TRIGGER update_profiles_updated_at
@@ -1178,6 +1238,47 @@ CREATE POLICY "Parents can view children scholarships"
 -- Migration: Add full_name column to students (for existing databases)
 -- NOTE: Run this in Supabase SQL Editor if upgrading an existing database
 ALTER TABLE students ADD COLUMN IF NOT EXISTS full_name TEXT;
+
+-- Migration: Add sequence + RPC for concurrency-safe admission acceptance
+CREATE SEQUENCE IF NOT EXISTS student_admission_seq START 1;
+
+CREATE OR REPLACE FUNCTION accept_admission_transaction(
+  p_admission_id       UUID,
+  p_parent_profile_id  UUID,
+  p_student_full_name  TEXT,
+  p_class              TEXT,
+  p_dob                DATE,
+  p_gender             TEXT
+)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_seq         BIGINT;
+  v_adm_number  TEXT;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM admissions
+    WHERE id = p_admission_id AND status = 'processing'
+  ) THEN
+    RAISE EXCEPTION 'Admission is not in processing state or does not exist';
+  END IF;
+
+  v_seq := nextval('student_admission_seq');
+  v_adm_number := 'ELY/' || TO_CHAR(NOW(), 'YYYY') || '/' || LPAD(v_seq::TEXT, 4, '0');
+
+  INSERT INTO students (
+    admission_number, class, full_name, dob, gender, parent_profile_id, status
+  ) VALUES (
+    v_adm_number, p_class, p_student_full_name, p_dob, p_gender, p_parent_profile_id, 'active'
+  );
+
+  UPDATE admissions SET status = 'accepted' WHERE id = p_admission_id;
+
+  RETURN v_adm_number;
+END;
+$$;
 
 -- Migration: Create attendance_records table (for existing databases)
 CREATE TABLE IF NOT EXISTS attendance_records (
