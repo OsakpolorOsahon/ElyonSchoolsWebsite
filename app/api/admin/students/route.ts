@@ -196,10 +196,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid department' }, { status: 400 })
   }
 
-  const targetClass = cls || undefined
-  if (department && targetClass && !SSS_CLASSES.has(targetClass)) {
-    return NextResponse.json({ error: 'Department can only be set for SSS classes' }, { status: 400 })
-  }
+  // If changing to a non-SSS class, department will be auto-cleared — skip the 400 check
 
   if (graduation_year !== undefined && graduation_year !== null) {
     const yr = Number(graduation_year)
@@ -232,9 +229,15 @@ export async function PATCH(request: NextRequest) {
   if (status) updateData.status = status
   if (cls) {
     updateData.class = cls
-    if (!SSS_CLASSES.has(cls)) updateData.department = null
+    // When changing to a non-SSS class, always clear department regardless of what was sent
+    if (!SSS_CLASSES.has(cls)) {
+      updateData.department = null
+    } else if (department !== undefined) {
+      updateData.department = department || null
+    }
+  } else if (department !== undefined) {
+    updateData.department = department || null
   }
-  if (department !== undefined) updateData.department = department || null
   if (transfer_note !== undefined) updateData.transfer_note = transfer_note
   if (graduation_year !== undefined) updateData.graduation_year = graduation_year
   if (repeating !== undefined) updateData.repeating = repeating
