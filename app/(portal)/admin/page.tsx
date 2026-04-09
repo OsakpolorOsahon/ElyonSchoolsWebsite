@@ -301,12 +301,13 @@ export default async function AdminDashboard() {
             <CardContent>
               {recentPaymentsList && recentPaymentsList.length > 0 ? (
                 <div className="space-y-3">
-                  {recentPaymentsList.map((p: { id: string; amount: number; status: string; created_at: string; reference: string; payment_type: string; payer_name: string | null; admissions: { student_data: Record<string, string> | null }[] | null; students: { full_name: string | null; profiles: { full_name: string } | null } | null }) => {
+                  {recentPaymentsList.map((p: { id: string; amount: number; status: string; created_at: string; reference: string; payment_type: string; payer_name: string | null; admissions: { student_data: Record<string, string> | null }[] | null; students: { full_name: string | null; profiles: { full_name: string }[] }[] | null }) => {
                     const isNew = new Date(p.created_at) > new Date(yesterday)
                     const admission = p.admissions?.[0]
+                    const linkedStudent = p.students?.[0]
                     const studentName = p.payer_name
-                      || p.students?.profiles?.full_name
-                      || p.students?.full_name
+                      || linkedStudent?.profiles?.[0]?.full_name
+                      || linkedStudent?.full_name
                       || (admission?.student_data
                         ? `${admission.student_data.firstName || ''} ${admission.student_data.lastName || ''}`.trim()
                         : null)
