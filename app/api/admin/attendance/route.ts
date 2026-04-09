@@ -30,6 +30,7 @@ interface AttendanceRow {
   students: {
     admission_number: string
     class: string
+    full_name: string | null
     profiles: { full_name: string } | null
   } | null
 }
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
 
   let query = ctx.adminDb
     .from('attendance_records')
-    .select('*, students(id, admission_number, class, profiles!profile_id(full_name))')
+    .select('*, students(id, admission_number, class, full_name, profiles!profile_id(full_name))')
     .order('date', { ascending: false })
 
   if (className) query = query.eq('class', className) as typeof query
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest) {
   // Apply text search on student name or admission number (post-fetch)
   if (search) {
     records = records.filter(r => {
-      const name = r.students?.profiles?.full_name?.toLowerCase() || ''
+      const name = (r.students?.profiles?.full_name || r.students?.full_name || '').toLowerCase()
       const admNum = r.students?.admission_number?.toLowerCase() || ''
       return name.includes(search) || admNum.includes(search)
     })
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
     if (!summaryMap[key]) {
       summaryMap[key] = {
         student_id: rec.student_id,
-        name: rec.students?.profiles?.full_name || 'Unknown',
+        name: rec.students?.profiles?.full_name || rec.students?.full_name || 'Unknown',
         admission_number: rec.students?.admission_number || '',
         class: rec.students?.class || rec.class,
         present: 0, absent: 0, late: 0, excused: 0, total: 0,

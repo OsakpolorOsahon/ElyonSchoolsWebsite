@@ -230,7 +230,10 @@ export async function PATCH(request: NextRequest) {
 
   const updateData: Record<string, any> = {}
   if (status) updateData.status = status
-  if (cls) updateData.class = cls
+  if (cls) {
+    updateData.class = cls
+    if (!SSS_CLASSES.has(cls)) updateData.department = null
+  }
   if (department !== undefined) updateData.department = department || null
   if (transfer_note !== undefined) updateData.transfer_note = transfer_note
   if (graduation_year !== undefined) updateData.graduation_year = graduation_year
