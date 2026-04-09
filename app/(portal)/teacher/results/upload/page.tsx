@@ -116,13 +116,11 @@ export default function UploadResultsPage() {
       setAssignedClasses(classes)
 
       if (classes.length > 0) {
-        const { data: studs } = await supabase
-          .from('students')
-          .select('id, admission_number, class, department, full_name, profiles!profile_id(full_name)')
-          .in('class', classes)
-          .eq('status', 'active')
-          .order('admission_number')
-        setAllStudents((studs || []) as unknown as Student[])
+        const studsRes = await fetch('/api/teacher/students')
+        if (studsRes.ok) {
+          const studsJson = await studsRes.json()
+          setAllStudents((studsJson.students || []) as unknown as Student[])
+        }
       }
 
       setExams(examsRes.data || [])

@@ -84,7 +84,7 @@ export default async function AdminDashboard() {
     adminDb.from('events').select('*', { count: 'exact', head: true }).gte('start_ts', now.toISOString()),
     adminDb.from('payments').select('*', { count: 'exact', head: true }).gte('created_at', yesterday),
     adminDb.from('payments')
-      .select('id, amount, status, created_at, reference, payment_type, payer_name, admissions(student_data)')
+      .select('id, amount, status, created_at, reference, payment_type, payer_name, admissions(student_data), students!student_id(full_name, profiles!profile_id(full_name))')
       .order('created_at', { ascending: false })
       .limit(5),
     adminDb.from('exams').select('id, name, term, year').order('year', { ascending: false }).order('created_at', { ascending: false }).limit(1).single(),
@@ -301,10 +301,12 @@ export default async function AdminDashboard() {
             <CardContent>
               {recentPaymentsList && recentPaymentsList.length > 0 ? (
                 <div className="space-y-3">
-                  {recentPaymentsList.map((p: { id: string; amount: number; status: string; created_at: string; reference: string; payment_type: string; payer_name: string | null; admissions: { student_data: Record<string, string> | null }[] | null }) => {
+                  {recentPaymentsList.map((p: { id: string; amount: number; status: string; created_at: string; reference: string; payment_type: string; payer_name: string | null; admissions: { student_data: Record<string, string> | null }[] | null; students: { full_name: string | null; profiles: { full_name: string } | null } | null }) => {
                     const isNew = new Date(p.created_at) > new Date(yesterday)
                     const admission = p.admissions?.[0]
                     const studentName = p.payer_name
+                      || p.students?.profiles?.full_name
+                      || p.students?.full_name
                       || (admission?.student_data
                         ? `${admission.student_data.firstName || ''} ${admission.student_data.lastName || ''}`.trim()
                         : null)

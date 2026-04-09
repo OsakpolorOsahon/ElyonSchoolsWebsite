@@ -40,7 +40,7 @@ export default async function ParentDashboard() {
   const [childrenResult, upcomingEventsResult, announcementsResult] = await Promise.all([
     adminDb
       .from('students')
-      .select('id, admission_number, class, profiles!profile_id(full_name)')
+      .select('id, admission_number, class, full_name, profiles!profile_id(full_name)')
       .eq('parent_profile_id', session.user.id)
       .eq('status', 'active'),
     supabase
@@ -62,6 +62,7 @@ export default async function ParentDashboard() {
     id: string
     admission_number: string
     class: string
+    full_name: string | null
     profiles: { full_name: string } | null
   }
   const children = (childrenResult.data || []) as unknown as ChildRecord[]
@@ -115,7 +116,7 @@ export default async function ParentDashboard() {
                         <User className="h-7 w-7 text-primary" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-bold text-foreground">{children[0].profiles?.full_name || 'Student'}</h3>
+                        <h3 className="text-lg font-bold text-foreground">{children[0].profiles?.full_name || children[0].full_name || 'Student'}</h3>
                         <p className="text-sm text-muted-foreground">{children[0].class}</p>
                         <p className="text-xs text-muted-foreground">{children[0].admission_number}</p>
                       </div>

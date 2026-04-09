@@ -36,6 +36,8 @@ interface Student {
   id: string
   admission_number: string
   class: string
+  status: string
+  full_name: string | null
   profiles: { full_name: string } | null
 }
 
@@ -139,13 +141,13 @@ export default function AdminPaymentsPage() {
         const paymentsJson = await paymentsRes.json()
 
         const [studentsRes, feesRes, settingsRes] = await Promise.all([
-          supabase.from('students').select('id, admission_number, class, profiles!profile_id(full_name)').eq('status', 'active').order('admission_number'),
+          fetch('/api/admin/students').then(r => r.json()),
           supabase.from('fee_structures').select('*'),
           supabase.from('academic_settings').select('current_term, current_year').eq('singleton_key', true).single(),
         ])
 
         setPayments(paymentsJson.payments || [])
-        setStudents((studentsRes.data || []) as unknown as Student[])
+        setStudents(((studentsRes.students || []) as unknown as Student[]).filter(s => s.status === 'active'))
         setFeeStructures((feesRes.data || []) as FeeStructure[])
         setSettings(settingsRes.data as AcademicSettings | null)
       } catch {
@@ -223,7 +225,7 @@ export default function AdminPaymentsPage() {
       if (outstandingClassFilter !== 'all' && r.student.class !== outstandingClassFilter) return false
       if (outstandingStatusFilter !== 'all' && r.status !== outstandingStatusFilter) return false
       if (q) {
-        const name = r.student.profiles?.full_name?.toLowerCase() || ''
+        const name = (r.student.profiles?.full_name || r.student.full_name || '').toLowerCase()
         const adm = r.student.admission_number.toLowerCase()
         if (!name.includes(q) && !adm.includes(q)) return false
       }
@@ -298,7 +300,7 @@ export default function AdminPaymentsPage() {
   function downloadCSV() {
     const headers = ['Student Name', 'Admission No', 'Class', 'Expected (₦)', 'Paid (₦)', 'Balance (₦)', 'Status']
     const rows = filteredOutstanding.map(r => [
-      r.student.profiles?.full_name || 'Unknown',
+      r.student.profiles?.full_name || r.student.full_name || 'Unknown',
       r.student.admission_number,
       r.student.class,
       r.expected.toFixed(2),
@@ -320,7 +322,7 @@ export default function AdminPaymentsPage() {
     if (!studentSearch) return students.slice(0, 20)
     const q = studentSearch.toLowerCase()
     return students.filter(s =>
-      s.profiles?.full_name?.toLowerCase().includes(q) ||
+      (s.profiles?.full_name || s.full_name || '').toLowerCase().includes(q) ||
       s.admission_number.toLowerCase().includes(q)
     ).slice(0, 20)
   }, [students, studentSearch])
@@ -576,7 +578,7 @@ export default function AdminPaymentsPage() {
                             <CreditCard className="h-4 w-4 text-primary" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium truncate">{row.student.profiles?.full_name || 'Unknown'}</p>
+                            <p className="font-medium truncate">{row.student.profiles?.full_name || row.student.full_name || 'Unknown'}</p>
                             <p className="text-xs text-muted-foreground">{row.student.admission_number} · {row.student.class}</p>
                           </div>
                         </div>
@@ -634,11 +636,11 @@ export default function AdminPaymentsPage() {
                       className={`w-full text-left px-3 py-2 text-sm hover:bg-muted ${offlineForm.student_id === s.id ? 'bg-primary/10 font-medium' : ''}`}
                       onClick={() => {
                         setOfflineForm(f => ({ ...f, student_id: s.id }))
-                        setStudentSearch(s.profiles?.full_name || s.admission_number)
+                        setStudentSearch(s.profiles?.full_name || s.full_name || s.admission_number)
                       }}
                       data-testid={`select-student-${s.id}`}
                     >
-                      {s.profiles?.full_name || 'Unknown'} ({s.admission_number} · {s.class})
+                      {s.profiles?.full_name || s.full_name || 'Unknown'} ({s.admission_number} · {s.class})
                     </button>
                   ))}
                   {filteredStudentList.length === 0 && (
@@ -648,7 +650,7 @@ export default function AdminPaymentsPage() {
               )}
               {offlineForm.student_id && !studentSearch && (
                 <p className="text-xs text-muted-foreground">
-                  Selected: {students.find(s => s.id === offlineForm.student_id)?.profiles?.full_name || 'Unknown'}
+                  Selected: {(() => { const st = students.find(s => s.id === offlineForm.student_id); return st?.profiles?.full_name || st?.full_name || 'Unknown' })()}
                 </p>
               )}
             </div>
