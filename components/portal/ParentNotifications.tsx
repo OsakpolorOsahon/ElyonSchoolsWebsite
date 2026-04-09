@@ -26,14 +26,16 @@ export default function ParentNotifications() {
   async function dismiss(id: string) {
     setDismissing(id)
     try {
-      await fetch('/api/parent/notifications', {
+      const res = await fetch('/api/parent/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       })
-      setNotifications(prev => prev.filter(n => n.id !== id))
+      if (res.ok) {
+        setNotifications(prev => prev.filter(n => n.id !== id))
+      }
     } catch {
-      // silently fail
+      // Network error — leave the notification visible
     } finally {
       setDismissing(null)
     }
