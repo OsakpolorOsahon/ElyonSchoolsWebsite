@@ -24,6 +24,7 @@ type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused'
 interface Student {
   id: string
   admission_number: string
+  full_name: string | null
   profiles: { full_name: string } | null
 }
 
@@ -304,7 +305,7 @@ export default function TeacherAttendancePage() {
                               {idx + 1}
                             </div>
                             <div className="min-w-0">
-                              <p className="font-medium text-sm truncate">{student.profiles?.full_name || 'Unknown'}</p>
+                              <p className="font-medium text-sm truncate">{student.profiles?.full_name || student.full_name || 'Unknown'}</p>
                               <p className="text-xs text-muted-foreground">{student.admission_number}</p>
                             </div>
                           </div>

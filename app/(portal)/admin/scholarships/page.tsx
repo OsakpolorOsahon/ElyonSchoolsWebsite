@@ -18,6 +18,7 @@ import { Loader2, ArrowLeft, Award, Plus, Pencil, Trash2, Search, ToggleLeft, To
 interface ScholarshipStudent {
   admission_number: string
   class: string
+  full_name: string | null
   profiles: { full_name: string } | null
 }
 
@@ -40,6 +41,7 @@ interface StudentRecord {
   id: string
   admission_number: string
   class: string
+  full_name: string | null
   profiles: { full_name: string } | null
 }
 
@@ -205,7 +207,8 @@ export default function AdminScholarshipsPage() {
   }
 
   async function handleDelete(s: Scholarship) {
-    if (!confirm(`Delete scholarship "${s.name}" for ${s.students?.profiles?.full_name || 'this student'}?\n\nThis action cannot be undone.`)) return
+    const studentName = s.students?.profiles?.full_name || s.students?.full_name || 'this student'
+    if (!confirm(`Delete scholarship "${s.name}" for ${studentName}?\n\nThis action cannot be undone.`)) return
     setDeletingId(s.id)
     try {
       const res = await fetch(`/api/admin/scholarships?id=${s.id}`, { method: 'DELETE' })
@@ -242,7 +245,8 @@ export default function AdminScholarshipsPage() {
   const filtered = scholarships.filter(s => {
     const q = search.toLowerCase()
     const nameMatch = s.name.toLowerCase().includes(q)
-    const studentMatch = s.students?.profiles?.full_name?.toLowerCase().includes(q) || false
+    const sName = s.students?.profiles?.full_name || s.students?.full_name || ''
+    const studentMatch = sName.toLowerCase().includes(q)
     const admMatch = s.students?.admission_number?.toLowerCase().includes(q) || false
     const textMatch = !q || nameMatch || studentMatch || admMatch
     const activeMatch = filterActive === 'all' || (filterActive === 'active' ? s.active : !s.active)
@@ -338,7 +342,7 @@ export default function AdminScholarshipsPage() {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {s.students?.profiles?.full_name || 'Unknown Student'}
+                          {s.students?.profiles?.full_name || s.students?.full_name || 'Unknown Student'}
                           {' · '}{s.students?.admission_number}
                           {' · '}{s.students?.class}
                         </p>
@@ -427,11 +431,12 @@ export default function AdminScholarshipsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {students
-                    .filter(s => s.profiles?.full_name)
-                    .sort((a, b) => (a.profiles?.full_name || '').localeCompare(b.profiles?.full_name || ''))
+                    .map(s => ({ ...s, displayName: s.profiles?.full_name || s.full_name || '' }))
+                    .filter(s => s.displayName)
+                    .sort((a, b) => a.displayName.localeCompare(b.displayName))
                     .map(s => (
                       <SelectItem key={s.id} value={s.id}>
-                        {s.profiles?.full_name} — {s.admission_number} ({s.class})
+                        {s.displayName} — {s.admission_number} ({s.class})
                       </SelectItem>
                     ))}
                 </SelectContent>

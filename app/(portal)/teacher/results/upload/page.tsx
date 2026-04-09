@@ -19,6 +19,7 @@ interface Student {
   admission_number: string
   class: string
   department: string | null
+  full_name: string | null
   profiles: { full_name: string } | null
 }
 
@@ -117,7 +118,7 @@ export default function UploadResultsPage() {
       if (classes.length > 0) {
         const { data: studs } = await supabase
           .from('students')
-          .select('id, admission_number, class, department, profiles!profile_id(full_name)')
+          .select('id, admission_number, class, department, full_name, profiles!profile_id(full_name)')
           .in('class', classes)
           .eq('status', 'active')
           .order('admission_number')
@@ -453,7 +454,7 @@ export default function UploadResultsPage() {
                           {/* Mobile layout: name on top, inputs in a 3-column row below */}
                           <div className="sm:hidden space-y-2">
                             <div>
-                              <p className="font-medium">{student.profiles?.full_name || 'Unknown'}</p>
+                              <p className="font-medium">{student.profiles?.full_name || student.full_name || 'Unknown'}</p>
                               <p className="text-xs text-muted-foreground">{student.admission_number}</p>
                             </div>
                             <div className="grid grid-cols-3 gap-2 items-start">
@@ -501,7 +502,7 @@ export default function UploadResultsPage() {
                           {/* Desktop layout: original 4-column grid */}
                           <div className="hidden sm:grid grid-cols-[1fr_80px_80px_60px] gap-2 items-start">
                             <div className="min-w-0 pt-1">
-                              <p className="font-medium truncate">{student.profiles?.full_name || 'Unknown'}</p>
+                              <p className="font-medium truncate">{student.profiles?.full_name || student.full_name || 'Unknown'}</p>
                               <p className="text-xs text-muted-foreground">{student.admission_number}</p>
                             </div>
                             <div className="space-y-1">

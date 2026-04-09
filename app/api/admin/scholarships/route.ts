@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
   let query = ctx.adminDb
     .from('scholarships')
-    .select('*, students(admission_number, class, profiles!profile_id(full_name))')
+    .select('*, students(admission_number, class, full_name, profiles!profile_id(full_name))')
     .order('created_at', { ascending: false })
 
   if (studentId) {

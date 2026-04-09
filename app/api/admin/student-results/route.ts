@@ -20,6 +20,19 @@ export async function GET(request: NextRequest) {
     .eq('student_id', studentId)
     .order('created_at', { ascending: false })
 
+  interface ExamJoin {
+    id: string
+    name: string
+    term: string
+    year: number
+    published: boolean
+  }
+
+  interface SubjectJoin {
+    name: string
+    code: string
+  }
+
   interface ResultRow {
     id: string
     score: number
@@ -29,11 +42,11 @@ export async function GET(request: NextRequest) {
     remarks: string | null
     exam_id: string
     subject_id: string
-    exams: { id: string; name: string; term: string; year: number; published: boolean }[] | null
-    subjects: { name: string; code: string }[] | null
+    exams: ExamJoin | null
+    subjects: SubjectJoin | null
   }
 
-  const typedResults = (results || []) as ResultRow[]
+  const typedResults = (results || []) as unknown as ResultRow[]
 
   interface GroupedExam {
     exam_id: string
@@ -47,7 +60,7 @@ export async function GET(request: NextRequest) {
 
   const grouped: Record<string, GroupedExam> = {}
   for (const r of typedResults) {
-    const exam = r.exams?.[0]
+    const exam = r.exams
     if (!exam) continue
     if (!grouped[r.exam_id]) {
       grouped[r.exam_id] = {
@@ -61,8 +74,8 @@ export async function GET(request: NextRequest) {
       }
     }
     grouped[r.exam_id].results.push({
-      subject: r.subjects?.[0]?.name || 'Unknown',
-      code: r.subjects?.[0]?.code || '',
+      subject: r.subjects?.name || 'Unknown',
+      code: r.subjects?.code || '',
       score: r.score,
       ca_score: r.ca_score,
       exam_score: r.exam_score,

@@ -40,10 +40,10 @@ export async function GET(request: NextRequest) {
   // Fetch all students in the target class
   const { data: students, error: studentsErr } = await ctx.adminDb
     .from('students')
-    .select('id, admission_number, profiles!profile_id(full_name)')
+    .select('id, admission_number, full_name, profiles!profile_id(full_name)')
     .eq('class', targetClass)
     .eq('status', 'active')
-    .order('profiles(full_name)')
+    .order('admission_number')
 
   if (studentsErr) return NextResponse.json({ error: studentsErr.message }, { status: 500 })
 

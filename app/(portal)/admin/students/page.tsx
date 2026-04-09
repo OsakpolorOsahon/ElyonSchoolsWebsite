@@ -123,7 +123,7 @@ export default function AdminStudentsPage() {
 
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Student | null>(null)
-  const [editForm, setEditForm] = useState({ admission_number: '', class: '', gender: '', parent_profile_id: '' })
+  const [editForm, setEditForm] = useState({ admission_number: '', class: '', gender: '', parent_profile_id: '', department: '' })
   const [editSaving, setEditSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
@@ -448,6 +448,7 @@ export default function AdminStudentsPage() {
       class: student.class,
       gender: student.gender || '',
       parent_profile_id: student.parent_profile_id || '',
+      department: student.department || '',
     })
     setEditDialogOpen(true)
   }
@@ -469,6 +470,7 @@ export default function AdminStudentsPage() {
           class: editForm.class,
           gender: editForm.gender || null,
           parent_profile_id: editForm.parent_profile_id || null,
+          department: isSSS(editForm.class) ? (editForm.department || null) : null,
         }),
       })
       const data = await res.json()
@@ -1418,7 +1420,7 @@ export default function AdminStudentsPage() {
             </div>
             <div className="space-y-2">
               <Label>Class *</Label>
-              <Select value={editForm.class} onValueChange={v => setEditForm(f => ({ ...f, class: v }))}>
+              <Select value={editForm.class} onValueChange={v => setEditForm(f => ({ ...f, class: v, department: isSSS(v) ? f.department : '' }))}>
                 <SelectTrigger data-testid="select-edit-class">
                   <SelectValue placeholder="Select class..." />
                 </SelectTrigger>
@@ -1429,6 +1431,22 @@ export default function AdminStudentsPage() {
                 </SelectContent>
               </Select>
             </div>
+            {isSSS(editForm.class) && (
+              <div className="space-y-2">
+                <Label>Department</Label>
+                <Select value={editForm.department || '__none__'} onValueChange={v => setEditForm(f => ({ ...f, department: v === '__none__' ? '' : v }))}>
+                  <SelectTrigger data-testid="select-edit-department">
+                    <SelectValue placeholder="Select department..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">None</SelectItem>
+                    {DEPARTMENTS.map(d => (
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Gender</Label>
               <Select value={editForm.gender} onValueChange={v => setEditForm(f => ({ ...f, gender: v }))}>
