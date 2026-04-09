@@ -378,6 +378,17 @@ ALTER TABLE report_card_comments ADD COLUMN IF NOT EXISTS teacher_comment TEXT;
 
 
 -- ----------------------------------------------------------
+-- parent_notifications
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS parent_notifications (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  message    TEXT NOT NULL,
+  read       BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ----------------------------------------------------------
 -- attendance_records
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS attendance_records (
@@ -460,6 +471,9 @@ CREATE INDEX IF NOT EXISTS idx_payments_term_year                    ON payments
 CREATE INDEX IF NOT EXISTS idx_staff_profiles_profile_id             ON staff_profiles(profile_id);
 
 CREATE INDEX IF NOT EXISTS idx_report_card_comments_student_exam     ON report_card_comments(student_id, exam_id);
+
+CREATE INDEX IF NOT EXISTS idx_parent_notifications_profile_id        ON parent_notifications(profile_id);
+CREATE INDEX IF NOT EXISTS idx_parent_notifications_read              ON parent_notifications(profile_id, read);
 
 CREATE INDEX IF NOT EXISTS idx_attendance_student_id                  ON attendance_records(student_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_class_date                  ON attendance_records(class, date);

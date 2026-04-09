@@ -16,6 +16,7 @@ import {
   ClipboardList,
 } from 'lucide-react'
 import ParentChildSelector from '@/components/portal/ParentChildSelector'
+import ParentNotifications from '@/components/portal/ParentNotifications'
 
 export const metadata = {
   title: 'Parent Dashboard - Elyon Schools',
@@ -76,6 +77,7 @@ export default async function ParentDashboard() {
       />
 
       <main className="mx-auto max-w-7xl px-6 py-8 animate-fade-up">
+        <ParentNotifications />
         {announcements && announcements.length > 0 && (
           <Card className="mb-6 border-primary/20 bg-primary/5">
             <CardHeader className="pb-3">

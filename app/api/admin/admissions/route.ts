@@ -257,6 +257,17 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
+    // If the parent already had a portal account (not newly invited), create an in-portal notification.
+    // Best-effort: any error here must not roll back or block the acceptance response.
+    if (!newUserId) {
+      await supabase
+        .from('parent_notifications')
+        .insert({
+          profile_id: parentProfileId,
+          message: `Your child ${studentFullName} has been accepted. Log in to view fees and details.`,
+        })
+    }
+
     return NextResponse.json({
       success: true,
       created: {
