@@ -26,6 +26,7 @@ interface Payment {
   payer_name?: string
   payer_email?: string
   student_id?: string
+  student_full_name?: string | null
   notes?: string
   term?: string
   year?: number
@@ -176,6 +177,7 @@ export default function AdminPaymentsPage() {
   }, [payments, activeFilter])
 
   const getDisplayName = (payment: Payment): string => {
+    if (payment.student_full_name) return payment.student_full_name
     if (payment.payer_name) return payment.payer_name
     if (payment.admissions?.student_data) {
       const sd = payment.admissions.student_data as Record<string, string>

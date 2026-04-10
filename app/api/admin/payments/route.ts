@@ -16,12 +16,21 @@ export async function GET() {
 
   const { data, error } = await adminDb
     .from('payments')
-    .select('*, admissions(class_applied, student_data)')
+    .select('*, admissions(class_applied, student_data), students!student_id(full_name, profiles!profile_id(full_name))')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ payments: data || [] })
+  // Resolve student name from join (handles both portal and portal-less students)
+  const payments = (data || []).map((p: any) => {
+    const st = Array.isArray(p.students) ? p.students[0] : p.students
+    const profileName = Array.isArray(st?.profiles) ? st?.profiles[0]?.full_name : st?.profiles?.full_name
+    const studentFullName = profileName || st?.full_name || null
+    const { students: _s, ...rest } = p
+    return { ...rest, student_full_name: studentFullName }
+  })
+
+  return NextResponse.json({ payments })
 }
 
 export async function POST(request: NextRequest) {
@@ -56,7 +65,7 @@ export async function POST(request: NextRequest) {
 
   const { data: student } = await adminDb
     .from('students')
-    .select('id, admission_number, profiles!profile_id(full_name)')
+    .select('id, admission_number, full_name, profiles!profile_id(full_name)')
     .eq('id', student_id)
     .single()
 
@@ -64,7 +73,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Student not found' }, { status: 404 })
   }
 
-  const studentTyped = student as unknown as { id: string; admission_number: string; profiles: { full_name: string } | null }
+  const studentTyped = student as unknown as { id: string; admission_number: string; full_name: string | null; profiles: { full_name: string } | null }
   const paymentRef = reference || `OFFLINE-${randomUUID().slice(0, 8).toUpperCase()}`
 
   let resolvedTerm = term || null
@@ -88,7 +97,7 @@ export async function POST(request: NextRequest) {
     method,
     reference: paymentRef,
     payment_type,
-    payer_name: studentTyped.profiles?.full_name || studentTyped.admission_number,
+    payer_name: studentTyped.profiles?.full_name || studentTyped.full_name || null,
     recorded_by: session.user.id,
     notes: notes?.trim() || null,
     term: resolvedTerm,

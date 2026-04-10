@@ -12,6 +12,7 @@ interface StudentRow {
   class: string
   department: string | null
   gender: string | null
+  full_name: string | null
   profiles: ProfileRow | null
 }
 
@@ -78,7 +79,7 @@ export async function GET(
 
   const { data: studentData } = await adminDb
     .from('students')
-    .select('id, admission_number, class, department, gender, profiles!profile_id(full_name)')
+    .select('id, admission_number, class, department, gender, full_name, profiles!profile_id(full_name)')
     .eq('id', studentId)
     .single()
 
@@ -194,7 +195,7 @@ export async function GET(
       class: student.class,
       department: student.department,
       gender: student.gender,
-      full_name: student.profiles?.full_name || 'Unknown',
+      full_name: student.profiles?.full_name || student.full_name || 'Unknown',
     },
     exam: {
       id: exam.id,

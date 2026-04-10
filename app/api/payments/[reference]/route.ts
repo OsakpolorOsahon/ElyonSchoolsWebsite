@@ -101,13 +101,13 @@ export async function GET(
     if (payment.student_id) {
       const { data: student } = await adminDb
         .from('students')
-        .select('admission_number, profiles!profile_id(full_name)')
+        .select('admission_number, full_name, profiles!profile_id(full_name)')
         .eq('id', payment.student_id)
         .single()
 
       if (student) {
-        const s = student as unknown as { admission_number: string; profiles: { full_name: string } | null }
-        student_name = s.profiles?.full_name || null
+        const s = student as unknown as { admission_number: string; full_name: string | null; profiles: { full_name: string } | null }
+        student_name = s.profiles?.full_name || s.full_name || null
         admission_number = s.admission_number || null
       }
     }
