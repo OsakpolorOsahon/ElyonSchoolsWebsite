@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { 
   GraduationCap, 
   Users, 
+  User,
   Trophy, 
   Target,
   Heart,
