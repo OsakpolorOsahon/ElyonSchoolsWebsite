@@ -64,6 +64,16 @@ interface OutstandingRow {
   status: 'paid' | 'partial' | 'unpaid'
 }
 
+interface Scholarship {
+  id: string
+  student_id: string
+  coverage_type: 'full' | 'percentage' | 'fixed'
+  coverage_value: number
+  applies_to_term: string | null
+  applies_to_year: number | null
+  active: boolean
+}
+
 const statusConfig: Record<string, { label: string; color: string }> = {
   success: { label: 'Success', color: 'bg-green-100 text-green-700' },
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
@@ -84,6 +94,7 @@ const paymentTypeConfig: Record<string, { label: string; color: string }> = {
   lab_fee: { label: 'Lab Fee', color: 'bg-cyan-100 text-cyan-700' },
   exam_fee: { label: 'Exam Fee', color: 'bg-rose-100 text-rose-700' },
   donation: { label: 'Donation', color: 'bg-yellow-100 text-yellow-700' },
+  other: { label: 'Other', color: 'bg-gray-100 text-gray-700' },
 }
 
 const FEE_RELEVANT_TYPES = ['school_fee', 'tuition', 'pta_levy', 'books', 'uniform', 'technology_fee', 'sports_fee', 'lab_fee', 'exam_fee']
@@ -97,12 +108,29 @@ const ALL_CLASSES = [
   'SSS 1', 'SSS 2', 'SSS 3',
 ]
 
+const CLASS_ORDER = ALL_CLASSES.reduce<Record<string, number>>((acc, cls, i) => {
+  acc[cls] = i
+  return acc
+}, {})
+
+function sortStudents<T extends { class: string; profiles?: { full_name: string } | null; full_name?: string | null }>(arr: T[]): T[] {
+  return [...arr].sort((a, b) => {
+    const orderA = CLASS_ORDER[a.class] ?? 99
+    const orderB = CLASS_ORDER[b.class] ?? 99
+    if (orderA !== orderB) return orderA - orderB
+    const nameA = (a.profiles?.full_name || a.full_name || '').toLowerCase()
+    const nameB = (b.profiles?.full_name || b.full_name || '').toLowerCase()
+    return nameA.localeCompare(nameB)
+  })
+}
+
 export default function AdminPaymentsPage() {
   const { toast } = useToast()
   const [payments, setPayments] = useState<Payment[]>([])
   const [students, setStudents] = useState<Student[]>([])
   const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([])
   const [settings, setSettings] = useState<AcademicSettings | null>(null)
+  const [scholarships, setScholarships] = useState<Scholarship[]>([])
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<{ full_name: string } | null>(null)
   const [activeFilter, setActiveFilter] = useState('All')
@@ -124,6 +152,7 @@ export default function AdminPaymentsPage() {
   const [outstandingSearch, setOutstandingSearch] = useState('')
   const [outstandingClassFilter, setOutstandingClassFilter] = useState('all')
   const [outstandingStatusFilter, setOutstandingStatusFilter] = useState('all')
+  const [outstandingFeeTypeFilter, setOutstandingFeeTypeFilter] = useState('all')
 
   const formatAmount = (amount: number) =>
     new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount)
@@ -141,16 +170,18 @@ export default function AdminPaymentsPage() {
         if (!paymentsRes.ok) throw new Error('Failed to load payments')
         const paymentsJson = await paymentsRes.json()
 
-        const [studentsRes, feesRes, settingsRes] = await Promise.all([
+        const [studentsRes, feesRes, settingsRes, scholarshipsRes] = await Promise.all([
           fetch('/api/admin/students').then(r => r.json()),
           supabase.from('fee_structures').select('*'),
           supabase.from('academic_settings').select('current_term, current_year').eq('singleton_key', true).single(),
+          supabase.from('scholarships').select('*').eq('active', true),
         ])
 
         setPayments(paymentsJson.payments || [])
         setStudents(((studentsRes.students || []) as unknown as Student[]).filter(s => s.status === 'active'))
         setFeeStructures((feesRes.data || []) as FeeStructure[])
         setSettings(settingsRes.data as AcademicSettings | null)
+        setScholarships((scholarshipsRes.data || []) as Scholarship[])
       } catch {
         toast({ title: 'Error', description: 'Failed to load payment data. Please refresh the page.', variant: 'destructive' })
       } finally {
@@ -191,16 +222,23 @@ export default function AdminPaymentsPage() {
   const outstandingRows: OutstandingRow[] = useMemo(() => {
     if (!settings) return []
     const { current_term, current_year } = settings
-    const termFees = feeStructures.filter(f => f.term === current_term && f.year === current_year)
+    let termFees = feeStructures.filter(f => f.term === current_term && f.year === current_year)
+    if (outstandingFeeTypeFilter !== 'all') {
+      termFees = termFees.filter(f => f.fee_type === outstandingFeeTypeFilter)
+    }
     const feeByClass: Record<string, number> = {}
     for (const f of termFees) {
       feeByClass[f.class] = (feeByClass[f.class] || 0) + Number(f.amount)
     }
 
+    const relevantTypes = outstandingFeeTypeFilter !== 'all'
+      ? [outstandingFeeTypeFilter]
+      : FEE_RELEVANT_TYPES
+
     const feePayments = payments.filter(p =>
       p.status === 'success' &&
       p.student_id &&
-      (FEE_RELEVANT_TYPES.includes(p.payment_type || '') || feeStructures.some(fs => fs.fee_type === p.payment_type))
+      (relevantTypes.includes(p.payment_type || '') || feeStructures.some(fs => fs.fee_type === p.payment_type))
     )
     const paidByStudent: Record<string, number> = {}
     for (const p of feePayments) {
@@ -209,8 +247,24 @@ export default function AdminPaymentsPage() {
       }
     }
 
-    return students.map(student => {
-      const expected = feeByClass[student.class] || 0
+    const studentScholarships: Record<string, number> = {}
+    for (const sc of scholarships) {
+      const termMatch = !sc.applies_to_term || sc.applies_to_term === current_term
+      const yearMatch = !sc.applies_to_year || sc.applies_to_year === current_year
+      if (!termMatch || !yearMatch) continue
+      if (!studentScholarships[sc.student_id]) studentScholarships[sc.student_id] = 0
+      const baseExpected = feeByClass[students.find(s => s.id === sc.student_id)?.class || ''] || 0
+      let credit = 0
+      if (sc.coverage_type === 'full') credit = baseExpected
+      else if (sc.coverage_type === 'percentage') credit = (baseExpected * Number(sc.coverage_value)) / 100
+      else if (sc.coverage_type === 'fixed') credit = Number(sc.coverage_value)
+      studentScholarships[sc.student_id] = Math.min(studentScholarships[sc.student_id] + credit, baseExpected)
+    }
+
+    const rows = students.map(student => {
+      const baseExpected = feeByClass[student.class] || 0
+      const credit = studentScholarships[student.id] || 0
+      const expected = Math.max(0, baseExpected - credit)
       const paid = paidByStudent[student.id] || 0
       const balance = expected - paid
       let status: 'paid' | 'partial' | 'unpaid' = 'unpaid'
@@ -219,7 +273,8 @@ export default function AdminPaymentsPage() {
       else if (paid > 0) status = 'partial'
       return { student, expected, paid, balance: Math.max(0, balance), status }
     })
-  }, [students, feeStructures, payments, settings])
+    return sortStudents(rows.map(r => r.student)).map(s => rows.find(r => r.student.id === s.id)!)
+  }, [students, feeStructures, payments, settings, scholarships, outstandingFeeTypeFilter])
 
   const filteredOutstanding = useMemo(() => {
     const q = outstandingSearch.toLowerCase()
@@ -300,7 +355,8 @@ export default function AdminPaymentsPage() {
   }
 
   function downloadCSV() {
-    const headers = ['Student Name', 'Admission No', 'Class', 'Expected (₦)', 'Paid (₦)', 'Balance (₦)', 'Status']
+    const escape = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`
+    const headers = ['Student Name', 'Admission No', 'Class', 'Expected (NGN)', 'Paid (NGN)', 'Balance (NGN)', 'Status']
     const rows = filteredOutstanding.map(r => [
       r.student.profiles?.full_name || r.student.full_name || 'Unknown',
       r.student.admission_number,
@@ -308,10 +364,10 @@ export default function AdminPaymentsPage() {
       r.expected.toFixed(2),
       r.paid.toFixed(2),
       r.balance.toFixed(2),
-      r.status.toUpperCase(),
+      r.status.charAt(0).toUpperCase() + r.status.slice(1),
     ])
-    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
+    const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(escape).join(',')).join('\r\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -320,14 +376,16 @@ export default function AdminPaymentsPage() {
     URL.revokeObjectURL(url)
   }
 
+  const sortedStudents = useMemo(() => sortStudents(students), [students])
+
   const filteredStudentList = useMemo(() => {
-    if (!studentSearch) return students.slice(0, 20)
+    if (!studentSearch) return sortedStudents.slice(0, 20)
     const q = studentSearch.toLowerCase()
-    return students.filter(s =>
+    return sortedStudents.filter(s =>
       (s.profiles?.full_name || s.full_name || '').toLowerCase().includes(q) ||
       s.admission_number.toLowerCase().includes(q)
     ).slice(0, 20)
-  }, [students, studentSearch])
+  }, [sortedStudents, studentSearch])
 
   const feeStatusColor: Record<string, string> = {
     paid: 'bg-green-100 text-green-700',
@@ -547,6 +605,23 @@ export default function AdminPaymentsPage() {
                   <SelectItem value="unpaid">Unpaid ({outstandingStats.unpaid})</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={outstandingFeeTypeFilter} onValueChange={setOutstandingFeeTypeFilter}>
+                <SelectTrigger className="w-44" data-testid="filter-outstanding-fee-type">
+                  <SelectValue placeholder="All Fee Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Fee Types</SelectItem>
+                  <SelectItem value="school_fee">School Fee</SelectItem>
+                  <SelectItem value="tuition">Tuition</SelectItem>
+                  <SelectItem value="pta_levy">PTA Levy</SelectItem>
+                  <SelectItem value="books">Books</SelectItem>
+                  <SelectItem value="uniform">Uniform</SelectItem>
+                  <SelectItem value="technology_fee">Technology Fee</SelectItem>
+                  <SelectItem value="sports_fee">Sports Fee</SelectItem>
+                  <SelectItem value="lab_fee">Lab Fee</SelectItem>
+                  <SelectItem value="exam_fee">Exam Fee</SelectItem>
+                </SelectContent>
+              </Select>
               <Button variant="outline" className="gap-2" onClick={downloadCSV} data-testid="button-download-csv">
                 <Download className="h-4 w-4" />
                 CSV
@@ -686,6 +761,7 @@ export default function AdminPaymentsPage() {
                     <SelectItem value="lab_fee">Lab Fee</SelectItem>
                     <SelectItem value="exam_fee">Exam Fee</SelectItem>
                     <SelectItem value="donation">Donation</SelectItem>
+                    <SelectItem value="other">Other (Custom)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

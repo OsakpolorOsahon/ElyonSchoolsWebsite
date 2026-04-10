@@ -34,7 +34,7 @@ const footerNavigation = {
 }
 
 const socialLinks = [
-  { name: 'Facebook', href: '#', icon: Facebook },
+  { name: 'Facebook', href: 'https://web.facebook.com/elyonchildrensworld', icon: Facebook },
   { name: 'Twitter', href: '#', icon: Twitter },
   { name: 'Instagram', href: '#', icon: Instagram },
   { name: 'YouTube', href: '#', icon: Youtube },
@@ -75,15 +75,15 @@ export function Footer() {
             <div className="space-y-3 text-sm">
               <div className="flex items-center gap-3">
                 <MapPin className="h-5 w-5 flex-shrink-0" />
-                <span>123 Education Avenue, Lagos, Nigeria</span>
+                <span>6, Orija Street, Ile-Epo Bus Stop, Ikotun-Idimu, Lagos</span>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="h-5 w-5 flex-shrink-0" />
-                <span>+234 803 123 4567</span>
+                <span>+234 703 517 5566 | +234 806 655 5965</span>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="h-5 w-5 flex-shrink-0" />
-                <span>info@elyonschools.edu.ng</span>
+                <span>elyononcam@gmail.com</span>
               </div>
               <div className="flex items-center gap-3">
                 <Clock className="h-5 w-5 flex-shrink-0" />

@@ -129,7 +129,7 @@ export default async function HomePage() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40 z-10" />
         <Image
-          src="/images/School_Building_Exterior_Hero_4c95b726.png"
+          src="/images/school-campus.jpg"
           alt="Elyon Schools Campus"
           fill
           className="object-cover"

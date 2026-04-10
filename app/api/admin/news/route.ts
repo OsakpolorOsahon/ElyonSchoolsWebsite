@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { title, slug, body: postBody, summary, status } = body
+  const { title, slug, body: postBody, summary, status, featured_url } = body
 
   if (!title || !slug || !postBody) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
       slug,
       body: postBody,
       summary: summary || null,
+      featured_url: featured_url || null,
       status: status || 'draft',
       author_id: session.user.id,
       published_at: status === 'published' ? new Date().toISOString() : null,
@@ -74,12 +75,12 @@ export async function PATCH(request: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { id, title, slug, body: postBody, summary, status } = body
+  const { id, title, slug, body: postBody, summary, status, featured_url } = body
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
   if (!title || !slug || !postBody) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
 
   const supabase = createAdminClient()
-  const updateData: Record<string, any> = { title, slug, body: postBody, summary: summary || null, status: status || 'draft' }
+  const updateData: Record<string, any> = { title, slug, body: postBody, summary: summary || null, featured_url: featured_url || null, status: status || 'draft' }
   if (status === 'published') {
     const { data: existing } = await supabase.from('news_posts').select('published_at, status').eq('id', id).single()
     if (existing?.status !== 'published') {

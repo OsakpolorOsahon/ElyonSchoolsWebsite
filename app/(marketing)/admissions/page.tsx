@@ -7,8 +7,7 @@ import {
   CheckCircle,
   Clock,
   ArrowRight,
-  Download,
-  Calendar,
+  MessageCircle,
   Users,
   HelpCircle
 } from 'lucide-react'
@@ -69,12 +68,6 @@ const requirements = {
   ],
 }
 
-const fees = [
-  { level: 'Nursery (Pre-Nursery to Nursery 2)', tuition: '₦150,000', admission: '₦50,000' },
-  { level: 'Primary (Primary 1 to Primary 6)', tuition: '₦200,000', admission: '₦75,000' },
-  { level: 'Junior High (JSS 1 to JSS 3)', tuition: '₦250,000', admission: '₦100,000' },
-  { level: 'Senior High (SSS 1 to SSS 3)', tuition: '₦300,000', admission: '₦125,000' },
-]
 
 const faqs = [
   {
@@ -238,39 +231,26 @@ export default function AdmissionsPage() {
 
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               Fees Structure
             </h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              2024/2025 Academic Session fees. All fees are per term.
+              To get information about our current fee structure, kindly reach out to us directly via WhatsApp and our admissions team will assist you promptly.
             </p>
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-muted">
-                  <th className="text-left p-4 font-semibold">Level</th>
-                  <th className="text-left p-4 font-semibold">Tuition (Per Term)</th>
-                  <th className="text-left p-4 font-semibold">Admission Fee (One-time)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fees.map((fee, index) => (
-                  <tr key={index} className="border-b border-border">
-                    <td className="p-4">{fee.level}</td>
-                    <td className="p-4 font-semibold text-primary">{fee.tuition}</td>
-                    <td className="p-4">{fee.admission}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex justify-center">
+            <a
+              href="https://wa.me/2347035175566?text=Hello%2C%20I%20would%20like%20to%20inquire%20about%20the%20fee%20structure%20at%20Elyon%20Schools."
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button size="lg" className="gap-2 bg-green-600 hover:bg-green-700 text-white" data-testid="button-whatsapp-fees">
+                <MessageCircle className="h-5 w-5" />
+                Inquire About Fees on WhatsApp
+              </Button>
+            </a>
           </div>
-
-          <p className="text-sm text-muted-foreground mt-6 text-center">
-            * Fees are subject to annual review. Additional fees may apply for books, uniforms, and extracurricular activities.
-          </p>
         </div>
       </section>
 
@@ -301,53 +281,6 @@ export default function AdmissionsPage() {
                 </CardContent>
               </Card>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Downloadable Resources
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Download and print our school prospectus and academic timetable for your reference.
-            </p>
-          </div>
-          <div className="grid gap-6 md:grid-cols-2 max-w-2xl mx-auto">
-            <Card className="hover-elevate text-center">
-              <CardContent className="pt-8 pb-8">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mx-auto mb-4">
-                  <FileText className="h-7 w-7 text-primary" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">School Prospectus</h3>
-                <p className="text-sm text-muted-foreground mb-6">
-                  Complete information about our school, programmes, fees, and facilities.
-                </p>
-                <Link href="/downloads/prospectus" target="_blank">
-                  <Button className="gap-2 w-full">
-                    <Download className="h-4 w-4" /> View & Print Prospectus
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-            <Card className="hover-elevate text-center">
-              <CardContent className="pt-8 pb-8">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 mx-auto mb-4">
-                  <Calendar className="h-7 w-7 text-blue-600" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">Academic Timetable</h3>
-                <p className="text-sm text-muted-foreground mb-6">
-                  Primary and high school daily class timetables for the current session.
-                </p>
-                <Link href="/downloads/timetable" target="_blank">
-                  <Button variant="outline" className="gap-2 w-full">
-                    <Download className="h-4 w-4" /> View & Print Timetable
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </section>

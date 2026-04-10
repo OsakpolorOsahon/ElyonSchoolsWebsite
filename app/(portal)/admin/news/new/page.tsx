@@ -31,6 +31,7 @@ export default function NewNewsPostPage() {
     slug: '',
     body: '',
     summary: '',
+    featured_url: '',
     status: 'draft',
   })
 
@@ -130,6 +131,18 @@ export default function NewNewsPostPage() {
                   rows={12}
                   required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="featured_url">Featured Image URL</Label>
+                <Input
+                  id="featured_url"
+                  value={formData.featured_url}
+                  onChange={e => setFormData(prev => ({ ...prev, featured_url: e.target.value }))}
+                  placeholder="https://example.com/image.jpg (optional)"
+                  data-testid="input-news-featured-url"
+                />
+                <p className="text-xs text-muted-foreground">Paste a direct image URL to display as the post&apos;s cover image.</p>
               </div>
 
               <div className="space-y-2">

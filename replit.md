@@ -8,6 +8,13 @@ Elyon Schools is a comprehensive school management platform for a Nigerian educa
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+- **Batch Comments page** (`/admin/batch-comments`): New admin tool to add principal's report card comments for multiple students at once, with exam/class/search filters and inline unsaved-change tracking.
+- **Admin payments**: Students now sorted by class order (Nursery 1 → SSS 3) then alphabetically in the offline payment search combobox and outstanding fees table; CSV export uses UTF-8 BOM for proper Excel rendering and proper quote-escaping.
+- **Teacher results**: Students within a class are now sorted alphabetically by name.
+- **News listing page**: Fixed variable name bug (`post.featured_url` → `article.featured_url`) in featured news cards.
+
 ## System Architecture
 
 ### Stack

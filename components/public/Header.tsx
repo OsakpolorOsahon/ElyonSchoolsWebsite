@@ -74,7 +74,7 @@ export function Header() {
               />
               <div>
                 <p className="text-base font-bold text-primary leading-tight">Elyon Schools</p>
-                <p className="text-xs text-muted-foreground hidden sm:block">Excellence in Education</p>
+                <p className="text-xs text-muted-foreground hidden sm:block">Hardwork and Determination</p>
               </div>
             </Link>
           </div>

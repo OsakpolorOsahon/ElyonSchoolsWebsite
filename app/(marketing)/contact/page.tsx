@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -30,22 +31,22 @@ const contactInfo = [
   {
     icon: MapPin,
     title: 'Visit Us',
-    details: ['123 Education Avenue', 'Ikeja, Lagos', 'Nigeria'],
+    details: ['6, Orija Street', 'Ile-Epo Bus Stop, Ikotun-Idimu', 'Lagos, Nigeria'],
   },
   {
     icon: Phone,
     title: 'Call Us',
-    details: ['+234 803 123 4567', '+234 809 876 5432'],
+    details: ['+234 703 517 5566', '+234 806 655 5965', '+234 703 660 1957'],
   },
   {
     icon: Mail,
     title: 'Email Us',
-    details: ['info@elyonschools.edu.ng', 'admissions@elyonschools.edu.ng'],
+    details: ['elyononcam@gmail.com'],
   },
   {
     icon: Clock,
     title: 'Office Hours',
-    details: ['Monday - Friday: 7:30 AM - 4:00 PM', 'Saturday: 9:00 AM - 1:00 PM'],
+    details: ['Monday - Thursday: 7:30 AM - 3:00 PM', 'Friday: 7:30 AM - 1:00 PM'],
   },
 ]
 
@@ -247,16 +248,22 @@ export default function ContactPage() {
               Find Us
             </h2>
             <p className="text-muted-foreground">
-              Our campus is located in the heart of Ikeja, easily accessible by public transport.
+              Our campus is located at Ile-Epo Bus Stop, Ikotun-Idimu, Lagos — easily accessible by public transport.
             </p>
           </div>
           
-          <div className="relative aspect-[21/9] rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 via-secondary/10 to-primary/20 flex items-center justify-center">
-            <Building2 className="w-32 h-32 text-primary/40" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <div className="relative aspect-[21/9] rounded-lg overflow-hidden">
+            <Image
+              src="/images/school-campus.jpg"
+              alt="Elyon Schools Campus"
+              fill
+              className="object-cover"
+              sizes="100vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
             <div className="absolute bottom-6 left-6 text-white">
               <p className="font-semibold text-lg">Elyon Schools Main Campus</p>
-              <p className="text-sm text-white/80">123 Education Avenue, Ikeja, Lagos</p>
+              <p className="text-sm text-white/80">6, Orija Street, Ile-Epo Bus Stop, Ikotun-Idimu, Lagos</p>
             </div>
           </div>
         </div>

@@ -27,6 +27,7 @@ import {
   XCircle,
   ClipboardList,
   Award,
+  MessageSquare,
 } from 'lucide-react'
 
 export const metadata = {
@@ -48,6 +49,7 @@ const quickActions = [
   { name: 'Attendance', icon: ClipboardList, href: '/admin/attendance', description: 'View attendance across all classes' },
   { name: 'Staff Profiles', icon: UserCog, href: '/admin/staff', description: 'Teacher bios & qualifications' },
   { name: 'Class Teachers', icon: BookOpen, href: '/admin/class-teachers', description: 'Assign teachers to classes' },
+  { name: 'Batch Comments', icon: MessageSquare, href: '/admin/batch-comments', description: 'Add report card comments in bulk' },
   { name: 'Settings', icon: Settings, href: '/admin/settings', description: 'Academic term & school config' },
 ]
 

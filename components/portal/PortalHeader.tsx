@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { LogOut, Globe } from 'lucide-react'
+import { LogOut, Globe, BookOpen } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 interface PortalHeaderProps {
@@ -68,12 +68,20 @@ export function PortalHeader({ title, subtitle, role }: PortalHeaderProps) {
           <Button variant="outline" size="sm" asChild>
             <Link href="/">
               <Globe className="h-4 w-4 mr-1" />
-              View Website
+              <span className="hidden sm:inline">View Website</span>
             </Link>
           </Button>
+          {role !== 'admin' && (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/${role}/policy`}>
+                <BookOpen className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Handbook</span>
+              </Link>
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleSignOut}>
             <LogOut className="h-4 w-4 mr-1" />
-            Sign Out
+            <span className="hidden sm:inline">Sign Out</span>
           </Button>
         </div>
       </div>

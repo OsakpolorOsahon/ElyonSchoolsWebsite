@@ -27,6 +27,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#1a3a6b" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+      </head>
       <body className={inter.className}>
         <Providers>
           {children}

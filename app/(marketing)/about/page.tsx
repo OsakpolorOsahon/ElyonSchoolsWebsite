@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { 
@@ -11,8 +12,7 @@ import {
   ArrowRight,
   Award,
   Calendar,
-  Building2,
-  User
+  Globe
 } from 'lucide-react'
 
 export const metadata = {
@@ -22,30 +22,35 @@ export const metadata = {
 
 const values = [
   {
-    name: 'Excellence',
-    description: 'We strive for the highest standards in everything we do, from academics to character development.',
-    icon: Trophy,
+    name: 'Cultural Retainership',
+    description: 'We preserve and promote our diverse but rich cultural Nigerian heritage, instilling pride, identity, respect for traditions, and appreciation for diversity in every pupil/student.',
+    icon: Globe,
   },
   {
-    name: 'Integrity',
-    description: 'We uphold honesty, transparency, and moral uprightness in all our dealings.',
+    name: 'Academic Development',
+    description: 'We foster intellectual growth through quality teaching, critical thinking, creativity, and consistent assessment — empowering students to achieve excellence and lifelong learning.',
+    icon: BookOpen,
+  },
+  {
+    name: 'Psyche/Social Development',
+    description: 'We nurture emotional intelligence, confidence, teamwork, and healthy relationships, equipping students with social skills essential for personal well-being and societal contribution.',
+    icon: Users,
+  },
+  {
+    name: 'Moral Excellence',
+    description: 'We uphold integrity, honesty, discipline, and accountability, guiding students to make responsible choices and become ethical leaders in their communities and beyond.',
     icon: Heart,
   },
   {
-    name: 'Innovation',
-    description: 'We embrace modern teaching methods and technology to enhance learning outcomes.',
-    icon: Target,
-  },
-  {
-    name: 'Community',
-    description: 'We foster a sense of belonging and partnership among students, parents, and staff.',
-    icon: Users,
+    name: 'Spiritual Development',
+    description: 'We are a Christian values-based school that cultivates Faith, reverence for God, and strong moral grounding through devotion, reflection, and values-based teaching.',
+    icon: Award,
   },
 ]
 
 const milestones = [
-  { year: '1994', title: 'School Founded', description: 'Elyon Schools was established with just 50 students and a vision for excellence.' },
-  { year: '2000', title: 'Primary Section Added', description: 'Expanded to include primary education, growing our student body significantly.' },
+  { year: '1994', title: 'School Founded', description: 'Established on January 4, 1994 as El-Shaddai Preparatory School, beginning an intentional one-on-one learning journey.' },
+  { year: '2000', title: 'Name Change & Expansion', description: 'Rebranded to Elyon Schools and expanded to include full primary education, growing our student body significantly.' },
   { year: '2005', title: 'High School Launched', description: 'Opened our high school section to provide a complete education journey.' },
   { year: '2010', title: 'New Campus Completed', description: 'Moved to our current modern campus with state-of-the-art facilities.' },
   { year: '2018', title: 'STEM Lab Inaugurated', description: 'Opened our advanced science and technology laboratory.' },
@@ -89,8 +94,14 @@ export default function AboutPage() {
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 via-secondary/10 to-primary/20 flex items-center justify-center">
-              <Building2 className="w-24 h-24 text-primary/40" />
+            <div className="relative aspect-[4/3] rounded-lg overflow-hidden flex items-center justify-center bg-primary/5">
+              <Image
+                src="/logo.png"
+                alt="Elyon Schools Logo"
+                width={280}
+                height={280}
+                className="object-contain p-8"
+              />
             </div>
             <div>
               <h2 className="text-3xl font-bold tracking-tight text-foreground mb-6">
@@ -98,21 +109,13 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  Elyon Schools was founded in 1994 by a group of visionary educators who 
-                  believed in providing quality education that goes beyond textbooks. Starting 
-                  with just 50 students in a small building, we have grown into one of the 
-                  most respected educational institutions in Nigeria.
+                  Established formally on the 4th of January, 1994, Elyon School had hitherto been referred to as El-Shaddai Preparatory School. In what began as a deliberate nurturing, impactful one-on-one journey, the school has grown into an empire with over a thousand pupils and students. In over 30 years of existence, the story has remained consistent — <strong className="text-foreground">Hardwork and Determination</strong> remain the only deal-breaker for success.
                 </p>
                 <p>
-                  Today, Elyon Schools serves over 1,500 students from nursery through 
-                  high school. Our modern campus features well-equipped classrooms, 
-                  science laboratories, a library, computer labs, sports facilities, and 
-                  recreational areas that support holistic development.
+                  We began with a simple but powerful belief: that every child carries within them the potential for greatness, and that with the right structure, guidance, and values, that potential can be transformed into excellence. Elyon Schools was built to be more than a place of learning — it was designed to be a community where character is formed as intentionally as knowledge is taught.
                 </p>
                 <p>
-                  Our alumni have gone on to become doctors, engineers, lawyers, entrepreneurs, 
-                  and leaders in various fields, carrying with them the values instilled during 
-                  their time at Elyon Schools.
+                  At Elyon Schools, order is not rigidity — it is the foundation upon which excellence is built. Our story is still being written through every child who walks through our gates, every lesson taught, and every value instilled. We are not just preparing students for exams; we are preparing them for life.
                 </p>
               </div>
             </div>
@@ -188,7 +191,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 stagger-children">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 stagger-children">
             {values.map((value) => (
               <Card key={value.name} className="text-center hover-elevate">
                 <CardContent className="pt-6">

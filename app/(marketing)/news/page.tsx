@@ -24,6 +24,7 @@ interface NewsPost {
   status: string
   published_at: string | null
   created_at: string
+  featured_url: string | null
 }
 
 interface Event {
@@ -167,7 +168,13 @@ export default async function NewsPage() {
                 <div className="grid gap-6 lg:grid-cols-2 stagger-children">
                   {featuredNews.map((article: any) => (
                     <Card key={article.id} className="hover-elevate">
-                      <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-t-lg" />
+                      {article.featured_url ? (
+                        <div className="aspect-video rounded-t-lg overflow-hidden">
+                          <img src={article.featured_url} alt={article.title} className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-t-lg" />
+                      )}
                       <CardHeader>
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-sm text-muted-foreground">

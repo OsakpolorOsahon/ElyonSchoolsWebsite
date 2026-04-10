@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /teacher/
+Disallow: /parent/
+Disallow: /student/
+Disallow: /api/
+
+Sitemap: https://elyonschools.edu.ng/sitemap.xml

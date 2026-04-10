@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, ArrowLeft, Upload, Save, Pencil } from 'lucide-react'
+import { Loader2, ArrowLeft, Upload, Save, Pencil, Lock } from 'lucide-react'
 
 interface Student {
   id: string
@@ -28,6 +28,7 @@ interface Exam {
   name: string
   term: string
   year: number
+  published: boolean
 }
 
 interface Subject {
@@ -62,7 +63,13 @@ export default function UploadResultsPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [loadingExisting, setLoadingExisting] = useState(false)
 
-  const classStudents = allStudents.filter(s => s.class === selectedClass)
+  const classStudents = allStudents
+    .filter(s => s.class === selectedClass)
+    .sort((a, b) => {
+      const na = (a.profiles?.full_name || a.full_name || '').toLowerCase()
+      const nb = (b.profiles?.full_name || b.full_name || '').toLowerCase()
+      return na.localeCompare(nb)
+    })
 
   const filteredSubjects = useMemo(() => {
     if (!selectedClass) return allSubjects
@@ -201,6 +208,9 @@ export default function UploadResultsPage() {
     return () => { cancelled = true }
   }, [selectedClass, selectedExam, selectedSubject, studentIdsKey])
 
+  const selectedExamObj = exams.find(e => e.id === selectedExam)
+  const isExamLocked = selectedExamObj?.published === true
+
   const getGrade = (score: number): string => {
     if (score >= 70) return 'A'
     if (score >= 60) return 'B'
@@ -210,7 +220,29 @@ export default function UploadResultsPage() {
     return 'F'
   }
 
+  const getRemarkFromGrade = (grade: string): string => {
+    const map: Record<string, string> = {
+      A: 'Excellent',
+      B: 'Very Good',
+      C: 'Good',
+      D: 'Fair',
+      E: 'Pass',
+      F: 'Fail',
+    }
+    return map[grade] || ''
+  }
+
   const hasScoreErrors = Object.keys(scoreErrors).some(k => scoreErrors[k] !== '')
+
+  const autoUpdateRemark = (studentId: string, newCa: string, newExam: string) => {
+    const ca = newCa ? parseFloat(newCa) : 0
+    const ex = newExam ? parseFloat(newExam) : 0
+    if (!newCa && !newExam) return
+    const total = ca + ex
+    const grade = getGrade(total)
+    const remark = getRemarkFromGrade(grade)
+    setRemarks(prev => ({ ...prev, [studentId]: remark }))
+  }
 
   const handleCaChange = (studentId: string, value: string) => {
     setCaScores(prev => ({ ...prev, [studentId]: value }))
@@ -225,6 +257,7 @@ export default function UploadResultsPage() {
       setScoreErrors(prev => ({ ...prev, [`${studentId}:ca`]: 'Max 40' }))
     } else {
       setScoreErrors(prev => ({ ...prev, [`${studentId}:ca`]: '' }))
+      autoUpdateRemark(studentId, value, examScores[studentId] || '')
     }
   }
 
@@ -241,6 +274,7 @@ export default function UploadResultsPage() {
       setScoreErrors(prev => ({ ...prev, [`${studentId}:exam`]: 'Max 60' }))
     } else {
       setScoreErrors(prev => ({ ...prev, [`${studentId}:exam`]: '' }))
+      autoUpdateRemark(studentId, caScores[studentId] || '', value)
     }
   }
 
@@ -269,6 +303,11 @@ export default function UploadResultsPage() {
       }
     }
 
+    if (isExamLocked) {
+      toast({ title: 'Results locked', description: 'This exam has been published. Results can no longer be edited.', variant: 'destructive' })
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const supabase = createClient()
@@ -276,6 +315,7 @@ export default function UploadResultsPage() {
         const ca = caScores[studentId] ? parseFloat(caScores[studentId]) : 0
         const ex = examScores[studentId] ? parseFloat(examScores[studentId]) : 0
         const score = ca + ex
+        const grade = getGrade(score)
         return {
           student_id: studentId,
           exam_id: selectedExam,
@@ -283,8 +323,8 @@ export default function UploadResultsPage() {
           ca_score: ca,
           exam_score: ex,
           score,
-          grade: getGrade(score),
-          remarks: remarks[studentId]?.trim() || null,
+          grade,
+          remarks: remarks[studentId]?.trim() || getRemarkFromGrade(grade),
           uploaded_by: null,
         }
       })
@@ -295,11 +335,11 @@ export default function UploadResultsPage() {
 
       if (error) throw error
 
-      toast({ title: isEditing ? 'Results updated!' : 'Results saved!', description: `${studentIds.length} result${studentIds.length !== 1 ? 's' : ''} ${isEditing ? 'updated' : 'saved'} successfully.` })
-      setCaScores({})
-      setExamScores({})
-      setRemarks({})
-      setIsEditing(false)
+      toast({
+        title: isEditing ? '✓ Results updated!' : '✓ Results saved!',
+        description: `${studentIds.length} result${studentIds.length !== 1 ? 's' : ''} ${isEditing ? 'updated' : 'saved'} successfully. Scores remain visible for review.`,
+      })
+      setIsEditing(true)
     } catch (err: any) {
       toast({ title: 'Error saving results', description: err.message || 'Something went wrong.', variant: 'destructive' })
     } finally {
@@ -367,11 +407,17 @@ export default function UploadResultsPage() {
                     <SelectContent>
                       {exams.map(e => (
                         <SelectItem key={e.id} value={e.id}>
-                          {e.name} — {e.term} {e.year}
+                          {e.name} — {e.term} {e.year}{e.published ? ' 🔒' : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {isExamLocked && (
+                    <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded text-amber-700 text-xs" data-testid="alert-exam-locked">
+                      <Lock className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span>This exam has been published. Results are locked and cannot be edited.</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -563,7 +609,7 @@ export default function UploadResultsPage() {
             </Card>
 
             {students.length > 0 && (
-              <Button type="submit" disabled={isSubmitting || hasScoreErrors || loadingExisting} className="gap-2 w-full sm:w-auto" data-testid="button-save-results">
+              <Button type="submit" disabled={isSubmitting || hasScoreErrors || loadingExisting || isExamLocked} className="gap-2 w-full sm:w-auto" data-testid="button-save-results">
                 {isSubmitting || loadingExisting
                   ? <Loader2 className="h-4 w-4 animate-spin" />
                   : isEditing

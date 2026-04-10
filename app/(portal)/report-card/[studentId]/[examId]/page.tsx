@@ -426,12 +426,12 @@ export default function ReportCardPage() {
                       <img
                         src={principal_signature_url}
                         alt="Principal's Signature"
-                        className="h-12 max-w-[160px] object-contain"
+                        className="h-24 max-w-[320px] object-contain"
                         data-testid="img-principal-signature"
                       />
                     </div>
                   ) : (
-                    <div className="border-b border-gray-400 mb-1 h-12"></div>
+                    <div className="border-b border-gray-400 mb-1 h-24"></div>
                   )}
                   <p className="text-xs text-gray-500">
                     {principal_name ? `${principal_name} — ` : ''}Principal&apos;s Signature &amp; School Stamp
