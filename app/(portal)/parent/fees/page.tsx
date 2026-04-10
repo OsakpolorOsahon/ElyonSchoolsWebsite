@@ -17,6 +17,7 @@ import { Loader2, ArrowLeft, CreditCard, Wallet, TrendingDown, CheckCircle, Aler
 interface Child {
   id: string
   admission_number: string
+  full_name: string | null
   class: string
   profiles: { full_name: string } | null
 }
@@ -265,7 +266,7 @@ function FeesContent() {
               <SelectContent>
                 {children.map(c => (
                   <SelectItem key={c.id} value={c.id}>
-                    {c.profiles?.full_name} ({c.class})
+                    {c.profiles?.full_name || c.full_name || c.admission_number} ({c.class})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -288,7 +289,7 @@ function FeesContent() {
                 </Badge>
                 {selectedChild && (
                   <span className="text-sm text-muted-foreground">
-                    {selectedChild.profiles?.full_name} — {selectedChild.class}
+                    {selectedChild.profiles?.full_name || selectedChild.full_name || selectedChild.admission_number} — {selectedChild.class}
                   </span>
                 )}
                 {status === 'paid' && (
@@ -317,7 +318,7 @@ function FeesContent() {
                     <div>
                       <p className="font-medium text-primary text-sm">Scholarship Applied: {activeScholarship.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        Fee reduction of {formatAmount(scholarshipCredit)} applied to {selectedChild?.profiles?.full_name}&apos;s fees this term.
+                        Fee reduction of {formatAmount(scholarshipCredit)} applied to {selectedChild?.profiles?.full_name || selectedChild?.full_name || selectedChild?.admission_number}&apos;s fees this term.
                       </p>
                     </div>
                     <Badge className="ml-auto bg-primary/10 text-primary border-primary/20 shrink-0" data-testid="badge-scholarship-credit">
@@ -366,7 +367,7 @@ function FeesContent() {
                       <div>
                         <p className="font-medium">Outstanding Balance: {formatAmount(outstanding)}</p>
                         <p className="text-sm text-muted-foreground">
-                          Pay the full outstanding balance for {selectedChild?.profiles?.full_name} ({settings?.current_term} Term {settings?.current_year})
+                          Pay the full outstanding balance for {selectedChild?.profiles?.full_name || selectedChild?.full_name || selectedChild?.admission_number} ({settings?.current_term} Term {settings?.current_year})
                         </p>
                       </div>
                     </div>
@@ -417,10 +418,10 @@ function FeesContent() {
                       return (
                         <div
                           key={f.id}
-                          className="flex items-center justify-between gap-3 py-3 border-b border-dashed last:border-0"
+                          className="flex items-start justify-between gap-x-3 gap-y-1 py-3 border-b border-dashed last:border-0 flex-wrap"
                           data-testid={`fee-item-${f.id}`}
                         >
-                          <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
                             {itemFullyPaid && (
                               <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                             )}

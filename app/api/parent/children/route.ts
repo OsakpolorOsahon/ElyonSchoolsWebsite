@@ -21,7 +21,7 @@ export async function GET() {
 
   const { data: children, error } = await adminDb
     .from('students')
-    .select('id, admission_number, class, profiles!profile_id(full_name)')
+    .select('id, admission_number, full_name, class, profiles!profile_id(full_name)')
     .eq('parent_profile_id', session.user.id)
     .eq('status', 'active')
 

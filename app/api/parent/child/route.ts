@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   const { data: student, error } = await adminDb
     .from('students')
-    .select('id, admission_number, class, profiles!profile_id(full_name)')
+    .select('id, admission_number, full_name, class, profiles!profile_id(full_name)')
     .eq('admission_number', admissionNumber)
     .eq('parent_profile_id', session.user.id)
     .single()

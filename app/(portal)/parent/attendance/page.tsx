@@ -36,6 +36,7 @@ interface AttendanceRecord {
 interface Child {
   id: string
   admission_number: string
+  full_name: string | null
   class: string
   profiles: { full_name: string } | null
 }
@@ -155,7 +156,7 @@ function AttendanceContent() {
                 <TabsList data-testid="child-tabs">
                   {children.map(c => (
                     <TabsTrigger key={c.id} value={c.id} data-testid={`tab-child-${c.id}`}>
-                      {c.profiles?.full_name || c.admission_number}
+                      {c.profiles?.full_name || c.full_name || c.admission_number}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -168,7 +169,7 @@ function AttendanceContent() {
                 <SelectContent>
                   {children.map(c => (
                     <SelectItem key={c.id} value={c.id}>
-                      {c.profiles?.full_name || c.admission_number} ({c.class})
+                      {c.profiles?.full_name || c.full_name || c.admission_number} ({c.class})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -184,7 +185,7 @@ function AttendanceContent() {
               <User className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="font-medium text-sm">{selectedChild.profiles?.full_name || selectedChild.admission_number}</p>
+              <p className="font-medium text-sm">{selectedChild.profiles?.full_name || selectedChild.full_name || selectedChild.admission_number}</p>
               <p className="text-xs text-muted-foreground">{selectedChild.class} · {selectedChild.admission_number}</p>
             </div>
           </div>
@@ -234,7 +235,7 @@ function AttendanceContent() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <CalendarDays className="h-4 w-4" />
-                {selectedChild.profiles?.full_name || selectedChild.admission_number} — Summary
+                {selectedChild.profiles?.full_name || selectedChild.full_name || selectedChild.admission_number} — Summary
               </CardTitle>
             </CardHeader>
             <CardContent>
