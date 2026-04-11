@@ -27,7 +27,7 @@ export const metadata = {
   title: 'Student Dashboard - Elyon Schools',
 }
 
-const FEE_RELEVANT_TYPES = ['school_fee', 'tuition', 'pta_levy', 'books', 'uniform', 'technology_fee', 'sports_fee', 'lab_fee', 'exam_fee']
+const NON_SCHOOL_FEE_TYPES = new Set(['admission_fee', 'application_fee', 'donation'])
 
 export default async function StudentDashboard() {
   const supabase = await createClient()
@@ -140,7 +140,7 @@ export default async function StudentDashboard() {
     const fees = (feesResult.data || []) as { id: string; fee_type: string; amount: number }[]
     feeExpected = fees.reduce((s, f) => s + Number(f.amount), 0)
 
-    const feePayments = (paymentsResult.data || []).filter((p: { payment_type: string }) => FEE_RELEVANT_TYPES.includes(p.payment_type || ''))
+    const feePayments = (paymentsResult.data || []).filter((p: { payment_type: string }) => !NON_SCHOOL_FEE_TYPES.has(p.payment_type || ''))
     feePaid = feePayments.reduce((s: number, p: { amount: number }) => s + Number(p.amount), 0)
 
     let bestCredit = 0

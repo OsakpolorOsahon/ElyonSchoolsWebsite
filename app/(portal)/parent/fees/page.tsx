@@ -45,7 +45,7 @@ interface Payment {
   student_id?: string
 }
 
-const FEE_RELEVANT_TYPES = ['school_fee', 'tuition', 'pta_levy', 'books', 'uniform', 'technology_fee', 'sports_fee', 'lab_fee', 'exam_fee']
+const NON_SCHOOL_FEE_TYPES = new Set(['admission_fee', 'application_fee', 'donation'])
 
 const feeTypeLabels: Record<string, string> = {
   tuition: 'Tuition',
@@ -141,12 +141,13 @@ function FeesContent() {
 
   const childPayments = useMemo(() => {
     if (!selectedChild || !settings) return []
+    const currentYear = Number(settings.current_year)
     return payments.filter(p =>
       p.status === 'success' &&
       p.student_id === selectedChildId &&
       p.term === settings.current_term &&
-      p.year === settings.current_year &&
-      (FEE_RELEVANT_TYPES.includes(p.payment_type || '') || feeStructures.some(fs => fs.fee_type === p.payment_type))
+      Number(p.year) === currentYear &&
+      !NON_SCHOOL_FEE_TYPES.has(p.payment_type || '')
     )
   }, [selectedChildId, payments, settings, feeStructures, selectedChild])
 

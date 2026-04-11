@@ -97,7 +97,7 @@ const paymentTypeConfig: Record<string, { label: string; color: string }> = {
   other: { label: 'Other', color: 'bg-gray-100 text-gray-700' },
 }
 
-const FEE_RELEVANT_TYPES = ['school_fee', 'tuition', 'pta_levy', 'books', 'uniform', 'technology_fee', 'sports_fee', 'lab_fee', 'exam_fee']
+const NON_SCHOOL_FEE_TYPES = new Set(['admission_fee', 'application_fee', 'donation'])
 
 const filterOptions = ['All', 'Admission Fee', 'School Fee', 'Donation', 'Offline']
 
@@ -221,8 +221,13 @@ export default function AdminPaymentsPage() {
 
   const outstandingRows: OutstandingRow[] = useMemo(() => {
     if (!settings) return []
-    const { current_term, current_year } = settings
-    let termFees = feeStructures.filter(f => f.term === current_term && f.year === current_year)
+    const { current_term } = settings
+    const current_year = Number(settings.current_year)
+
+    // 1. Build expected amounts per class from fee structures (Number() guards against DB returning strings)
+    let termFees = feeStructures.filter(
+      f => f.term === current_term && Number(f.year) === current_year
+    )
     if (outstandingFeeTypeFilter !== 'all') {
       termFees = termFees.filter(f => f.fee_type === outstandingFeeTypeFilter)
     }
@@ -231,29 +236,32 @@ export default function AdminPaymentsPage() {
       feeByClass[f.class] = (feeByClass[f.class] || 0) + Number(f.amount)
     }
 
-    const relevantTypes = outstandingFeeTypeFilter !== 'all'
-      ? [outstandingFeeTypeFilter]
-      : FEE_RELEVANT_TYPES
-
-    const feePayments = payments.filter(p =>
-      p.status === 'success' &&
-      p.student_id &&
-      (relevantTypes.includes(p.payment_type || '') || feeStructures.some(fs => fs.fee_type === p.payment_type))
-    )
+    // 2. Count what each student has already paid this term.
+    //    Include ALL payment types except admission/application fees and donations —
+    //    this correctly handles custom fee types (e.g. "special_fee", "other") without
+    //    requiring a hardcoded allowlist.
+    const feePayments = payments.filter(p => {
+      if (p.status !== 'success' || !p.student_id) return false
+      const type = p.payment_type || ''
+      if (outstandingFeeTypeFilter !== 'all') return type === outstandingFeeTypeFilter
+      return !NON_SCHOOL_FEE_TYPES.has(type)
+    })
     const paidByStudent: Record<string, number> = {}
     for (const p of feePayments) {
-      if (p.term === current_term && p.year === current_year && p.student_id) {
+      if (p.term === current_term && Number(p.year) === current_year && p.student_id) {
         paidByStudent[p.student_id] = (paidByStudent[p.student_id] || 0) + Number(p.amount)
       }
     }
 
+    // 3. Apply scholarships — use Number() on year fields to prevent string/number mismatch
     const studentScholarships: Record<string, number> = {}
     for (const sc of scholarships) {
       const termMatch = !sc.applies_to_term || sc.applies_to_term === current_term
-      const yearMatch = !sc.applies_to_year || sc.applies_to_year === current_year
+      const yearMatch = !sc.applies_to_year || Number(sc.applies_to_year) === current_year
       if (!termMatch || !yearMatch) continue
       if (!studentScholarships[sc.student_id]) studentScholarships[sc.student_id] = 0
-      const baseExpected = feeByClass[students.find(s => s.id === sc.student_id)?.class || ''] || 0
+      const studentClass = students.find(s => s.id === sc.student_id)?.class || ''
+      const baseExpected = feeByClass[studentClass] || 0
       let credit = 0
       if (sc.coverage_type === 'full') credit = baseExpected
       else if (sc.coverage_type === 'percentage') credit = (baseExpected * Number(sc.coverage_value)) / 100
@@ -378,6 +386,22 @@ export default function AdminPaymentsPage() {
 
   const sortedStudents = useMemo(() => sortStudents(students), [students])
 
+  // All unique fee types from fee structures for the current term/year
+  const currentTermFeeTypes = useMemo(() => {
+    if (!settings) return []
+    const currentYear = Number(settings.current_year)
+    const currentTerm = settings.current_term
+    const types = new Map<string, string>()
+    for (const f of feeStructures) {
+      if (f.term !== currentTerm || Number(f.year) !== currentYear) continue
+      if (!types.has(f.fee_type)) {
+        const label = f.fee_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+        types.set(f.fee_type, label)
+      }
+    }
+    return Array.from(types.entries()).map(([value, label]) => ({ value, label }))
+  }, [feeStructures, settings])
+
   const filteredStudentList = useMemo(() => {
     if (!studentSearch) return sortedStudents.slice(0, 20)
     const q = studentSearch.toLowerCase()
@@ -392,6 +416,47 @@ export default function AdminPaymentsPage() {
     partial: 'bg-amber-100 text-amber-700',
     unpaid: 'bg-red-100 text-red-700',
   }
+
+  // Dynamic payment types for the offline payment dialog.
+  // Always includes the standard types; adds any custom types from fee structures
+  // (filtered to the selected student's class when a student is chosen).
+  const offlinePaymentTypeOptions = useMemo(() => {
+    const standard = [
+      { value: 'school_fee', label: 'School Fee' },
+      { value: 'tuition', label: 'Tuition' },
+      { value: 'pta_levy', label: 'PTA Levy' },
+      { value: 'books', label: 'Books' },
+      { value: 'uniform', label: 'Uniform' },
+      { value: 'technology_fee', label: 'Technology Fee' },
+      { value: 'sports_fee', label: 'Sports Fee' },
+      { value: 'lab_fee', label: 'Lab Fee' },
+      { value: 'exam_fee', label: 'Exam Fee' },
+      { value: 'donation', label: 'Donation' },
+    ]
+    const standardValues = new Set(standard.map(s => s.value))
+
+    const selectedStudent = offlineForm.student_id
+      ? students.find(s => s.id === offlineForm.student_id)
+      : null
+
+    const currentYear = settings ? Number(settings.current_year) : 0
+    const currentTerm = settings?.current_term || ''
+
+    const customTypes: { value: string; label: string }[] = []
+    const seen = new Set<string>()
+    for (const f of feeStructures) {
+      if (standardValues.has(f.fee_type) || seen.has(f.fee_type)) continue
+      if (currentTerm && f.term !== currentTerm) continue
+      if (currentYear && Number(f.year) !== currentYear) continue
+      if (selectedStudent && f.class !== selectedStudent.class) continue
+      seen.add(f.fee_type)
+      // Convert slug back to readable label (e.g. "special_fee" → "Special Fee")
+      const label = f.fee_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+      customTypes.push({ value: f.fee_type, label })
+    }
+
+    return [...standard, ...customTypes]
+  }, [feeStructures, offlineForm.student_id, students, settings])
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -611,15 +676,9 @@ export default function AdminPaymentsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Fee Types</SelectItem>
-                  <SelectItem value="school_fee">School Fee</SelectItem>
-                  <SelectItem value="tuition">Tuition</SelectItem>
-                  <SelectItem value="pta_levy">PTA Levy</SelectItem>
-                  <SelectItem value="books">Books</SelectItem>
-                  <SelectItem value="uniform">Uniform</SelectItem>
-                  <SelectItem value="technology_fee">Technology Fee</SelectItem>
-                  <SelectItem value="sports_fee">Sports Fee</SelectItem>
-                  <SelectItem value="lab_fee">Lab Fee</SelectItem>
-                  <SelectItem value="exam_fee">Exam Fee</SelectItem>
+                  {currentTermFeeTypes.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Button variant="outline" className="gap-2" onClick={downloadCSV} data-testid="button-download-csv">
@@ -751,19 +810,14 @@ export default function AdminPaymentsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="school_fee">School Fee</SelectItem>
-                    <SelectItem value="tuition">Tuition</SelectItem>
-                    <SelectItem value="pta_levy">PTA Levy</SelectItem>
-                    <SelectItem value="books">Books</SelectItem>
-                    <SelectItem value="uniform">Uniform</SelectItem>
-                    <SelectItem value="technology_fee">Technology Fee</SelectItem>
-                    <SelectItem value="sports_fee">Sports Fee</SelectItem>
-                    <SelectItem value="lab_fee">Lab Fee</SelectItem>
-                    <SelectItem value="exam_fee">Exam Fee</SelectItem>
-                    <SelectItem value="donation">Donation</SelectItem>
-                    <SelectItem value="other">Other (Custom)</SelectItem>
+                    {offlinePaymentTypeOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                {offlineForm.student_id && offlinePaymentTypeOptions.some(o => !['school_fee','tuition','pta_levy','books','uniform','technology_fee','sports_fee','lab_fee','exam_fee','donation'].includes(o.value)) && (
+                  <p className="text-xs text-muted-foreground">Custom fee types for this student's class are shown above.</p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">

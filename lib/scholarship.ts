@@ -37,7 +37,7 @@ export function calcScholarshipCredit(
   if (!scholarship || !scholarship.active) return 0
 
   if (scholarship.applies_to_term && scholarship.applies_to_term !== currentTerm) return 0
-  if (scholarship.applies_to_year && scholarship.applies_to_year !== currentYear) return 0
+  if (scholarship.applies_to_year && Number(scholarship.applies_to_year) !== Number(currentYear)) return 0
 
   const hasTypeFilter = Array.isArray(scholarship.fee_types) && scholarship.fee_types.length > 0
 
