@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { PortalHeader } from '@/components/portal/PortalHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -45,17 +45,19 @@ interface StudentRecord {
   profiles: { full_name: string } | null
 }
 
-const FEE_TYPE_OPTIONS = [
-  { value: 'tuition', label: 'Tuition' },
-  { value: 'pta_levy', label: 'PTA Levy' },
-  { value: 'books', label: 'Books' },
-  { value: 'uniform', label: 'Uniform' },
-  { value: 'technology_fee', label: 'Technology Fee' },
-  { value: 'sports_fee', label: 'Sports Fee' },
-  { value: 'lab_fee', label: 'Lab Fee' },
-  { value: 'exam_fee', label: 'Exam Fee' },
-  { value: 'school_fee', label: 'School Fee (General)' },
-]
+interface FeeStructure {
+  id: string
+  class: string
+  fee_type: string
+  amount: number
+  term: string
+  year: number
+}
+
+interface Settings {
+  current_term: string
+  current_year: number
+}
 
 const TERMS = ['First', 'Second', 'Third']
 const CURRENT_YEAR = new Date().getFullYear()
@@ -69,7 +71,7 @@ function coverageLabel(s: Scholarship): string {
 
 function scopeLabel(s: Scholarship): string {
   if (!s.fee_types || s.fee_types.length === 0) return 'All fees'
-  return s.fee_types.map(t => FEE_TYPE_OPTIONS.find(o => o.value === t)?.label || t).join(', ')
+  return s.fee_types.map(t => t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())).join(', ')
 }
 
 const BLANK_FORM = {
@@ -92,6 +94,9 @@ export default function AdminScholarshipsPage() {
   const [search, setSearch] = useState('')
   const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all')
 
+  const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([])
+  const [settings, setSettings] = useState<Settings | null>(null)
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Scholarship | null>(null)
   const [form, setForm] = useState(BLANK_FORM)
@@ -100,15 +105,39 @@ export default function AdminScholarshipsPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null)
 
   async function loadData() {
-    const [schRes, studRes] = await Promise.all([
+    const [schRes, studRes, fsRes, settRes] = await Promise.all([
       fetch('/api/admin/scholarships'),
       fetch('/api/admin/students'),
+      fetch('/api/admin/fee-structures'),
+      fetch('/api/settings'),
     ])
     const schData = await schRes.json()
     const studData = await studRes.json()
+    const fsData = await fsRes.json()
+    const settData = await settRes.json()
     setScholarships((schData.scholarships || []) as Scholarship[])
     setStudents((studData.students || []) as StudentRecord[])
+    setFeeStructures((fsData.fee_structures || []) as FeeStructure[])
+    if (settData.settings) setSettings(settData.settings as Settings)
   }
+
+  // Fee type options derived from fee structures for the currently selected student's class
+  const scholarshipFeeTypeOptions = useMemo(() => {
+    const currentYear = settings ? Number(settings.current_year) : 0
+    const currentTerm = settings?.current_term || ''
+    const selectedStudent = form.student_id ? students.find(s => s.id === form.student_id) : null
+
+    const seen = new Map<string, string>()
+    for (const f of feeStructures) {
+      if (seen.has(f.fee_type)) continue
+      if (currentTerm && f.term !== currentTerm) continue
+      if (currentYear && Number(f.year) !== currentYear) continue
+      if (selectedStudent && f.class !== selectedStudent.class) continue
+      const label = f.fee_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+      seen.set(f.fee_type, label)
+    }
+    return Array.from(seen.entries()).map(([value, label]) => ({ value, label }))
+  }, [feeStructures, settings, form.student_id, students])
 
   useEffect(() => {
     const load = async () => {
@@ -156,6 +185,10 @@ export default function AdminScholarshipsPage() {
   async function handleSave() {
     if (!form.student_id || !form.name.trim() || !form.coverage_type) {
       toast({ title: 'Missing fields', description: 'Student, scholarship name, and coverage type are required.', variant: 'destructive' })
+      return
+    }
+    if (form.fee_types.length === 0) {
+      toast({ title: 'Fee type required', description: 'Please select at least one fee type this scholarship applies to.', variant: 'destructive' })
       return
     }
     const val = parseFloat(form.coverage_value)
@@ -423,7 +456,7 @@ export default function AdminScholarshipsPage() {
               <Label>Student *</Label>
               <Select
                 value={form.student_id}
-                onValueChange={v => setForm(f => ({ ...f, student_id: v }))}
+                onValueChange={v => setForm(f => ({ ...f, student_id: v, fee_types: [] }))}
                 disabled={!!editTarget}
               >
                 <SelectTrigger data-testid="select-scholarship-student">
@@ -492,29 +525,44 @@ export default function AdminScholarshipsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Applies To (leave all unchecked for all fees)</Label>
-              <div className="flex flex-wrap gap-2 border rounded-md p-3">
-                {FEE_TYPE_OPTIONS.map(opt => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => toggleFeeType(opt.value)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                      form.fee_types.includes(opt.value)
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
-                    }`}
-                    data-testid={`fee-type-toggle-${opt.value}`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {form.fee_types.length === 0
-                  ? 'Will apply to all fee types'
-                  : `Applies only to: ${form.fee_types.map(t => FEE_TYPE_OPTIONS.find(o => o.value === t)?.label || t).join(', ')}`}
-              </p>
+              <Label>
+                Fee Types *{' '}
+                <span className="text-xs font-normal text-muted-foreground">(select all that apply)</span>
+              </Label>
+              {!form.student_id ? (
+                <p className="text-xs text-muted-foreground border rounded-md p-3 bg-muted/30">
+                  Select a student above to see available fee types for their class.
+                </p>
+              ) : scholarshipFeeTypeOptions.length === 0 ? (
+                <p className="text-xs text-amber-600 border border-amber-200 rounded-md p-3 bg-amber-50">
+                  No fee structures found for this student&apos;s class in the current term. Add them in Fee Structures first.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2 border rounded-md p-3">
+                  {scholarshipFeeTypeOptions.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => toggleFeeType(opt.value)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                        form.fee_types.includes(opt.value)
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
+                      }`}
+                      data-testid={`fee-type-toggle-${opt.value}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {form.student_id && scholarshipFeeTypeOptions.length > 0 && (
+                <p className={`text-xs ${form.fee_types.length === 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  {form.fee_types.length === 0
+                    ? 'At least one fee type must be selected.'
+                    : `Applies to: ${form.fee_types.map(t => t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())).join(', ')}`}
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

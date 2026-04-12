@@ -58,6 +58,8 @@ interface AcademicSettings {
 
 interface OutstandingRow {
   student: Student
+  grossExpected: number
+  scholarshipCredit: number
   expected: number
   paid: number
   balance: number
@@ -270,16 +272,16 @@ export default function AdminPaymentsPage() {
     }
 
     const rows = students.map(student => {
-      const baseExpected = feeByClass[student.class] || 0
-      const credit = studentScholarships[student.id] || 0
-      const expected = Math.max(0, baseExpected - credit)
+      const grossExpected = feeByClass[student.class] || 0
+      const scholarshipCredit = studentScholarships[student.id] || 0
+      const expected = Math.max(0, grossExpected - scholarshipCredit)
       const paid = paidByStudent[student.id] || 0
       const balance = expected - paid
       let status: 'paid' | 'partial' | 'unpaid' = 'unpaid'
       if (expected === 0) status = paid > 0 ? 'paid' : 'unpaid'
       else if (balance <= 0) status = 'paid'
       else if (paid > 0) status = 'partial'
-      return { student, expected, paid, balance: Math.max(0, balance), status }
+      return { student, grossExpected, scholarshipCredit, expected, paid, balance: Math.max(0, balance), status }
     })
     return sortStudents(rows.map(r => r.student)).map(s => rows.find(r => r.student.id === s.id)!)
   }, [students, feeStructures, payments, settings, scholarships, outstandingFeeTypeFilter])
@@ -303,6 +305,8 @@ export default function AdminPaymentsPage() {
     paid: outstandingRows.filter(r => r.status === 'paid').length,
     partial: outstandingRows.filter(r => r.status === 'partial').length,
     unpaid: outstandingRows.filter(r => r.status === 'unpaid').length,
+    totalGross: outstandingRows.reduce((s, r) => s + r.grossExpected, 0),
+    totalScholarship: outstandingRows.reduce((s, r) => s + r.scholarshipCredit, 0),
     totalExpected: outstandingRows.reduce((s, r) => s + r.expected, 0),
     totalPaid: outstandingRows.reduce((s, r) => s + r.paid, 0),
     totalBalance: outstandingRows.reduce((s, r) => s + r.balance, 0),
@@ -417,45 +421,31 @@ export default function AdminPaymentsPage() {
     unpaid: 'bg-red-100 text-red-700',
   }
 
-  // Dynamic payment types for the offline payment dialog.
-  // Always includes the standard types; adds any custom types from fee structures
-  // (filtered to the selected student's class when a student is chosen).
+  // Dynamic payment type options for the offline payment dialog.
+  // Shows ONLY the fee types that actually exist in fee structures for the
+  // selected student's class (current term/year), plus Donation as a non-fee option.
+  // If no student is selected yet, shows all fee types across all classes for the current term.
   const offlinePaymentTypeOptions = useMemo(() => {
-    const standard = [
-      { value: 'school_fee', label: 'School Fee' },
-      { value: 'tuition', label: 'Tuition' },
-      { value: 'pta_levy', label: 'PTA Levy' },
-      { value: 'books', label: 'Books' },
-      { value: 'uniform', label: 'Uniform' },
-      { value: 'technology_fee', label: 'Technology Fee' },
-      { value: 'sports_fee', label: 'Sports Fee' },
-      { value: 'lab_fee', label: 'Lab Fee' },
-      { value: 'exam_fee', label: 'Exam Fee' },
-      { value: 'donation', label: 'Donation' },
-    ]
-    const standardValues = new Set(standard.map(s => s.value))
-
+    const currentYear = settings ? Number(settings.current_year) : 0
+    const currentTerm = settings?.current_term || ''
     const selectedStudent = offlineForm.student_id
       ? students.find(s => s.id === offlineForm.student_id)
       : null
 
-    const currentYear = settings ? Number(settings.current_year) : 0
-    const currentTerm = settings?.current_term || ''
-
-    const customTypes: { value: string; label: string }[] = []
-    const seen = new Set<string>()
+    const seen = new Map<string, string>()
     for (const f of feeStructures) {
-      if (standardValues.has(f.fee_type) || seen.has(f.fee_type)) continue
+      if (seen.has(f.fee_type)) continue
       if (currentTerm && f.term !== currentTerm) continue
       if (currentYear && Number(f.year) !== currentYear) continue
       if (selectedStudent && f.class !== selectedStudent.class) continue
-      seen.add(f.fee_type)
-      // Convert slug back to readable label (e.g. "special_fee" → "Special Fee")
       const label = f.fee_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-      customTypes.push({ value: f.fee_type, label })
+      seen.set(f.fee_type, label)
     }
 
-    return [...standard, ...customTypes]
+    const types = Array.from(seen.entries()).map(([value, label]) => ({ value, label }))
+    // Always include Donation as a non-school-fee option
+    if (!seen.has('donation')) types.push({ value: 'donation', label: 'Donation' })
+    return types
   }, [feeStructures, offlineForm.student_id, students, settings])
 
   return (
@@ -612,8 +602,18 @@ export default function AdminPaymentsPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                 <Card>
                   <CardContent className="pt-4 pb-4">
-                    <p className="text-xs text-muted-foreground">Expected</p>
-                    <p className="text-lg font-bold text-primary">{formatAmount(outstandingStats.totalExpected)}</p>
+                    <p className="text-xs text-muted-foreground">Total Fees</p>
+                    <p className="text-lg font-bold text-primary">{formatAmount(outstandingStats.totalGross)}</p>
+                    {outstandingStats.totalScholarship > 0 && (
+                      <p className="text-xs text-emerald-600">−{formatAmount(outstandingStats.totalScholarship)} scholarship</p>
+                    )}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4">
+                    <p className="text-xs text-muted-foreground">Net Expected</p>
+                    <p className="text-lg font-bold text-foreground">{formatAmount(outstandingStats.totalExpected)}</p>
+                    <p className="text-xs text-muted-foreground">after discounts</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -624,14 +624,9 @@ export default function AdminPaymentsPage() {
                 </Card>
                 <Card>
                   <CardContent className="pt-4 pb-4">
-                    <p className="text-xs text-muted-foreground">Outstanding</p>
+                    <p className="text-xs text-muted-foreground">Still Owed</p>
                     <p className="text-lg font-bold text-red-600">{formatAmount(outstandingStats.totalBalance)}</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-4">
-                    <p className="text-xs text-muted-foreground">Current Term</p>
-                    <p className="text-lg font-bold">{settings.current_term} {settings.current_year}</p>
+                    <p className="text-xs text-muted-foreground">{settings.current_term} {settings.current_year}</p>
                   </CardContent>
                 </Card>
               </div>
@@ -719,11 +714,17 @@ export default function AdminPaymentsPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-4 shrink-0 flex-wrap">
-                          <div className="text-right text-sm">
-                            <p className="text-muted-foreground">Expected: <span className="font-medium text-foreground">{formatAmount(row.expected)}</span></p>
+                          <div className="text-right text-sm space-y-0.5">
+                            <p className="text-muted-foreground">Fee: <span className="font-medium text-foreground">{formatAmount(row.grossExpected)}</span></p>
+                            {row.scholarshipCredit > 0 && (
+                              <p className="text-muted-foreground">Scholarship: <span className="font-medium text-emerald-600">−{formatAmount(row.scholarshipCredit)}</span></p>
+                            )}
                             <p className="text-muted-foreground">Paid: <span className="font-medium text-green-600">{formatAmount(row.paid)}</span></p>
                             {row.balance > 0 && (
                               <p className="text-muted-foreground">Balance: <span className="font-bold text-red-600">{formatAmount(row.balance)}</span></p>
+                            )}
+                            {row.balance <= 0 && row.grossExpected > 0 && (
+                              <p className="font-medium text-green-600 text-xs">Settled ✓</p>
                             )}
                           </div>
                           <Badge className={feeStatusColor[row.status]}>{row.status.charAt(0).toUpperCase() + row.status.slice(1)}</Badge>
@@ -805,18 +806,29 @@ export default function AdminPaymentsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Payment Type *</Label>
-                <Select value={offlineForm.payment_type} onValueChange={v => setOfflineForm(f => ({ ...f, payment_type: v }))}>
+                <Select
+                  value={offlinePaymentTypeOptions.some(o => o.value === offlineForm.payment_type) ? offlineForm.payment_type : (offlinePaymentTypeOptions[0]?.value || '')}
+                  onValueChange={v => setOfflineForm(f => ({ ...f, payment_type: v }))}
+                >
                   <SelectTrigger data-testid="input-offline-type">
-                    <SelectValue />
+                    <SelectValue placeholder="Select fee type..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {offlinePaymentTypeOptions.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
+                    {offlinePaymentTypeOptions.length === 0 ? (
+                      <SelectItem value="_none" disabled>No fee structures defined for this class</SelectItem>
+                    ) : (
+                      offlinePaymentTypeOptions.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
-                {offlineForm.student_id && offlinePaymentTypeOptions.some(o => !['school_fee','tuition','pta_levy','books','uniform','technology_fee','sports_fee','lab_fee','exam_fee','donation'].includes(o.value)) && (
-                  <p className="text-xs text-muted-foreground">Custom fee types for this student's class are shown above.</p>
+                {offlineForm.student_id && (
+                  <p className="text-xs text-muted-foreground">
+                    {offlinePaymentTypeOptions.length > 0
+                      ? `Showing fee types for ${students.find(s => s.id === offlineForm.student_id)?.class || 'this student'}'s class`
+                      : 'No fee structures found for this student\'s class. Add them in Fee Structures first.'}
+                  </p>
                 )}
               </div>
             </div>
