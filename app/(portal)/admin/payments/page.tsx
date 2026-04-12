@@ -71,6 +71,7 @@ interface Scholarship {
   student_id: string
   coverage_type: 'full' | 'percentage' | 'fixed'
   coverage_value: number
+  fee_types: string[] | null
   applies_to_term: string | null
   applies_to_year: number | null
   active: boolean
@@ -255,20 +256,43 @@ export default function AdminPaymentsPage() {
       }
     }
 
-    // 3. Apply scholarships — use Number() on year fields to prevent string/number mismatch
+    // 3. Apply scholarships correctly:
+    //    - Only credit fee types that the scholarship was designated for
+    //    - When a fee type filter is active, only credit if the scholarship covers that fee type
     const studentScholarships: Record<string, number> = {}
     for (const sc of scholarships) {
+      if (!sc.active) continue
       const termMatch = !sc.applies_to_term || sc.applies_to_term === current_term
       const yearMatch = !sc.applies_to_year || Number(sc.applies_to_year) === current_year
       if (!termMatch || !yearMatch) continue
       if (!studentScholarships[sc.student_id]) studentScholarships[sc.student_id] = 0
       const studentClass = students.find(s => s.id === sc.student_id)?.class || ''
-      const baseExpected = feeByClass[studentClass] || 0
+
+      // Start with all fee structures for this student's class/term/year
+      let applicableFees = feeStructures.filter(
+        f => f.class === studentClass && f.term === current_term && Number(f.year) === current_year
+      )
+      // Restrict to the fee types this scholarship was designated for (if specified)
+      const hasTypeFilter = Array.isArray(sc.fee_types) && sc.fee_types.length > 0
+      if (hasTypeFilter) {
+        applicableFees = applicableFees.filter(f => sc.fee_types!.includes(f.fee_type))
+      }
+      // Further restrict to the current outstanding fee type filter (e.g. "pta_levy" tab)
+      if (outstandingFeeTypeFilter !== 'all') {
+        applicableFees = applicableFees.filter(f => f.fee_type === outstandingFeeTypeFilter)
+      }
+
+      // The scholarship only applies where its designated fees overlap with the current view
+      const applicableTotal = applicableFees.reduce((s, f) => s + Number(f.amount), 0)
+      if (applicableTotal === 0) continue
+
       let credit = 0
-      if (sc.coverage_type === 'full') credit = baseExpected
-      else if (sc.coverage_type === 'percentage') credit = (baseExpected * Number(sc.coverage_value)) / 100
-      else if (sc.coverage_type === 'fixed') credit = Number(sc.coverage_value)
-      studentScholarships[sc.student_id] = Math.min(studentScholarships[sc.student_id] + credit, baseExpected)
+      if (sc.coverage_type === 'full') credit = applicableTotal
+      else if (sc.coverage_type === 'percentage') credit = Math.round((Number(sc.coverage_value) / 100) * applicableTotal)
+      else if (sc.coverage_type === 'fixed') credit = Math.min(Number(sc.coverage_value), applicableTotal)
+
+      const maxCredit = feeByClass[studentClass] || 0
+      studentScholarships[sc.student_id] = Math.min(studentScholarships[sc.student_id] + credit, maxCredit)
     }
 
     const rows = students.map(student => {
