@@ -22,6 +22,13 @@ const ALL_CLASSES = [
 ]
 const CLASS_ORDER = ALL_CLASSES.reduce<Record<string, number>>((acc, cls, i) => { acc[cls] = i; return acc }, {})
 
+function getStudentName(student: { full_name: string | null; profiles: { full_name: string } | { full_name: string }[] | null }): string {
+  const profileName = Array.isArray(student.profiles)
+    ? student.profiles[0]?.full_name
+    : student.profiles?.full_name
+  return profileName || student.full_name || 'Unknown'
+}
+
 const GRADE_COLORS: Record<string, string> = {
   A: 'bg-green-100 text-green-800',
   B: 'bg-blue-100 text-blue-800',
@@ -42,7 +49,7 @@ interface Student {
   admission_number: string
   class: string
   full_name: string | null
-  profiles: { full_name: string } | null
+  profiles: { full_name: string } | { full_name: string }[] | null
 }
 
 interface SubjectResult {
@@ -154,8 +161,8 @@ export default function TeacherBatchCommentsPage() {
       const oa = CLASS_ORDER[a.class] ?? 99
       const ob = CLASS_ORDER[b.class] ?? 99
       if (oa !== ob) return oa - ob
-      const na = (a.profiles?.full_name || a.full_name || '').toLowerCase()
-      const nb = (b.profiles?.full_name || b.full_name || '').toLowerCase()
+      const na = getStudentName(a).toLowerCase()
+      const nb = getStudentName(b).toLowerCase()
       return na.localeCompare(nb)
     })
   }, [students])
@@ -164,7 +171,7 @@ export default function TeacherBatchCommentsPage() {
     return sortedStudents.filter(s => {
       if (selectedClass !== 'all' && s.class !== selectedClass) return false
       if (search) {
-        const name = (s.profiles?.full_name || s.full_name || '').toLowerCase()
+        const name = getStudentName(s).toLowerCase()
         const adm = s.admission_number.toLowerCase()
         if (!name.includes(search.toLowerCase()) && !adm.includes(search.toLowerCase())) return false
       }
@@ -377,7 +384,7 @@ export default function TeacherBatchCommentsPage() {
             ) : (
               <div className="space-y-3">
                 {filteredStudents.map(student => {
-                  const name = student.profiles?.full_name || student.full_name || 'Unknown'
+                  const name = getStudentName(student)
                   const current = comments[student.id] || ''
                   const original = existingComments[student.id] || ''
                   const isDirty = current !== original
