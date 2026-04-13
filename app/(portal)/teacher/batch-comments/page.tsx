@@ -53,12 +53,13 @@ interface SubjectResult {
   grade: string | null
 }
 
-export default function BatchCommentsPage() {
+export default function TeacherBatchCommentsPage() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [exams, setExams] = useState<Exam[]>([])
   const [students, setStudents] = useState<Student[]>([])
+  const [assignedClasses, setAssignedClasses] = useState<string[]>([])
   const [selectedExam, setSelectedExam] = useState('')
   const [selectedClass, setSelectedClass] = useState('all')
   const [comments, setComments] = useState<Record<string, string>>({})
@@ -71,13 +72,34 @@ export default function BatchCommentsPage() {
   useEffect(() => {
     const load = async () => {
       const supabase = createClient()
-      const [examsRes, studentsRes] = await Promise.all([
-        supabase.from('exams').select('*').order('year', { ascending: false }),
-        fetch('/api/admin/students').then(r => r.json()),
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { setLoading(false); return }
+
+      const [classRes, examsRes] = await Promise.all([
+        supabase
+          .from('class_teacher')
+          .select('class')
+          .eq('teacher_profile_id', session.user.id),
+        supabase
+          .from('exams')
+          .select('*')
+          .order('year', { ascending: false }),
       ])
+
+      const myClasses = ((classRes.data || []) as { class: string }[]).map(c => c.class)
+        .sort((a, b) => (CLASS_ORDER[a] ?? 99) - (CLASS_ORDER[b] ?? 99))
+      setAssignedClasses(myClasses)
       setExams(examsRes.data || [])
-      const activeStudents = ((studentsRes.students || []) as Student[]).filter((s: any) => s.status === 'active')
-      setStudents(activeStudents)
+
+      if (myClasses.length > 0) {
+        const { data: studentsData } = await supabase
+          .from('students')
+          .select('id, admission_number, class, full_name, profiles!profile_id(full_name)')
+          .in('class', myClasses)
+          .eq('status', 'active')
+        setStudents((studentsData || []) as unknown as Student[])
+        if (myClasses.length === 1) setSelectedClass(myClasses[0])
+      }
       setLoading(false)
     }
     load()
@@ -91,22 +113,25 @@ export default function BatchCommentsPage() {
     Promise.all([
       supabase
         .from('report_card_comments')
-        .select('student_id, principal_comment')
+        .select('student_id, teacher_comment')
         .eq('exam_id', selectedExam),
       supabase
         .from('student_results')
         .select('student_id, ca_score, exam_score, score, grade, subjects(name)')
         .eq('exam_id', selectedExam),
     ]).then(([commentsRes, resultsRes]) => {
+      const myStudentIds = new Set(students.map(s => s.id))
       const existing: Record<string, string> = {}
       for (const row of commentsRes.data || []) {
-        if (row.principal_comment) existing[row.student_id] = row.principal_comment
+        if (myStudentIds.has(row.student_id) && row.teacher_comment)
+          existing[row.student_id] = row.teacher_comment
       }
       setExistingComments(existing)
       setComments(existing)
 
       const byStudent: Record<string, SubjectResult[]> = {}
       for (const row of (resultsRes.data || []) as any[]) {
+        if (!myStudentIds.has(row.student_id)) continue
         if (!byStudent[row.student_id]) byStudent[row.student_id] = []
         byStudent[row.student_id].push({
           subject_name: Array.isArray(row.subjects) ? (row.subjects[0]?.name || 'Unknown') : (row.subjects?.name || 'Unknown'),
@@ -171,7 +196,7 @@ export default function BatchCommentsPage() {
           const res = await fetch(`/api/report-card/${student.id}/${selectedExam}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ principal_comment: comments[student.id] || '' }),
+            body: JSON.stringify({ teacher_comment: comments[student.id] || '' }),
           })
           if (!res.ok) {
             const err = await res.json().catch(() => ({}))
@@ -193,7 +218,7 @@ export default function BatchCommentsPage() {
       } else {
         toast({
           title: `✓ ${succeeded} comment${succeeded !== 1 ? 's' : ''} saved!`,
-          description: 'All principal comments have been updated.',
+          description: 'All teacher comments have been updated.',
         })
         setExistingComments(prev => {
           const updated = { ...prev }
@@ -222,7 +247,7 @@ export default function BatchCommentsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-muted/30">
-        <PortalHeader title="Batch Report Comments" subtitle="Add comments for multiple students at once" role="admin" />
+        <PortalHeader title="Batch Report Comments" subtitle="Add your teacher comments for all students at once" role="teacher" />
         <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -230,13 +255,37 @@ export default function BatchCommentsPage() {
     )
   }
 
+  if (assignedClasses.length === 0) {
+    return (
+      <div className="min-h-screen bg-muted/30">
+        <PortalHeader title="Batch Report Comments" subtitle="Add your teacher comments for all students at once" role="teacher" />
+        <main className="mx-auto max-w-4xl px-6 py-8">
+          <div className="flex items-center gap-4 mb-6">
+            <Link href="/teacher">
+              <Button variant="ghost" size="sm" className="gap-1">
+                <ArrowLeft className="h-4 w-4" /> Dashboard
+              </Button>
+            </Link>
+          </div>
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
+              <p>You are not assigned as a class teacher for any class yet.</p>
+              <p className="text-sm mt-1">Contact the admin to get assigned to a class.</p>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-muted/30">
-      <PortalHeader title="Batch Principal Comments" subtitle="Write and save principal comments for multiple students efficiently" role="admin" />
+      <PortalHeader title="Batch Teacher Comments" subtitle="Write and save your comments for all students efficiently" role="teacher" />
 
       <main className="mx-auto max-w-4xl px-6 py-8">
         <div className="flex items-center gap-4 mb-6">
-          <Link href="/admin">
+          <Link href="/teacher">
             <Button variant="ghost" size="sm" className="gap-1">
               <ArrowLeft className="h-4 w-4" /> Dashboard
             </Button>
@@ -249,7 +298,10 @@ export default function BatchCommentsPage() {
               <MessageSquare className="h-5 w-5 text-primary" />
               Filter Students
             </CardTitle>
-            <CardDescription>Select an exam, then optionally filter by class and search</CardDescription>
+            <CardDescription>
+              Select an exam, then optionally filter by class and search.
+              You can only comment on students in your assigned {assignedClasses.length > 1 ? 'classes' : 'class'}: {assignedClasses.join(', ')}.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -270,11 +322,11 @@ export default function BatchCommentsPage() {
                 <Label>Class</Label>
                 <Select value={selectedClass} onValueChange={setSelectedClass}>
                   <SelectTrigger data-testid="select-class">
-                    <SelectValue placeholder="All Classes" />
+                    <SelectValue placeholder="All My Classes" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Classes</SelectItem>
-                    {ALL_CLASSES.map(c => (
+                    {assignedClasses.length > 1 && <SelectItem value="all">All My Classes</SelectItem>}
+                    {assignedClasses.map(c => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
                   </SelectContent>
@@ -395,7 +447,7 @@ export default function BatchCommentsPage() {
                         )}
 
                         <Textarea
-                          placeholder="Enter principal's comment for this student..."
+                          placeholder="Enter your teacher's comment for this student..."
                           value={current}
                           onChange={e => setComments(prev => ({ ...prev, [student.id]: e.target.value }))}
                           rows={2}
@@ -424,7 +476,7 @@ export default function BatchCommentsPage() {
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
               <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
-              <p>Select an exam above to start adding principal comments for students.</p>
+              <p>Select an exam above to start adding your comments for students.</p>
             </CardContent>
           </Card>
         )}

@@ -14,6 +14,7 @@ import {
   Clock,
   Megaphone,
   ClipboardList,
+  MessageSquare,
 } from 'lucide-react'
 
 export const metadata = {
@@ -94,7 +95,7 @@ export default async function TeacherDashboard() {
       />
 
       <main className="mx-auto max-w-7xl px-6 py-8 animate-fade-up">
-        <div className="mb-8 grid gap-4 sm:grid-cols-2">
+        <div className="mb-8 grid gap-4 sm:grid-cols-3">
           <Link href="/teacher/results/upload">
             <Card className="bg-primary text-primary-foreground hover-elevate">
               <CardContent className="pt-6">
@@ -126,6 +127,24 @@ export default async function TeacherDashboard() {
                   <div className="flex items-center gap-2">
                     <ClipboardList className="h-6 w-6" />
                     <ArrowRight className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/teacher/batch-comments">
+            <Card className="hover-elevate border-primary/20">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-semibold">Batch Report Comments</p>
+                    <p className="text-sm text-muted-foreground">
+                      Write comments for all students at once
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-6 w-6 text-primary" />
+                    <ArrowRight className="h-5 w-5 text-muted-foreground" />
                   </div>
                 </div>
               </CardContent>
