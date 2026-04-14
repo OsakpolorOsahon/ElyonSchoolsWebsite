@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { PWAInstallBanner } from '@/components/pwa/PWASetup'
 
 export default async function PortalLayout({
   children,
@@ -19,6 +20,7 @@ export default async function PortalLayout({
   return (
     <div className="min-h-screen">
       {children}
+      <PWAInstallBanner />
     </div>
   )
 }
