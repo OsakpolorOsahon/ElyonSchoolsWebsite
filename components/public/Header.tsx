@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Menu, X, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -42,6 +42,30 @@ const roleDashboardMap: Record<string, string> = {
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [dashboardHref, setDashboardHref] = useState<string | null>(null)
+  const [hidden, setHidden] = useState(false)
+  const lastScrollY = useRef(0)
+  const headerRef = useRef<HTMLElement>(null)
+  const [headerHeight, setHeaderHeight] = useState(0)
+
+  useEffect(() => {
+    if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight)
+  }, [])
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY
+      if (currentY <= 0) {
+        setHidden(false)
+      } else if (currentY > lastScrollY.current && currentY > 80) {
+        setHidden(true)
+      } else if (currentY < lastScrollY.current) {
+        setHidden(false)
+      }
+      lastScrollY.current = currentY
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -60,7 +84,11 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+      <div style={{ height: headerHeight || 73 }} />
+      <header
+        ref={headerRef}
+        className={`fixed top-0 left-0 right-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border transition-transform duration-300 ${hidden ? '-translate-y-full' : 'translate-y-0'}`}
+      >
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 lg:px-8" aria-label="Global">
           <div className="flex lg:flex-1">
             <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-3" data-testid="link-home-logo">
