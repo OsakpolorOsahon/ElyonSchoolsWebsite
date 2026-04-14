@@ -99,12 +99,8 @@ export default function TeacherBatchCommentsPage() {
       setExams(examsRes.data || [])
 
       if (myClasses.length > 0) {
-        const { data: studentsData } = await supabase
-          .from('students')
-          .select('id, admission_number, class, full_name, profiles!profile_id(full_name)')
-          .in('class', myClasses)
-          .eq('status', 'active')
-        setStudents((studentsData || []) as unknown as Student[])
+        const studentsRes = await fetch('/api/teacher/students').then(r => r.json())
+        setStudents((studentsRes.students || []) as Student[])
         if (myClasses.length === 1) setSelectedClass(myClasses[0])
       }
       setLoading(false)
