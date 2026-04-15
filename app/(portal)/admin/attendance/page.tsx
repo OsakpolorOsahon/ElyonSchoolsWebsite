@@ -104,7 +104,16 @@ export default function AdminAttendancePage() {
       }
       const data = await res.json()
       setRecords(data.records || [])
-      setSummary(data.summary || [])
+      const rawSummary: StudentSummary[] = data.summary || []
+      const classOrderMap: Record<string, number> = ALL_CLASSES.reduce<Record<string, number>>((acc, cls, i) => { acc[cls] = i; return acc }, {})
+      setSummary(
+        [...rawSummary].sort((a, b) => {
+          const oa = classOrderMap[a.class] ?? 99
+          const ob = classOrderMap[b.class] ?? 99
+          if (oa !== ob) return oa - ob
+          return a.name.localeCompare(b.name)
+        })
+      )
     } finally {
       setLoading(false)
     }

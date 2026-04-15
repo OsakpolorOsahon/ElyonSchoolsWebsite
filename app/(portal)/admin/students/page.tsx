@@ -66,6 +66,8 @@ const ALL_CLASSES = [
   'SSS 1', 'SSS 2', 'SSS 3',
 ]
 
+const CLASS_ORDER = ALL_CLASSES.reduce<Record<string, number>>((acc, cls, i) => { acc[cls] = i; return acc }, {})
+
 const SSS_CLASSES = ['SSS 1', 'SSS 2', 'SSS 3']
 const DEPARTMENTS = ['Science', 'Commercial', 'Art']
 
@@ -275,15 +277,22 @@ export default function AdminStudentsPage() {
   useEffect(() => {
     const q = search.toLowerCase()
     setFiltered(
-      students.filter(s => {
-        const name = getStudentName(s)
-        const matchesSearch =
-          name.toLowerCase().includes(q) ||
-          s.admission_number.toLowerCase().includes(q) ||
-          s.class.toLowerCase().includes(q)
-        const matchesStatus = statusFilter === 'all' || s.status === statusFilter
-        return matchesSearch && matchesStatus
-      })
+      students
+        .filter(s => {
+          const name = getStudentName(s)
+          const matchesSearch =
+            name.toLowerCase().includes(q) ||
+            s.admission_number.toLowerCase().includes(q) ||
+            s.class.toLowerCase().includes(q)
+          const matchesStatus = statusFilter === 'all' || s.status === statusFilter
+          return matchesSearch && matchesStatus
+        })
+        .sort((a, b) => {
+          const oa = CLASS_ORDER[a.class] ?? 99
+          const ob = CLASS_ORDER[b.class] ?? 99
+          if (oa !== ob) return oa - ob
+          return getStudentName(a).localeCompare(getStudentName(b))
+        })
     )
   }, [search, students, statusFilter])
 

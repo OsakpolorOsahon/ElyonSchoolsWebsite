@@ -78,7 +78,14 @@ export default function TeacherAttendancePage() {
       const data = await res.json()
       setAssignedClasses(data.assignedClasses || [])
       setActiveClass(data.activeClass || '')
-      setStudents(data.students || [])
+      const fetchedStudents: Student[] = (data.students || [])
+      setStudents(
+        [...fetchedStudents].sort((a, b) => {
+          const na = (a.profiles?.full_name || a.full_name || '').toLowerCase()
+          const nb = (b.profiles?.full_name || b.full_name || '').toLowerCase()
+          return na.localeCompare(nb)
+        })
+      )
 
       // Pre-fill existing records
       const statusMap: Record<string, AttendanceStatus> = {}

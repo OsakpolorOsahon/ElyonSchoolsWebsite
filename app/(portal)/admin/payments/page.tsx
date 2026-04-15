@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, ArrowLeft, CreditCard, TrendingUp, Plus, Download, Search, Banknote } from 'lucide-react'
+import { StudentCombobox, StudentOption, sortStudentOptions } from '@/components/portal/StudentCombobox'
 
 interface Payment {
   id: string
@@ -141,7 +142,6 @@ export default function AdminPaymentsPage() {
 
   const [offlineDialogOpen, setOfflineDialogOpen] = useState(false)
   const [offlineSaving, setOfflineSaving] = useState(false)
-  const [studentSearch, setStudentSearch] = useState('')
   const [offlineForm, setOfflineForm] = useState({
     student_id: '',
     amount: '',
@@ -346,7 +346,6 @@ export default function AdminPaymentsPage() {
       notes: '',
       date: new Date().toISOString().split('T')[0],
     })
-    setStudentSearch('')
     setOfflineDialogOpen(true)
   }
 
@@ -412,8 +411,6 @@ export default function AdminPaymentsPage() {
     URL.revokeObjectURL(url)
   }
 
-  const sortedStudents = useMemo(() => sortStudents(students), [students])
-
   // All unique fee types from fee structures for the current term/year
   const currentTermFeeTypes = useMemo(() => {
     if (!settings) return []
@@ -430,14 +427,17 @@ export default function AdminPaymentsPage() {
     return Array.from(types.entries()).map(([value, label]) => ({ value, label }))
   }, [feeStructures, settings])
 
-  const filteredStudentList = useMemo(() => {
-    if (!studentSearch) return sortedStudents.slice(0, 20)
-    const q = studentSearch.toLowerCase()
-    return sortedStudents.filter(s =>
-      (s.profiles?.full_name || s.full_name || '').toLowerCase().includes(q) ||
-      s.admission_number.toLowerCase().includes(q)
-    ).slice(0, 20)
-  }, [sortedStudents, studentSearch])
+  const studentOptions = useMemo<StudentOption[]>(() =>
+    sortStudentOptions(
+      students.map(s => ({
+        id: s.id,
+        name: s.profiles?.full_name || s.full_name || s.admission_number,
+        admission_number: s.admission_number,
+        class: s.class,
+      }))
+    ),
+    [students]
+  )
 
   const feeStatusColor: Record<string, string> = {
     paid: 'bg-green-100 text-green-700',
@@ -782,38 +782,13 @@ export default function AdminPaymentsPage() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Student *</Label>
-              <Input
-                placeholder="Search student by name or admission number..."
-                value={studentSearch}
-                onChange={e => setStudentSearch(e.target.value)}
-                data-testid="input-student-search"
+              <StudentCombobox
+                students={studentOptions}
+                value={offlineForm.student_id}
+                onValueChange={v => setOfflineForm(f => ({ ...f, student_id: v }))}
+                placeholder="Search student..."
+                testId="input-student-search"
               />
-              {(studentSearch || !offlineForm.student_id) && (
-                <div className="max-h-32 overflow-y-auto border rounded-md">
-                  {filteredStudentList.map(s => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-muted ${offlineForm.student_id === s.id ? 'bg-primary/10 font-medium' : ''}`}
-                      onClick={() => {
-                        setOfflineForm(f => ({ ...f, student_id: s.id }))
-                        setStudentSearch(s.profiles?.full_name || s.full_name || s.admission_number)
-                      }}
-                      data-testid={`select-student-${s.id}`}
-                    >
-                      {s.profiles?.full_name || s.full_name || 'Unknown'} ({s.admission_number} · {s.class})
-                    </button>
-                  ))}
-                  {filteredStudentList.length === 0 && (
-                    <p className="px-3 py-2 text-sm text-muted-foreground">No students found</p>
-                  )}
-                </div>
-              )}
-              {offlineForm.student_id && !studentSearch && (
-                <p className="text-xs text-muted-foreground">
-                  Selected: {(() => { const st = students.find(s => s.id === offlineForm.student_id); return st?.profiles?.full_name || st?.full_name || 'Unknown' })()}
-                </p>
-              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

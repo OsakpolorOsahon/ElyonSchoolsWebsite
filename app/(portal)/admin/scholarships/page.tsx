@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, ArrowLeft, Award, Plus, Pencil, Trash2, Search, ToggleLeft, ToggleRight } from 'lucide-react'
+import { StudentCombobox, StudentOption, sortStudentOptions } from '@/components/portal/StudentCombobox'
 
 interface ScholarshipStudent {
   admission_number: string
@@ -120,6 +121,18 @@ export default function AdminScholarshipsPage() {
     setFeeStructures((fsData.fee_structures || []) as FeeStructure[])
     if (settData.settings) setSettings(settData.settings as Settings)
   }
+
+  const studentOptions = useMemo<StudentOption[]>(() =>
+    sortStudentOptions(
+      students.map(s => ({
+        id: s.id,
+        name: s.profiles?.full_name || s.full_name || s.admission_number,
+        admission_number: s.admission_number,
+        class: s.class,
+      }))
+    ),
+    [students]
+  )
 
   // Fee type options derived from fee structures for the currently selected student's class
   const scholarshipFeeTypeOptions = useMemo(() => {
@@ -454,26 +467,14 @@ export default function AdminScholarshipsPage() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Student *</Label>
-              <Select
+              <StudentCombobox
+                students={studentOptions}
                 value={form.student_id}
                 onValueChange={v => setForm(f => ({ ...f, student_id: v, fee_types: [] }))}
+                placeholder="Select student..."
                 disabled={!!editTarget}
-              >
-                <SelectTrigger data-testid="select-scholarship-student">
-                  <SelectValue placeholder="Select student..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {students
-                    .map(s => ({ ...s, displayName: s.profiles?.full_name || s.full_name || '' }))
-                    .filter(s => s.displayName)
-                    .sort((a, b) => a.displayName.localeCompare(b.displayName))
-                    .map(s => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.displayName} — {s.admission_number} ({s.class})
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+                testId="select-scholarship-student"
+              />
             </div>
 
             <div className="space-y-2">

@@ -79,7 +79,14 @@ export default function ClassStudentsPage() {
         return
       }
       const studentsJson = await studentsRes.json()
-      setStudents((studentsJson.students || []) as unknown as Student[])
+      const raw: Student[] = (studentsJson.students || []) as unknown as Student[]
+      setStudents(
+        [...raw].sort((a, b) => {
+          const na = (a.profiles?.full_name || a.full_name || '').toLowerCase()
+          const nb = (b.profiles?.full_name || b.full_name || '').toLowerCase()
+          return na.localeCompare(nb)
+        })
+      )
       setExams((examsRes.data || []) as Exam[])
       setLoading(false)
     }
