@@ -1,16 +1,11 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   BookOpen, 
-  Calculator, 
-  Globe, 
-  Microscope, 
-  Palette, 
-  Dumbbell,
-  Languages,
   CheckCircle,
   ArrowRight,
   GraduationCap,
@@ -33,14 +28,35 @@ const classes = [
   { name: 'Primary 6', ages: '10-11 years', focus: 'Common Entrance preparation' },
 ]
 
-const subjects = [
-  { icon: BookOpen, name: 'English Language', description: 'Reading, writing, grammar, and comprehension' },
-  { icon: Calculator, name: 'Mathematics', description: 'Arithmetic, geometry, and problem-solving' },
-  { icon: Microscope, name: 'Basic Science', description: 'Introduction to scientific concepts and methods' },
-  { icon: Globe, name: 'Social Studies', description: 'Nigerian history, geography, and civic education' },
-  { icon: Languages, name: 'Nigerian Languages', description: 'Yoruba, Igbo, or Hausa language studies' },
-  { icon: Palette, name: 'Creative Arts', description: 'Visual arts, crafts, and creative expression' },
-  { icon: Dumbbell, name: 'Physical Education', description: 'Sports, fitness, and healthy living' },
+const lowerPrimarySubjects = [
+  'English',
+  'Mathematics',
+  'Yoruba',
+  'Basic Science',
+  'Physical and Health Education',
+  'Christian Religious Studies',
+  'Nigerian History',
+  'Social and Citizenship Studies',
+  'Cultural and Creative Art',
+  'Handwriting',
+  'Character Development',
+]
+
+const higherPrimarySubjects = [
+  'English',
+  'Mathematics',
+  'Yoruba',
+  'Basic Science & Technology',
+  'Physical & Health Education',
+  'Basic Digital Literacy',
+  'Christian Religious Studies',
+  'Nigerian History',
+  'Social and Citizenship Studies',
+  'Cultural and Creative Art',
+  'Prevocational Studies (PVS)',
+  'French',
+  'Handwriting',
+  'Character Development',
 ]
 
 const highlights = [
@@ -145,19 +161,55 @@ export default function PrimaryPage() {
               A comprehensive curriculum aligned with national standards
             </p>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {subjects.map((subject) => (
-              <Card key={subject.name} data-testid={`card-subject-${subject.name.toLowerCase().replace(/\s+/g, '-')}`}>
-                <CardContent className="pt-6 text-center">
-                  <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-primary/10">
-                    <subject.icon className="h-6 w-6 text-primary" />
+
+          <Tabs defaultValue="lower" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8 max-w-sm mx-auto">
+              <TabsTrigger value="lower" data-testid="tab-lower-primary">Lower Primary</TabsTrigger>
+              <TabsTrigger value="higher" data-testid="tab-higher-primary">Higher Primary</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="lower">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-primary" />
+                    Lower Primary — Primary 1, 2 & 3
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {lowerPrimarySubjects.map((subject) => (
+                      <div key={subject} className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                        <span className="text-sm">{subject}</span>
+                      </div>
+                    ))}
                   </div>
-                  <h3 className="mt-4 font-semibold text-foreground">{subject.name}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{subject.description}</p>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            </TabsContent>
+
+            <TabsContent value="higher">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-primary" />
+                    Higher Primary — Primary 4, 5 & 6
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {higherPrimarySubjects.map((subject) => (
+                      <div key={subject} className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                        <span className="text-sm">{subject}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </section>
 

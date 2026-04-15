@@ -9,16 +9,15 @@ import {
   BookOpen, 
   FlaskConical, 
   Calculator,
-  Globe,
   Briefcase,
-  Palette,
-  Languages,
+  Library,
   CheckCircle,
   ArrowRight,
   Users,
   Award,
   Target,
-  TrendingUp
+  TrendingUp,
+  Star
 } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -27,53 +26,48 @@ export const metadata: Metadata = {
 }
 
 const jssSubjects = [
-  'English Language',
   'Mathematics',
-  'Basic Science',
-  'Basic Technology',
-  'Social Studies',
-  'Civic Education',
+  'English',
+  'Intermediate Science',
+  'Yoruba',
+  'Social & Citizenship Studies',
+  'History',
+  'Cultural & Creative Art',
   'Christian Religious Studies',
-  'Nigerian Languages',
-  'French',
-  'Computer Studies',
-  'Physical & Health Education',
-  'Creative Arts',
-  'Home Economics',
-  'Agricultural Science',
+  'Livestock Farming',
+  'Physical and Health Education',
+  'Digital Technologies',
+  'French (Elective)',
 ]
 
-const scienceSubjects = [
-  'English Language',
+const sssCompulsory = [
   'Mathematics',
-  'Physics',
-  'Chemistry',
+  'English',
+  'Civic Education',
   'Biology',
-  'Further Mathematics',
-  'Computer Science',
-  'Agricultural Science',
+  'Digital Technologies',
+  'Livestock Farming (Trade Subject)',
 ]
 
-const commercialSubjects = [
-  'English Language',
-  'Mathematics',
-  'Economics',
-  'Commerce',
-  'Accounting',
-  'Government',
-  'Computer Science',
-  'Business Studies',
-]
-
-const artsSubjects = [
-  'English Language',
-  'Mathematics',
+const humanitiesElectives = [
   'Literature in English',
   'Government',
-  'Economics',
   'Christian Religious Studies',
-  'History',
-  'French',
+  'Yoruba',
+]
+
+const scienceElectives = [
+  'Chemistry',
+  'Physics',
+  'Geography',
+  'Further Mathematics',
+]
+
+const businessElectives = [
+  'Commerce',
+  'Account',
+  'Marketing',
+  'Economics',
 ]
 
 const classLevels = [
@@ -101,7 +95,6 @@ const features = [
   'Career counseling',
   'JAMB preparation classes',
   'Extracurricular activities',
-  'French natural value education',
   'Secondary exams CBT preparation',
 ]
 
@@ -194,8 +187,8 @@ export default function SecondaryPage() {
             <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-8">
               <TabsTrigger value="jss" data-testid="tab-jss">Junior Secondary</TabsTrigger>
               <TabsTrigger value="science" data-testid="tab-science">Science</TabsTrigger>
-              <TabsTrigger value="commercial" data-testid="tab-commercial">Commercial</TabsTrigger>
-              <TabsTrigger value="arts" data-testid="tab-arts">Arts</TabsTrigger>
+              <TabsTrigger value="humanities" data-testid="tab-humanities">Humanities</TabsTrigger>
+              <TabsTrigger value="business" data-testid="tab-business">Business</TabsTrigger>
             </TabsList>
             
             <TabsContent value="jss">
@@ -203,14 +196,14 @@ export default function SecondaryPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BookOpen className="h-5 w-5 text-primary" />
-                    Junior High School (JSS 1-3)
+                    Junior High School (JSS 1–3)
                   </CardTitle>
                   <CardDescription>
                     A broad curriculum covering all foundational subjects
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {jssSubjects.map((subject) => (
                       <div key={subject} className="flex items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-primary shrink-0" />
@@ -223,75 +216,141 @@ export default function SecondaryPage() {
             </TabsContent>
             
             <TabsContent value="science">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FlaskConical className="h-5 w-5 text-primary" />
-                    Science Department (SSS 1-3)
-                  </CardTitle>
-                  <CardDescription>
-                    For students pursuing careers in medicine, engineering, and sciences
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {scienceSubjects.map((subject) => (
-                      <div key={subject} className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-primary shrink-0" />
-                        <span className="text-sm">{subject}</span>
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FlaskConical className="h-5 w-5 text-primary" />
+                      Science — Senior Secondary (SSS 1–3)
+                    </CardTitle>
+                    <CardDescription>
+                      For students pursuing careers in medicine, engineering, and the sciences
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Star className="h-4 w-4 text-amber-500" />
+                        <h4 className="font-semibold text-sm text-foreground">Compulsory Subjects (All SSS Students)</h4>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {sssCompulsory.map((subject) => (
+                          <div key={subject} className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                            <span className="text-sm">{subject}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="border-t pt-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <FlaskConical className="h-4 w-4 text-primary" />
+                        <h4 className="font-semibold text-sm text-foreground">Science Electives</h4>
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {scienceElectives.map((subject) => (
+                          <div key={subject} className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                            <span className="text-sm">{subject}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
             
-            <TabsContent value="commercial">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Briefcase className="h-5 w-5 text-primary" />
-                    Commercial Department (SSS 1-3)
-                  </CardTitle>
-                  <CardDescription>
-                    For students pursuing careers in business, finance, and administration
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {commercialSubjects.map((subject) => (
-                      <div key={subject} className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-primary shrink-0" />
-                        <span className="text-sm">{subject}</span>
+            <TabsContent value="humanities">
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Library className="h-5 w-5 text-primary" />
+                      Humanities — Senior Secondary (SSS 1–3)
+                    </CardTitle>
+                    <CardDescription>
+                      For students pursuing careers in law, communications, and the social sciences
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Star className="h-4 w-4 text-amber-500" />
+                        <h4 className="font-semibold text-sm text-foreground">Compulsory Subjects (All SSS Students)</h4>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {sssCompulsory.map((subject) => (
+                          <div key={subject} className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                            <span className="text-sm">{subject}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="border-t pt-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Library className="h-4 w-4 text-primary" />
+                        <h4 className="font-semibold text-sm text-foreground">Humanities Electives</h4>
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {humanitiesElectives.map((subject) => (
+                          <div key={subject} className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                            <span className="text-sm">{subject}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
-            
-            <TabsContent value="arts">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Palette className="h-5 w-5 text-primary" />
-                    Arts Department (SSS 1-3)
-                  </CardTitle>
-                  <CardDescription>
-                    For students pursuing careers in law, humanities, and social sciences
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {artsSubjects.map((subject) => (
-                      <div key={subject} className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-primary shrink-0" />
-                        <span className="text-sm">{subject}</span>
+
+            <TabsContent value="business">
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Briefcase className="h-5 w-5 text-primary" />
+                      Business — Senior Secondary (SSS 1–3)
+                    </CardTitle>
+                    <CardDescription>
+                      For students pursuing careers in business, finance, and administration
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Star className="h-4 w-4 text-amber-500" />
+                        <h4 className="font-semibold text-sm text-foreground">Compulsory Subjects (All SSS Students)</h4>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {sssCompulsory.map((subject) => (
+                          <div key={subject} className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                            <span className="text-sm">{subject}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="border-t pt-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Briefcase className="h-4 w-4 text-primary" />
+                        <h4 className="font-semibold text-sm text-foreground">Business Electives</h4>
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {businessElectives.map((subject) => (
+                          <div key={subject} className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                            <span className="text-sm">{subject}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
