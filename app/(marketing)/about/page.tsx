@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { BreadcrumbJsonLd } from '@/components/seo/JsonLd'
 import { 
   GraduationCap, 
   Users, 
@@ -17,8 +18,14 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'About Us - Elyon Schools',
-  description: 'Learn about Elyon Schools history, mission, vision, and our commitment to excellence in education since 1994.',
+  title: 'About Us',
+  description: 'Learn about Elyon Schools — our history, mission, vision, and commitment to excellence in education since 1994.',
+  alternates: { canonical: '/about' },
+  openGraph: {
+    title: 'About Us | Elyon Schools',
+    description: 'Learn about Elyon Schools history, mission, vision, and our commitment to excellence in education since 1994.',
+    url: 'https://elyonschools.edu.ng/about',
+  },
 }
 
 const values = [
@@ -352,6 +359,12 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', url: '/' },
+          { name: 'About Us', url: '/about' },
+        ]}
+      />
     </div>
   )
 }

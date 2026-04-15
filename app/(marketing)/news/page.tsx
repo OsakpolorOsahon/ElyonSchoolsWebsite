@@ -13,6 +13,17 @@ import {
   Bell
 } from 'lucide-react'
 
+export const metadata = {
+  title: 'Latest News',
+  description: 'Read the latest news, updates, and announcements from Elyon Schools.',
+  alternates: { canonical: '/news' },
+  openGraph: {
+    title: 'Latest News | Elyon Schools',
+    description: 'Read the latest news, updates, and announcements from Elyon Schools.',
+    url: 'https://elyonschools.edu.ng/news',
+  },
+}
+
 export const revalidate = 60
 
 interface NewsPost {

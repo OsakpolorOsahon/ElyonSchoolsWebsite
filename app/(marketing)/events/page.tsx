@@ -8,8 +8,14 @@ import { Calendar, MapPin, Clock, ArrowRight } from 'lucide-react'
 export const revalidate = 60
 
 export const metadata = {
-  title: 'Events - Elyon Schools',
+  title: 'School Events',
   description: 'Stay up to date with upcoming events, activities, and important dates at Elyon Schools.',
+  alternates: { canonical: '/events' },
+  openGraph: {
+    title: 'School Events | Elyon Schools',
+    description: 'Stay up to date with upcoming events, activities, and important dates at Elyon Schools.',
+    url: 'https://elyonschools.edu.ng/events',
+  },
 }
 
 interface SchoolEvent {

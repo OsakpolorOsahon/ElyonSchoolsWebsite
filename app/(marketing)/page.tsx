@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
 import { InviteRedirect } from '@/components/InviteRedirect'
+import { SchoolJsonLd } from '@/components/seo/JsonLd'
 import { 
   GraduationCap, 
   Users, 
@@ -472,6 +473,7 @@ export default async function HomePage() {
         </div>
       </section>
     <InviteRedirect />
+    <SchoolJsonLd />
     </>
   )
 }

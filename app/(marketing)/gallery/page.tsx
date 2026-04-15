@@ -14,8 +14,14 @@ import {
 } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Gallery - Elyon Schools',
+  title: 'Photo Gallery',
   description: 'Explore photos from Elyon Schools showcasing our facilities, events, students, and memorable moments.',
+  alternates: { canonical: '/gallery' },
+  openGraph: {
+    title: 'Photo Gallery | Elyon Schools',
+    description: 'Explore photos from Elyon Schools showcasing our facilities, events, students, and memorable moments.',
+    url: 'https://elyonschools.edu.ng/gallery',
+  },
 }
 
 export const revalidate = 60

@@ -1,9 +1,11 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, Calendar, Newspaper } from 'lucide-react'
+import { NewsArticleJsonLd, BreadcrumbJsonLd } from '@/components/seo/JsonLd'
 
 export const revalidate = 60
 
@@ -26,20 +28,56 @@ function formatDate(dateString: string) {
   })
 }
 
-export default async function NewsArticlePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
+async function getArticle(slug: string): Promise<NewsPost | null> {
   const supabase = await createClient()
-
-  const { data: article } = await supabase
+  const { data } = await supabase
     .from('news_posts')
     .select('id, title, summary, body, slug, status, published_at, created_at')
     .eq('slug', slug)
     .eq('status', 'published')
     .single()
+  return data as NewsPost | null
+}
 
-  if (!article) notFound()
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const post = await getArticle(slug)
 
-  const post = article as NewsPost
+  if (!post) {
+    return { title: 'Article Not Found' }
+  }
+
+  const description = post.summary || post.body.slice(0, 160).trim()
+
+  return {
+    title: post.title,
+    description,
+    alternates: { canonical: `/news/${slug}` },
+    openGraph: {
+      title: post.title,
+      description,
+      type: 'article',
+      publishedTime: post.published_at || post.created_at,
+      url: `https://elyonschools.edu.ng/news/${slug}`,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description,
+    },
+  }
+}
+
+export default async function NewsArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const post = await getArticle(slug)
+
+  if (!post) notFound()
+
   const publishedDate = post.published_at || post.created_at
 
   return (
@@ -97,6 +135,20 @@ export default async function NewsArticlePage({ params }: { params: Promise<{ sl
           </div>
         </div>
       </section>
+
+      <NewsArticleJsonLd
+        title={post.title}
+        description={post.summary || post.body.slice(0, 160)}
+        slug={post.slug}
+        publishedAt={publishedDate}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', url: '/' },
+          { name: 'News', url: '/news' },
+          { name: post.title, url: `/news/${post.slug}` },
+        ]}
+      />
     </div>
   )
 }

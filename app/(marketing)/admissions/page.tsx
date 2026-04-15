@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { BreadcrumbJsonLd } from '@/components/seo/JsonLd'
 import { 
   FileText,
   CreditCard,
@@ -13,8 +14,14 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'Admissions - Elyon Schools',
-  description: 'Apply for admission to Elyon Schools. Learn about our admission process, requirements, and fees.',
+  title: 'Admissions',
+  description: 'Apply for admission to Elyon Schools. Learn about our admission process, requirements, fees, and available classes.',
+  alternates: { canonical: '/admissions' },
+  openGraph: {
+    title: 'Admissions | Elyon Schools',
+    description: 'Apply for admission to Elyon Schools. Learn about our admission process, requirements, and fees.',
+    url: 'https://elyonschools.edu.ng/admissions',
+  },
 }
 
 const admissionSteps = [
@@ -309,6 +316,12 @@ export default function AdmissionsPage() {
           </div>
         </div>
       </section>
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', url: '/' },
+          { name: 'Admissions', url: '/admissions' },
+        ]}
+      />
     </div>
   )
 }
