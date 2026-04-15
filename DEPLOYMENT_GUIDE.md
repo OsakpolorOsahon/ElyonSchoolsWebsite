@@ -636,12 +636,22 @@ If you followed every step above, the Elyon Schools Management System is now ful
 **What is now running on your website:**
 
 - A public school website with pages for About, Admissions, News, Events, Gallery, and Contact
-- An Admin portal to manage all school content, users, payments, and results
-- A Teacher portal to upload and manage student academic results
-- A Parent portal to view their children's results and pay school fees online
-- A Student portal to view their own academic results
-- A secure database with data protection rules for every type of user
+- An **Admin portal** with:
+  - Student management with class-order sorting, bulk promotion, and year-end graduation
+  - Payments & outstanding fee tracking with offline payment recording
+  - Scholarship and fee-waiver management per student
+  - Attendance records viewer with per-student drill-down
+  - Batch report card comments (Principal's Comment) for multiple students at once
+  - User management, admissions processing, exams, subjects, fee structures, class teacher assignments, staff profiles, announcements, news, events, and gallery
+- A **Teacher portal** with:
+  - Daily class attendance recording with "Recorded / Not Recorded" status indicator
+  - Exam result upload (CA + Exam scores, grade, remarks) per subject and class
+  - Batch report card comments (Teacher's Comment) for multiple students at once
+- A **Parent portal** to view children's results, check fee balances, pay online, and view receipts
+- A **Student portal** to view exam results and printed report cards
+- A secure database with role-based access and data protection rules for every user type
 - Online payment processing for school fees and admission forms via Paystack
-- A photo gallery with image upload functionality
+- Printable PDF-ready report cards with teacher and principal comments
+- A Progressive Web App (PWA) — users can install the portal on their phone's home screen
 
 The website runs 24 hours a day, 7 days a week, automatically — no maintenance needed.

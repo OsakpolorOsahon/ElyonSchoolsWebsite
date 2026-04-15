@@ -610,10 +610,96 @@ The form has **4 steps**. Test each step.
 
 ### 5.7 — Admin Payments Page ( /admin/payments )
 
-- [ ] Page loads with a table of all payments
-- [ ] Tab filters: All, Success, Pending, Failed
-- [ ] Each row shows: payer name, amount, type, status badge, method, reference, date
-- [ ] Clicking a payment reference or row navigates to the receipt page
+**Payments Tab**
+- [ ] Page loads with a list of payment records
+- [ ] Filter buttons: All, Admission Fee, School Fee, Donation, Offline
+- [ ] Each row shows: payer name, amount, type, status badge, method, reference, date, notes
+- [ ] Successful payments have a **"Receipt"** button that opens the receipt page
+
+**Test: Record Offline Payment**
+- [ ] Click **"Record Offline Payment"** — a dialog opens
+- [ ] The **Student** field is a searchable dropdown — type a name or admission number to filter
+- [ ] Results are grouped by class (Nursery 1 → SSS 3); selecting one fills the student field
+- [ ] Fill in: Amount, Payment Type (shows only fee types for the student's class), Method (Cash/Bank Transfer), Date, Reference, Notes
+- [ ] Click **"Record Payment"** → success toast appears → payment appears in the list
+
+**Outstanding Fees Tab**
+- [ ] Click **"Outstanding Fees"** tab — the view switches
+- [ ] Summary cards show: Total Fees, Net Expected (after scholarships), Collected, Still Owed
+- [ ] A list of all active students is shown, sorted by class order (Nursery 1 → SSS 3) then alphabetically by name
+- [ ] Each row shows: student name, admission number, class, expected fee, scholarship credit (if any), amount paid, outstanding balance, status badge (Paid/Partial/Unpaid)
+- [ ] **Search bar** filters by name or admission number
+- [ ] **Class filter** dropdown narrows to one class
+- [ ] **Fee Type filter** filters by specific fee type
+- [ ] **CSV button** downloads the outstanding fees list as a spreadsheet
+- [ ] Students with outstanding balance show a **"Record"** button — clicking it opens the offline payment dialog pre-filled with that student
+
+---
+
+### 5.16 — Admin Scholarships Page ( /admin/scholarships )
+
+- [ ] Page loads with a list of all assigned scholarships
+- [ ] Each row shows: student name, admission number, class, scholarship name, coverage type, term, year, active status badge
+- [ ] **Search bar** filters by student name, admission number, or scholarship name
+- [ ] **Active/Inactive filter** tabs let you see only active or only inactive scholarships
+
+**Test: Add a scholarship**
+- [ ] Click **"Add Scholarship"** — a dialog opens
+- [ ] The **Student** field is a searchable combobox — type a name or admission number to filter
+  - [ ] Students are grouped by class in the dropdown (Nursery 1 → SSS 3)
+  - [ ] Selecting a student fills the field
+- [ ] Fill in: Scholarship Name, Coverage Type (Full/Percentage/Fixed)
+  - [ ] For "Full": no additional amount needed
+  - [ ] For "Percentage": a coverage % field appears
+  - [ ] For "Fixed Amount": a ₦ amount field appears
+- [ ] Optionally set: Applies to Term, Applies to Year, Fee Types covered
+- [ ] Click **"Save"** → success toast → scholarship appears in the list
+
+**Test: Outstanding fees reflect scholarship**
+- [ ] Go to Admin → Payments → Outstanding Fees tab
+- [ ] Find the student who has a scholarship — the "Scholarship" credit column shows the correct amount
+- [ ] The "Net Expected" (after discount) is reduced accordingly
+
+**Test: Toggle active status**
+- [ ] Click the toggle on any scholarship → it becomes inactive (greyed out)
+- [ ] The scholarship credit disappears from the student's outstanding fees
+- [ ] Click again to re-activate — credit returns
+
+**Test: Delete a scholarship**
+- [ ] Click the bin icon on a scholarship → a confirmation appears → confirm → scholarship is removed
+
+---
+
+### 5.17 — Admin Attendance Page ( /admin/attendance )
+
+- [ ] Page loads with filter controls at the top
+- [ ] Filters available: Search Student (text), Class (dropdown), Term (dropdown), Year (dropdown), Date (single), Date From, Date To
+- [ ] **"Apply Filters"** button loads filtered results; **"Clear"** resets all filters
+
+**Test: View attendance summary**
+- [ ] Apply a class and term filter → click Apply
+- [ ] A summary table appears showing all students in that class with: name, admission number, class, Present count, Absent count, Late count, Excused count, Total, Attendance Rate %
+- [ ] Students are sorted by class order, then alphabetically by name
+- [ ] Click any student row → the row expands showing day-by-day records for that student
+- [ ] Each expanded record shows: date, status badge, notes (if any)
+
+**Test: Search by student name**
+- [ ] Type a student's name in the Search field → click Apply
+- [ ] Only that student (and matching students) appear in the summary
+
+---
+
+### 5.18 — Admin Batch Comments ( /admin/batch-comments )
+
+- [ ] Page loads with Exam and Class selector dropdowns
+- [ ] Select an exam and a class → students appear listed alphabetically
+
+**Test: Write and save a principal comment**
+- [ ] For one student, type a comment in their text box (e.g. "An excellent term. Keep it up.")
+- [ ] Click **"Save"** next to that student
+- [ ] Success toast appears
+- [ ] Navigate to the student's report card → the principal's comment appears correctly
+- [ ] Return to Batch Comments for the same exam/class → the saved comment is pre-loaded in the text box
 
 ---
 
@@ -740,7 +826,8 @@ The form has **4 steps**. Test each step.
 
 - [ ] Page loads — "Teacher Dashboard" at the top with your name
 - [ ] Your assigned class(es) are displayed
-- [ ] Quick links: Upload Results, My Classes
+- [ ] Quick actions section shows three cards: **Upload Results**, **Take Attendance**, **Batch Comments**
+- [ ] Each class is shown as a card with the number of students
 - [ ] School announcements targeting "teachers" or "all" are shown
 - [ ] Upcoming events are shown
 
@@ -773,6 +860,64 @@ The form has **4 steps**. Test each step.
 - [ ] Enter CA score > 40 — validation error appears
 - [ ] Enter Exam score > 60 — validation error appears
 - [ ] Enter negative scores — validation error appears
+
+---
+
+### 6.4 — Teacher Attendance ( /teacher/attendance )
+
+- [ ] Page loads with a date picker (defaulting to today) and a class selector (if multiple classes)
+- [ ] Students in the selected class appear in a list
+- [ ] Students are sorted alphabetically by name within the class
+
+**Test: Status badge**
+- [ ] Change the date to today (a day no attendance has been recorded for)
+  - [ ] An **amber "Not Recorded"** badge appears next to the date
+- [ ] Change the date to a day where attendance was already recorded
+  - [ ] A **green "Recorded"** badge appears next to the date
+
+**Test: Mark All shortcut**
+- [ ] Click **"Mark all as: Present"** — all students switch to Present status
+- [ ] Click **"Mark all as: Absent"** — all students switch to Absent status
+
+**Test: Individual status**
+- [ ] Click **"Absent"** for one student → that student's status changes to Absent
+- [ ] Click **"Late"** for another → status changes to Late
+- [ ] Click **"Excused"** for another → status changes to Excused
+
+**Test: Notes**
+- [ ] Click the speech bubble icon next to a student → a notes field appears
+- [ ] Type a note (e.g. "Left early — sick") → proceed to save
+
+**Test: Save attendance**
+- [ ] Click **"Save Attendance"** at the bottom
+- [ ] Success toast appears: "Attendance saved"
+- [ ] The badge next to the date changes to the green **"Recorded"** badge
+- [ ] Refresh the page → select the same date → the statuses reload as they were saved
+
+**Test: Editing attendance**
+- [ ] On a date with existing records (green "Recorded" badge), change one student's status
+- [ ] Click "Save Attendance" again → success toast → records are updated (no duplicate entries created)
+
+---
+
+### 6.5 — Teacher Batch Comments ( /teacher/batch-comments )
+
+- [ ] Page loads with Exam and Class selector dropdowns
+- [ ] Select a published exam and your assigned class → students appear listed alphabetically
+- [ ] Each student shows their name, admission number, and a text box for a teacher comment
+
+**Test: Write and save a comment**
+- [ ] Type a comment for one student (e.g. "A diligent student who participates actively")
+- [ ] Click **"Save"** next to that student
+- [ ] Success toast appears
+- [ ] Navigate to the student's report card → the **Teacher's Comment** field shows the text correctly
+- [ ] Return to Batch Comments for the same exam/class → the saved comment is pre-filled in the text box
+
+**Test: Multiple students**
+- [ ] Write comments for 3–4 students
+- [ ] Save each individually
+- [ ] Refresh the page, re-select the exam and class
+- [ ] All previously saved comments are pre-loaded in their text boxes
 
 ---
 
@@ -945,10 +1090,11 @@ The form has **4 steps**. Test each step.
 
 ---
 
-## Section 11 — Mobile Responsiveness
+## Section 11 — Mobile Responsiveness & PWA
 
 Test the following on a mobile phone (or use Chrome DevTools → mobile mode):
 
+**Layout**
 - [ ] Public homepage is readable and scrollable on mobile
 - [ ] Navigation menu collapses into a hamburger menu on mobile
 - [ ] The admissions form is usable on mobile (fields stack vertically)
@@ -957,6 +1103,21 @@ Test the following on a mobile phone (or use Chrome DevTools → mobile mode):
 - [ ] Payment dialogs are usable on mobile
 - [ ] Report card can be viewed (and printed) from mobile
 - [ ] Parent child selector tabs/dropdown work on mobile
+- [ ] Teacher attendance page is usable on mobile — status buttons are tap-friendly
+
+**Smart Navigation Bar**
+- [ ] On mobile (or any device), scroll down — the navigation bar hides smoothly
+- [ ] Scroll up (even slightly) — the navigation bar reappears immediately
+- [ ] The navigation bar stays visible when the page is at the very top
+
+**PWA — Install to Home Screen**
+*(Test in Chrome on Android)*
+- [ ] Open the portal (e.g. teacher or admin dashboard) in Chrome on Android
+- [ ] After a few seconds, a banner appears at the bottom: **"Add Elyon Schools to Home Screen"** or similar
+- [ ] Tap **"Install"** on the banner → the app icon is added to the home screen
+- [ ] Tap the home screen icon → the app opens in full-screen mode (no browser address bar)
+- [ ] Navigation within the portal works normally when launched from the home screen
+- [ ] Alternatively: tap the three-dot Chrome menu → "Add to Home screen" → confirm → icon appears on home screen
 
 ---
 

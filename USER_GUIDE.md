@@ -96,6 +96,28 @@ If you forget your password:
 
 ---
 
+## Installing the App on Your Phone (Optional)
+
+The Elyon Schools portal can be installed on your phone like a regular app — it will appear on your home screen and open without a browser address bar.
+
+**On Android (Chrome browser):**
+1. Open the portal in Chrome (e.g. log in to your dashboard).
+2. After a few seconds, a banner will appear at the bottom of the screen saying **"Add Elyon Schools to Home Screen"** or similar.
+3. Tap **"Install"** on the banner.
+4. Alternatively, tap the three-dot menu (⋮) in Chrome → tap **"Add to Home screen"** → tap **"Add"**.
+5. The app icon will appear on your home screen.
+
+**On iPhone (Safari browser):**
+1. Open the portal in Safari.
+2. Tap the **Share button** (the square with an upward arrow) at the bottom of the screen.
+3. Scroll down in the share menu and tap **"Add to Home Screen"**.
+4. Tap **"Add"** in the top right corner.
+5. The app icon will appear on your home screen.
+
+Once installed, tapping the icon opens the portal in full-screen mode with no browser bars — just like a native app.
+
+---
+
 ---
 
 # Part 1 — Admin Guide
@@ -135,6 +157,14 @@ These are shortcut buttons to the most commonly used pages. Clicking any of them
 - **Create Event** — add a new school event to the calendar
 - **Manage Users** — invite users and change user roles
 - **All Students** — view the full list of enrolled students
+- **Fee Structures** — manage school fees per class and term
+- **Class Teachers** — assign teachers to classes
+- **Staff Profiles** — view and edit teacher profile details
+- **Settings** — update current term, year, and other school settings
+
+### Results Submission Status
+
+At the bottom of the dashboard, there is a **Results Submission Status** grid showing all 14 classes (Nursery 1 through SSS 3). A green tick means at least one result has been uploaded for that class in the most recent exam. A grey cross means no results yet.
 
 ---
 
@@ -165,23 +195,57 @@ If you need to change someone from a Parent to an Admin (or any other role chang
    - **Full Name** — their name as it should appear in the system.
    - **Role** — select what type of user they are: Teacher, Parent, or Student. (You can also invite another Admin.)
 3. Click **"Send Invitation"**.
-4. The person will receive an email inviting them to set up their account. Once they accept the invitation and set their password, their name will appear in the Users list with a green status.
+4. The person will receive an email inviting them to set up their account. Once they accept the invitation and set their password, their name will appear in the Users list.
 
 > **TIP:** You can invite multiple people one at a time. Just click "Invite User" again for each person.
 
 ---
 
-## 1.3 — Viewing Students
+## 1.3 — Managing Students
 
-The **Students** page shows all currently enrolled students in the school.
+The **Students** page shows all currently enrolled students in the school, sorted by class order (Nursery 1 through SSS 3) and then alphabetically by name within each class.
 
-1. Click **"All Students"** from the Quick Actions or navigate to the Students section.
-2. You will see a list of students showing:
-   - Full name
-   - Admission number
-   - Class (e.g. JSS 1, SS 2)
-   - Status (Active, etc.)
-3. Use this page as a reference to look up any student's admission number or class.
+### Finding a Student
+
+- Use the **search bar** at the top to search by name, admission number, or class.
+- Use the **status filter tabs** (All, Active, Graduated, Withdrawn, Transferred) to narrow the list.
+
+### Adding a New Student
+
+1. Click **"Add Student"** — a dialog opens.
+2. Fill in: Student Name, Admission Number, Class, Gender, Parent Account (optional), Department (for SSS classes only).
+3. Click **"Save"**.
+4. To give the student portal access, click **"Invite to Portal"** on their card and enter their email address.
+
+### Student Actions (on each student card)
+
+| Button | What it does |
+|---|---|
+| **Invite to Portal** | Sends an invitation email so the student can log in |
+| **Repeat** | Toggles the "Repeating" flag — repeating students stay in their current class during end-of-year promotion |
+| **Set Dept** | (SSS classes only) Sets the student's department: Science, Commercial, or Art |
+| **Promote** | Moves the student up to the next class (e.g. JSS 1 → JSS 2) |
+| **Graduate** | (SSS 3 only) Marks the student as graduated |
+| **Payment** | Opens the offline payment recording dialog |
+| **Report** | (when an exam is selected) Opens the student's printable report card |
+| **Results** | Opens a dialog showing the student's full results history across all exams |
+| **Status badge** | Click to change the student's status (Active, Withdrawn, Transferred, etc.) |
+
+### Recording an Offline Payment
+
+When a parent pays school fees by cash or bank transfer, you record it here so the system stays accurate:
+
+1. Click the **"Payment"** button on a student's card (or click "Record" on the Outstanding Fees tab).
+2. A dialog opens — search for and select the student using the **searchable dropdown** (type any part of the name or admission number to filter).
+3. Enter the **Amount**, **Payment Type** (e.g. School Fee, Books, Uniform), **Method** (Cash or Bank Transfer), **Date**, and optionally a **Reference** and **Notes**.
+4. Click **"Record Payment"**.
+5. The payment is saved and appears in the Payments page immediately.
+
+### End-of-Year Promotion
+
+The **"End-of-Year Promotion"** button runs a bulk promotion that moves all active, non-repeating students up one class. Students in SSS 3 are graduated automatically. Students marked as "Repeating" stay in their current class.
+
+> **WARNING:** This action is irreversible. Make sure all results and reports are finalised before running promotion.
 
 ---
 
@@ -198,207 +262,273 @@ The **Admissions** page is where you review, approve, or reject school applicati
 | **Accepted** | You have approved the application |
 | **Rejected** | You have rejected the application |
 
-### Filtering by Status
-
-At the top of the Admissions page, you will see filter buttons: **All**, **Pending Payment**, **Processing**, **Accepted**, **Rejected**. Click any one to see only applications in that category.
-
-> **TIP:** Focus on "Processing" first — those are the applications that have paid and are waiting for a decision.
-
 ### Reviewing an Application
 
-Each application card shows:
-- The student's name, date of birth, and class they applied for
-- The guardian's name and contact details
-- The date the application was submitted
-- The application fee amount and payment reference
+Each application card shows the student's name, date of birth, class applied for, guardian name and contact details, submission date, and payment reference.
 
 ### Accepting or Rejecting
 
 For applications in **Processing** status:
-1. Click the **green "Accept"** button to approve the application. The status changes to "Accepted".
-2. Click the **red "Reject"** button to decline the application. The status changes to "Rejected".
+1. Click the **green "Accept"** button to approve. The status changes to "Accepted".
+2. Click the **red "Reject"** button to decline. The status changes to "Rejected".
 
-> **NOTE:** Once you accept an application, the next step is to manually enrol the student by creating their student record and inviting them (and their parent) as users.
+> **NOTE:** After accepting an application, enrol the student by creating their student record and inviting them (and their parent) as users.
 
 ---
 
 ## 1.5 — Payments
 
-The **Payments** page shows a full record of all money received through the school's payment system.
+The **Payments** page has two tabs:
 
-### What You Will See
+### Payments Tab
 
-Each payment row shows:
-- **Payer name** — who made the payment
-- **Amount** — how much was paid in Nigerian Naira
-- **Type** — what the payment was for (colour-coded badges):
-  - Blue badge: **Application Fee** (admission application)
-  - Green badge: **School Fee** (term fees)
-  - Purple badge: **Donation**
-- **Status** — whether it was successful (green), pending (yellow), or failed (red)
-- **Date** — when the payment was made
+Shows a full record of all money received. Each row shows:
+- **Payer name**, **Amount** (₦), **Type** (colour-coded), **Status**, **Method**, **Date**
 
-### Filtering Payments
+Use the filter buttons at the top (All, Admission Fee, School Fee, Donation, Offline) to narrow results.
 
-Use the tabs at the top of the page to filter: **All**, **Application Fees**, **School Fees**, etc. This makes it easy to see only the type of payment you are looking for.
+### Outstanding Fees Tab
+
+Shows all active students with a fee summary for the current term:
+
+| Column | What it means |
+|---|---|
+| **Expected** | Total fees set for the student's class in the current term |
+| **Scholarship** | Any fee discount applied (shown separately) |
+| **Paid** | Total of successful payments for fee-relevant types |
+| **Balance** | How much remains outstanding |
+| **Status** | Paid (green), Partial (yellow), or Unpaid (red) |
+
+Students are sorted by class order, then alphabetically by name within each class, making it easy to scan through a large school.
+
+- Use the **Search** box to find a specific student by name or admission number.
+- Use the **Class** filter to focus on one class at a time.
+- Use the **Fee Type** filter to see which fee type is unpaid.
+- Click **"Record"** next to a student to open the offline payment dialog for that student.
+- Click **"CSV"** to download the full outstanding fees list as a spreadsheet.
 
 ---
 
-## 1.6 — News Posts
+## 1.6 — Scholarships
+
+The **Scholarships** page lets you grant fee discounts and waivers to individual students.
+
+### Viewing Scholarships
+
+Go to **Admin → Scholarships** to see all assigned scholarships. Each row shows the student's name, class, scholarship name, coverage type, and whether the scholarship is currently active.
+
+Use the **search bar** to find a scholarship by student name, admission number, or scholarship name.
+
+### Adding a Scholarship
+
+1. Click **"Add Scholarship"** — a dialog opens.
+2. Select the **Student** using the searchable dropdown (grouped by class — type a name or admission number to filter quickly).
+3. Fill in:
+   - **Scholarship Name** — e.g. "Academic Excellence Award", "Founder's Scholarship"
+   - **Coverage Type** — choose one:
+     - **Full** — 100% fee waiver (no payment required)
+     - **Percentage** — e.g. 50% discount
+     - **Fixed Amount** — e.g. ₦20,000 off
+   - **Coverage Value** — the percentage or fixed amount (not needed for Full)
+   - **Applies to Term** — optionally restrict to one term (e.g. First)
+   - **Applies to Year** — optionally restrict to one year
+   - **Fee Types** — optionally restrict which fees are covered (e.g. tuition only)
+4. Click **"Save"**.
+
+The scholarship discount will automatically appear in the Outstanding Fees tab for that student.
+
+### Editing or Removing a Scholarship
+
+- Click the **pencil icon** to edit a scholarship.
+- Click the **toggle** to activate or deactivate a scholarship without deleting it.
+- Click the **bin icon** to permanently delete a scholarship.
+
+---
+
+## 1.7 — News Posts
 
 The **News** section lets you publish articles and updates that appear on the public school website.
 
 ### Creating a News Post
 
 1. Click **"Post News"** from the Quick Actions, or go to **Admin → News → New Post**.
-2. Fill in the form:
-   - **Title** — the headline of the article
-   - **Slug** — this is the web address for the article (e.g. `end-of-term-results-2025`). Use lowercase letters and hyphens, no spaces. The system may fill this in automatically based on the title.
-   - **Summary** — a short one or two sentence description (shown on the news listing page)
-   - **Body** — the full content of the article. Write everything you want the article to say here.
-   - **Featured Image URL** — if you have an image for the article, paste its web address here (optional)
-   - **Status** — choose **"Published"** to make it visible immediately, or **"Draft"** to save it without showing it publicly yet
+2. Fill in:
+   - **Title**, **Summary** (short description), **Body** (full article), **Featured Image URL** (optional), **Status** (Published or Draft)
 3. Click **"Publish"** or **"Save"**.
 
 ### Managing Existing Posts
 
-Go to **Admin → News** to see all your news posts. From here you can see the status of each post (Published or Draft).
+Go to **Admin → News** to see all posts and their published/draft status.
 
 ---
 
-## 1.7 — Events
+## 1.8 — Events
 
-The **Events** section manages the school's event calendar. Events appear on the public website's Events page.
-
-### Viewing Events
-
-Go to **Admin → Events** to see a list of all scheduled events showing the title, category, date, and location.
+The **Events** section manages the school's event calendar. Events appear on the public website.
 
 ### Creating a New Event
 
 1. Click **"New Event"** (or use the Quick Action from the dashboard).
-2. Fill in the form:
-   - **Title** — name of the event (e.g. "End of Term Examination")
-   - **Description** — details about the event (optional)
-   - **Start Date & Time** — when the event begins. Click the date field to pick a date, then enter the time.
-   - **End Date & Time** — when the event ends. Must be after the start time.
-   - **Location** — where the event takes place (e.g. "School Hall", "Sports Ground")
-   - **Category** — choose one: Academic, Sports, Cultural, or Other
+2. Fill in: **Title**, **Description** (optional), **Start Date & Time**, **End Date & Time**, **Location**, **Category** (Academic, Sports, Cultural, or Other).
 3. Click **"Create Event"**.
-
-The event will immediately appear on the public Events page of the school website.
 
 ---
 
-## 1.8 — Announcements
+## 1.9 — Announcements
 
-Announcements are messages sent to specific groups of people (parents, students, teachers, or everyone). They appear as a banner on each user's dashboard when they log in.
-
-### Viewing Announcements
-
-Go to **Admin → Announcements** to see all announcements. Each one shows the title, who it is targeted at, and whether it is published (visible) or not.
+Announcements appear as a banner on the selected users' dashboards when they log in.
 
 ### Creating an Announcement
 
 1. Click **"New Announcement"**.
-2. Fill in:
-   - **Title** — a short heading for the announcement (e.g. "School Fees Reminder")
-   - **Body** — the full message you want to send
-   - **Target Audience** — choose who should see this:
-     - **All** — every logged-in user sees it
-     - **Parents** — only parents see it on their dashboard
-     - **Students** — only students see it
-     - **Teachers** — only teachers see it
-   - **Publish immediately** — if ticked, the announcement is live right away. If unticked, it is saved as a draft.
+2. Fill in: **Title**, **Body** (the full message), **Target Audience** (All, Parents, Students, or Teachers), **Publish immediately** (tick to go live right away).
 3. Click **"Create Announcement"**.
 
 ### Toggling Visibility
 
-On the Announcements list page, each announcement has a **Published / Draft** toggle. Click it to instantly publish or unpublish an announcement without deleting it.
-
-### Deleting an Announcement
-
-Click the **delete button** (rubbish bin icon) next to an announcement to permanently remove it.
+Each announcement has a **Published / Draft** toggle — click it to instantly show or hide the announcement without deleting it.
 
 ---
 
-## 1.9 — Gallery
+## 1.10 — Gallery
 
 The **Gallery** section manages all school photos that appear on the public Gallery page.
 
-### Viewing Photos
-
-Go to **Admin → Gallery** to see all uploaded photos in a grid view. Each photo shows its title, category badge, and a delete button.
-
 ### Uploading a Photo
 
-1. Click **"Upload Image"**.
-2. Click **"Choose File"** or the upload area to select a photo from your computer.
-   - Only image files are accepted (JPG, PNG, WebP, GIF)
-   - Maximum file size is 5MB
-3. Fill in:
-   - **Title** — a name for the photo (e.g. "Science Lab 2024")
-   - **Description** — optional additional detail
-   - **Category** — choose what type of photo it is: Campus, Events, Sports, Graduation, or Student Life
-4. Click **"Upload"**.
-5. The photo will appear in the gallery grid and will be visible on the public Gallery page.
+1. Click **"Upload Image"** → select a photo (JPG, PNG, WebP, GIF; max 5MB).
+2. Fill in: **Title**, **Description** (optional), **Category** (Campus, Events, Sports, Graduation, or Student Life).
+3. Click **"Upload"**.
 
 ### Deleting a Photo
 
-Hover over any photo in the gallery grid — a **Delete** button will appear on top of the image. Click it and confirm to permanently remove the photo.
-
-> **WARNING:** Deleting a photo removes it permanently. It cannot be recovered.
+Hover over a photo — a **Delete** button will appear. Click and confirm to remove it permanently.
 
 ---
 
-## 1.10 — Exams
+## 1.11 — Exams
 
-The **Exams** section creates exam records. Teachers use these records when uploading student results.
-
-### Viewing Exams
-
-Go to **Admin → Exams** to see a list of all exams, showing the name, term, and year.
+The **Exams** section creates exam records. Teachers use these when uploading student results.
 
 ### Creating an Exam
 
 1. Click **"New Exam"**.
-2. Fill in:
-   - **Name** — what the exam is called (e.g. "First Term Examination", "Mock WAEC 2025")
-   - **Term** — choose First, Second, or Third
-   - **Year** — type the academic year (e.g. 2025)
+2. Fill in: **Name** (e.g. "First Term Examination"), **Term** (First, Second, or Third), **Year**.
 3. Click **"Create Exam"**.
 
-The exam will now appear in the list that teachers see when uploading results.
+### Publish / Unpublish
 
-### Deleting an Exam
+Published exams are visible to students and parents. Unpublished (draft) exams are hidden from them. Toggle the published status from the exam list.
 
-Click the **delete button** next to an exam to remove it.
+### Teacher Remarks Toggle
 
-> **WARNING:** Do not delete an exam if results have already been uploaded for it — the results will be lost.
+Each exam has a "Teacher Remarks" toggle. When open, teachers can write individual report card comments for each student. Close this toggle when remarks are finalised.
 
 ---
 
-## 1.11 — Subjects
+## 1.12 — Subjects
 
-The **Subjects** section manages the list of subjects taught in the school. Teachers select from this list when uploading results.
-
-### Viewing Subjects
-
-Go to **Admin → Subjects** to see all subjects, showing the name and short code.
+The **Subjects** section manages the list of subjects. Teachers select from this list when uploading results.
 
 ### Adding a Subject
 
 1. Click **"New Subject"**.
-2. Fill in:
-   - **Name** — the full subject name (e.g. "Mathematics", "English Language")
-   - **Code** — a short abbreviation (e.g. `MATH`, `ENG`, `BIO`). Must be unique.
+2. Fill in: **Name** (e.g. "Mathematics"), **Code** (e.g. `MATH`), **Applicable Classes** (which classes take this subject), **Applicable Departments** (for SSS department-specific subjects).
 3. Click **"Add Subject"**.
 
-### Deleting a Subject
+---
 
-Click the **delete button** next to a subject to remove it.
+## 1.13 — Batch Report Comments (Admin)
 
-> **WARNING:** Do not delete a subject if results have already been recorded for it.
+The **Admin Batch Comments** page lets you write the **Principal's Comment** on multiple students' report cards at once, without opening each report card individually.
+
+### Using Batch Comments
+
+1. Go to **Admin → Batch Comments** (or find it in the Quick Actions).
+2. Select the **Exam** you want to comment on.
+3. Select a **Class** to view that class's students.
+4. Students are listed sorted by class order and then alphabetically.
+5. For each student, type the Principal's Comment in the text box next to their name.
+6. Click **"Save"** next to each student's comment to save it individually.
+
+The comment will appear on the student's printed report card under "Principal's Remark".
+
+---
+
+## 1.14 — Attendance (Admin View)
+
+The **Admin Attendance** page lets you view, filter, and analyse attendance records submitted by teachers.
+
+### Filtering Attendance Records
+
+Use the filters at the top to narrow results:
+- **Search Student** — search by name or admission number
+- **Class** — filter to one class
+- **Term** — filter by term
+- **Year** — filter by academic year
+- **Date** — view attendance for a single day
+- **Date Range** — view attendance for a date range
+
+Click **"Apply Filters"** to load the filtered results.
+
+### Reading the Summary Table
+
+The summary table shows each student's attendance totals for the selected period:
+- **Present**, **Absent**, **Late**, **Excused** counts
+- **Total** sessions recorded
+- **Attendance Rate** (percentage of sessions marked present or excused)
+
+Students are sorted by class order (Nursery 1 → SSS 3), then alphabetically by name within each class.
+
+Click any student row to expand it and see their day-by-day attendance records.
+
+---
+
+## 1.15 — Fee Structures
+
+The **Fee Structures** page defines how much each class pays per term.
+
+### Adding a Fee Structure
+
+1. Click **"Add Fee"**.
+2. Fill in: **Class**, **Term**, **Year**, **Fee Type** (tuition, books, uniform, etc.), **Amount (₦)**.
+3. Click **"Save"**.
+
+These fee structures are used automatically to calculate outstanding balances in the Payments tab and on the Parent Fees page.
+
+---
+
+## 1.16 — Class Teachers
+
+The **Class Teachers** page assigns a teacher to each class. The assigned teacher can take attendance and upload results for that class.
+
+1. Find a class in the list.
+2. Click **"Assign"** or **"Change"** → select the teacher from the dropdown.
+3. Click **"Save"**.
+
+---
+
+## 1.17 — Staff Profiles
+
+The **Staff Profiles** page shows all teacher accounts with their profile details (subject specialty, qualification, phone, bio).
+
+- Click **"Add Profile"** to create a profile for a teacher who does not have one.
+- Click **"Edit Profile"** to update an existing profile.
+
+---
+
+## 1.18 — Settings
+
+The **Settings** page controls global academic settings.
+
+| Setting | What it does |
+|---|---|
+| **Current Term** | Sets the active term (First, Second, or Third). Used across the system for fees, attendance, and results. |
+| **Current Year** | Sets the active academic year. |
+| **School Name** | Used on printed report cards. |
+| **Principal Name** | Used on printed report cards. |
+
+Click **"Save Settings"** after making any changes.
 
 ---
 
@@ -406,77 +536,128 @@ Click the **delete button** next to a subject to remove it.
 
 # Part 2 — Teacher Guide
 
-As a teacher, your main job in the system is uploading student results and viewing your assigned students.
+As a teacher, your main responsibilities in the system are recording student attendance, uploading exam results, and writing report card comments.
 
 ---
 
 ## 2.1 — The Teacher Dashboard
 
-When you log in, you will see your **Teacher Dashboard**. Here is what each section shows:
+When you log in, you will see your **Teacher Dashboard**.
 
 ### Summary Cards (at the top)
 
 | Card | What it shows |
 |---|---|
-| **Assigned Students** | Total number of students assigned to you |
-| **Classes** | How many different classes your students belong to |
-| **Upcoming Events** | School events coming up in the next few weeks |
+| **Assigned Students** | Total number of students in your assigned class(es) |
+| **Classes** | How many different classes you teach |
+| **Upcoming Events** | School events coming up soon |
 
-### Upload Results Button
+### Quick Actions
 
-There is a large green button at the top of the dashboard that says **"Upload Student Results"**. This is your most important action — click it when you are ready to enter grades.
+Three quick action cards are visible at the top:
+
+- **Upload Results** — enter student scores for an exam and subject
+- **Take Attendance** — record daily attendance for your class
+- **Batch Comments** — write report card comments for multiple students at once
 
 ### Your Classes
 
-Below the summary cards, you will see a list of your classes (e.g. "JSS 2", "SS 1"). Each card shows the class name and how many students you have in that class. Click any class card to see the list of students in it.
+Below the quick actions, you will see a card for each of your assigned classes (e.g. "JSS 2 — 15 Students"). Click any class card to see the full list of students in it.
 
-### Upcoming Events
+### Announcements and Events
 
-At the bottom of the dashboard, you will see the next upcoming school events — dates, names, and locations. This is for your information only.
+School announcements addressed to teachers (or everyone) appear near the top. Upcoming school events appear at the bottom.
 
 ---
 
-## 2.2 — Uploading Student Results
+## 2.2 — Taking Attendance
 
-Uploading results is a simple process. You select an exam, select a subject, then enter a score for each of your students.
+1. From the Teacher Dashboard, click **"Take Attendance"** (or go to **Teacher → Attendance**).
+
+2. At the top of the page, you will see:
+   - **Date picker** — defaults to today's date. Click it to select a past date (you can record attendance for any previous day in the current term).
+   - **Class selector** — if you teach more than one class, a dropdown appears so you can switch between them.
+   - **Status badge** — next to the date, one of these badges appears:
+     - **Green "Recorded"** badge: attendance for this class on this date has already been saved.
+     - **Amber "Not Recorded"** badge: attendance has not been submitted yet for this date.
+
+3. Below the controls, a **summary bar** shows how many students are currently marked Present, Absent, Late, or Excused.
+
+4. Use **"Mark all as:"** buttons (Present, Absent, Late, Excused) to set every student to the same status at once. This is useful if almost everyone was present — mark all as Present, then change the exceptions.
+
+5. For each student in the list:
+   - Click **Present**, **Absent**, **Late**, or **Excused** to set their status.
+   - Click the **speech bubble icon** to open a note field for that student (e.g. "Sick — letter from parent", "Left early").
+
+6. When finished, click the **"Save Attendance"** button at the bottom.
+   - A success message appears.
+   - The badge next to the date changes to the green **"Recorded"** badge.
+
+> **TIP:** If you realise you made a mistake after saving, simply change the status for the affected students and click **"Save Attendance"** again. The records are updated — there are no duplicates.
+
+> **NOTE:** Attendance is saved per class, per date, and per term/year. Each day's attendance is a separate record.
+
+---
+
+## 2.3 — Uploading Student Results
+
+Uploading results is done one exam and one subject at a time.
 
 ### Step-by-Step Instructions
 
-1. Click **"Upload Student Results"** from your dashboard (the large green button).
+1. Click **"Upload Results"** from your dashboard (or the large green button).
 
-2. You will see a page with three sections at the top:
-   - **Select Exam** — click this dropdown and choose the exam you are recording results for (e.g. "First Term Examination 2025")
-   - **Select Subject** — click this dropdown and choose the subject (e.g. "Mathematics")
+2. At the top, select:
+   - **Class** — if you teach more than one class, select which class you are entering results for.
+   - **Exam** — choose the exam from the dropdown (e.g. "First Term Examination 2025").
+   - **Subject** — choose the subject (e.g. "Mathematics"). Only subjects applicable to your class appear.
 
-3. After selecting both an exam and a subject, a table will appear below showing all your assigned students.
+3. After selecting all three, a table of your students appears (sorted alphabetically by name).
 
-4. For each student in the table, type their score in the **Score** box. Scores must be between **0 and 100**.
-   - You do not need to enter a grade — the system calculates grades automatically.
-   - You can leave a student's score empty if you do not have it yet (you can come back and fill it in later).
+4. For each student, enter:
+   - **CA Score** (Continuous Assessment) — out of 40
+   - **Exam Score** — out of 60
+   - The **Total** (out of 100) and **Grade** calculate automatically.
+   - Optionally add a **Remark** (a short note for that student's result).
 
-5. When you are finished entering scores, click the **"Save Results"** button at the bottom of the page.
+5. Click **"Save Results"** at the bottom.
 
-6. You will see a success message. The results are now saved and visible to students and parents.
+> **NOTE:** If you save results for the same student, exam, and subject more than once, the system updates the existing record instead of creating a duplicate. It is safe to save, then come back and correct a score.
 
-> **NOTE:** If you save results for the same student, exam, and subject more than once, the system automatically updates (overwrites) the previous score instead of creating a duplicate. So it is safe to save, then come back and change a score if needed.
-
-> **TIP:** Work one exam and one subject at a time. For example: complete all results for "Mathematics - First Term Exam", then do "English - First Term Exam", and so on.
+> **TIP:** Work one subject at a time — complete all scores for "Mathematics - First Term", then move on to "English - First Term", etc.
 
 ---
 
-## 2.3 — Viewing Your Assigned Students
+## 2.4 — Batch Report Comments (Teacher)
 
-### Viewing a Class
+The **Batch Comments** page lets you write the **Teacher's Comment** on multiple students' report cards at once.
+
+### Using Batch Comments
+
+1. From your dashboard, click **"Batch Comments"**.
+2. Select the **Exam** you are writing comments for.
+3. Select a **Class** (if you teach more than one).
+4. Students appear listed alphabetically.
+5. For each student, type your comment in the text box (e.g. "A hardworking student who shows great improvement", "Needs to improve participation in class").
+6. Click **"Save"** next to each student to save their comment.
+
+The teacher's comment will appear on the student's printed report card.
+
+> **TIP:** Start with students who need the most personalised feedback. You can always come back to finish the rest later — your saved comments are pre-loaded when you return to this page.
+
+---
+
+## 2.5 — Viewing Your Assigned Students
 
 From the Teacher Dashboard, click on any class card (e.g. "JSS 2 — 15 Students").
 
-You will see a table listing all students in that class who are assigned to you, including:
-- Student name
+You will see a list of all students in that class, sorted alphabetically. Each student shows:
+- Full name
 - Admission number
-- Class
 - Gender
+- Department (for SSS classes)
 
-This page is useful if you need to look up a student's admission number.
+You can also view the student's report card for a specific exam from this page by selecting an exam from the dropdown at the top.
 
 ---
 
@@ -484,7 +665,7 @@ This page is useful if you need to look up a student's admission number.
 
 # Part 3 — Parent Guide
 
-As a parent, you can see your children's results, view school announcements, and check your payment history — all in one place.
+As a parent, you can see your children's results, check fee balances, view payment history, and read school announcements — all in one place.
 
 ---
 
@@ -494,7 +675,7 @@ When you log in, you will see your **Parent Dashboard**.
 
 ### Announcements Banner
 
-If the school has posted any announcements for parents (or for everyone), you will see them in a highlighted box at the very top of the page. Each announcement shows a title and the message. Read these to stay informed about school updates.
+If the school has posted any announcements for parents (or for everyone), they will appear in a highlighted box at the very top of the page.
 
 ### Your Children
 
@@ -503,26 +684,24 @@ Below the announcements, you will see a card for each of your children enrolled 
 - Their class (e.g. JSS 3)
 - Their admission number
 
-From each child's card, you can click **"View Results"** to see their academic results.
+From each child's card, you can click:
+- **"View Results"** — to see their academic results and report cards
+- **"View Fees"** — to check their fee balance and make a payment
+- **"Payment History"** — to see all payments made for this child
 
 > **NOTE:** If you do not see your child listed, contact the school admin. The admin needs to link your child's student record to your parent account.
 
 ### Upcoming Events
 
-At the bottom of the dashboard, you will see upcoming school events — name, date, and location. This helps you plan ahead for sports days, parent-teacher meetings, prize-giving days, and more.
+At the bottom of the dashboard, you will see upcoming school events — name, date, and location.
 
 ---
 
 ## 3.2 — Viewing Your Child's Results
 
-1. On the Parent Dashboard, find the card for the child whose results you want to see.
-2. Click the **"View Results"** button on their card.
-3. You will be taken to a page showing a full table of all their recorded results, including:
-   - **Exam name** — which exam the result is for (e.g. "First Term Examination")
-   - **Term and Year** — e.g. First Term 2025
-   - **Subject** — e.g. Mathematics, English Language
-   - **Score** — their mark out of 100
-   - **Grade** — A, B, C, D, E, or F (calculated automatically from the score)
+1. On the Parent Dashboard, find your child's card and click **"View Results"**.
+2. You will see a table showing all published exam results, including:
+   - **Exam name**, **Term**, **Year**, **Subject**, **Score**, **Grade**, **Remarks**
 
 ### What the Grades Mean
 
@@ -535,30 +714,45 @@ At the bottom of the dashboard, you will see upcoming school events — name, da
 | E | 40 – 44 | Near Pass |
 | F | 0 – 39 | Fail |
 
-4. Click the **"Back"** button (or the arrow at the top left) to return to your dashboard.
+### Viewing the Report Card
+
+Each exam group has a **"View Report Card"** button. Clicking it opens a printable, formatted report card showing:
+- Student name, class, admission number
+- All subject scores and grades
+- Teacher's comment
+- Principal's remark
+- A print button to save or print the report
 
 ---
 
-## 3.3 — Viewing Payment History
+## 3.3 — Viewing Fee Balance and Paying
 
-The **Payments** page shows all payments you (or anyone) have made for your children.
+1. On the Parent Dashboard, click **"View Fees"** on your child's card.
+2. You will see:
+   - **Expected** — total fees for the current term
+   - **Scholarship** — any discount applied (if applicable)
+   - **Paid** — what has already been paid
+   - **Outstanding** — what still needs to be paid
+   - A **status badge**: Paid (green), Partial (yellow), or Unpaid (red)
+3. A breakdown shows each individual fee type (tuition, books, uniform, etc.) and its amount.
+4. If there is an outstanding balance, a **"Pay Now"** button appears.
+5. Click **"Pay Now"** — the Paystack payment window opens. Enter your card details and complete the payment.
+6. After payment, the balance updates automatically.
 
-### How to Get There
+### Payment History
 
-From the Parent Dashboard, click **"Payment History"** or look for the **"Payments"** link in the navigation menu.
+Below the fee summary, you will see a list of all payment transactions for this child, including the amount, type, status, date, and reference. Successful payments have a **"View Receipt"** link.
 
-### What You Will See
+---
 
-A list of all your payments, each showing:
-- **Amount** — in Nigerian Naira (₦)
-- **Payment type** — what the payment was for (e.g. Application Fee, School Fee)
-- **Status** — Paid (green), Pending (yellow), or Failed (red)
-- **Date** — when the payment was made
-- **Reference number** — the unique Paystack transaction ID
+## 3.4 — Viewing Payment History
 
-### Viewing a Receipt
+From the Parent Dashboard, click **"Payment History"** (or **"Payments"** in the navigation).
 
-Click on any payment row to open a **receipt popup**. The receipt shows the full details of that transaction including the payment reference, amount, date, and status. You can use this as proof of payment if needed.
+You will see a complete list of all your payments, each showing:
+- **Amount** (₦), **Type**, **Status**, **Method**, **Date**, **Reference**
+
+Click on any payment to view a receipt popup.
 
 ---
 
@@ -572,52 +766,35 @@ As a student, you can check your academic results, see upcoming school events, a
 
 ## 4.1 — The Student Dashboard
 
-When you log in, you will see your **Student Dashboard**. Here is what each section shows:
+When you log in, you will see your **Student Dashboard**.
 
 ### Your Profile Summary
 
-At the top of the dashboard, you will see:
-- Your class (e.g. SS 2)
-- Your admission number
+At the top: your class, admission number, and gender. If these are blank or incorrect, contact your school administrator.
 
-If these are blank or incorrect, contact your school administrator.
+### Fee Status Card
+
+Shows your current term fee status: **Expected**, **Paid**, **Outstanding**, and a **status badge** (Paid, Partial, or Unpaid).
 
 ### Recent Results
 
-The dashboard shows your **6 most recent results** in a table. Each row shows:
-- Subject name
-- Exam name
-- Your score (out of 100)
-- Your grade
-
-This is a quick preview. To see ALL your results, click the **"View All Results"** button.
-
-### Your Average Score
-
-A card on the dashboard shows your **current average score** across all your recent results. This gives you a quick idea of your overall performance.
+Shows your 6 most recent results with subject, exam, score, and grade. Click **"View All Results"** to see your complete results history.
 
 ### Upcoming Events
 
-At the bottom of the dashboard, you will see upcoming school events — name, date, and location. Keep an eye on this for exam dates, sports days, and special occasions.
+At the bottom: upcoming school events with dates and locations.
 
 ### School Announcements
 
-If the school has posted any announcements for students, they will appear on your dashboard. Read these carefully — they may contain important information like exam schedules, fee reminders, or holiday notices.
+Any announcements posted for students (or for everyone) appear on your dashboard. Read these for important notices about exams, fee deadlines, or school events.
 
 ---
 
 ## 4.2 — Viewing All Your Results
 
-1. On your Student Dashboard, click the **"View All Results"** button.
-2. You will be taken to a full results page showing every result recorded for you.
-3. Each row in the table shows:
-   - **Exam name** — which exam the result is from
-   - **Term** — First, Second, or Third term
-   - **Year** — the academic year
-   - **Subject** — the subject name and code
-   - **Score** — your mark out of 100
-   - **Grade** — A, B, C, D, E, or F
-   - **Remarks** — any notes your teacher added (optional)
+1. Click **"View All Results"** from your Student Dashboard.
+2. Your results are grouped by exam, showing all subjects with scores and grades.
+3. Each row shows: **Exam name**, **Term**, **Year**, **Subject**, **Score**, **Grade**, **Remarks**.
 
 ### What the Grades Mean
 
@@ -630,9 +807,11 @@ If the school has posted any announcements for students, they will appear on you
 | E | 40 – 44 | Near Pass |
 | F | 0 – 39 | Fail |
 
-4. Click the **"Back"** button or the arrow at the top left to return to your dashboard.
+### Viewing Your Report Card
 
-> **NOTE:** If you do not see any results yet, it means your teacher has not uploaded your results yet. Check back after your exams.
+Each exam group has a **"View / Print Report Card"** button. This opens a formatted, printable report card with all your subject scores, your teacher's comment, and the principal's remark.
+
+> **NOTE:** Only results from **published** exams are shown. If you cannot see an exam result yet, the admin may not have published it. Check again later.
 
 ---
 
@@ -648,13 +827,23 @@ These tips apply to all users regardless of your role.
 
 When you are done using the app, always log out — especially on a shared or public computer.
 
-1. Look at the top right corner of any page inside the portal (your dashboard or any page inside it).
-2. You will see either your name, a user icon, or a menu button.
-3. Click it to open a small menu.
-4. Click **"Sign Out"** or **"Log Out"**.
-5. You will be taken back to the school's public homepage and your session will be ended.
+1. Look at the top right corner of any page inside the portal.
+2. Click your name or the user icon to open a small menu.
+3. Click **"Sign Out"** or **"Log Out"**.
+4. You will be taken back to the school's public homepage and your session will be ended.
 
 > **TIP:** Always log out when using the website on a school computer, library computer, or any device that others can access.
+
+---
+
+## The Smart Navigation Bar
+
+The navigation bar at the top of the page is **smart**:
+- It stays at the top of the screen so you can always access it.
+- When you **scroll down**, it hides out of the way so you have more reading space.
+- When you **scroll up** (even slightly), it immediately reappears.
+
+This works on both the public website and inside the portal.
 
 ---
 
@@ -665,8 +854,8 @@ If a page shows an error message or does not load properly:
 1. **Refresh the page** — press `F5` on your keyboard (or `Ctrl+R` on Windows, `Cmd+R` on Mac). This solves most temporary problems.
 2. **Check your internet connection** — make sure you are connected to the internet.
 3. **Log out and log back in** — sometimes your login session expires. Log out, then log in again.
-4. **Try a different browser** — if the page works in one browser (e.g. Chrome) but not another (e.g. Edge), the issue is with your browser. Try Google Chrome or Mozilla Firefox.
-5. **Clear your browser cache** — sometimes old saved data causes problems. In Chrome: press `Ctrl+Shift+Delete`, tick "Cached images and files", and click "Clear data".
+4. **Try a different browser** — Google Chrome or Mozilla Firefox are recommended.
+5. **Clear your browser cache** — in Chrome: press `Ctrl+Shift+Delete`, tick "Cached images and files", and click "Clear data".
 
 If none of the above works, contact your school administrator.
 
@@ -693,29 +882,43 @@ If none of the above works, contact your school administrator.
 | Invite a user | Admin Dashboard → Users → Invite User |
 | Review applications | Admin Dashboard → Admissions |
 | See all payments | Admin Dashboard → Payments |
+| See outstanding fees | Admin Dashboard → Payments → Outstanding Fees tab |
+| Record a cash/bank payment | Admin Dashboard → Payments → Record Offline Payment |
+| Manage scholarships / fee waivers | Admin Dashboard → Scholarships |
+| View attendance records | Admin Dashboard → Attendance |
+| Write principal's report comments | Admin Dashboard → Batch Comments |
 | Write a news article | Admin Dashboard → News → New Post |
 | Add an event | Admin Dashboard → Events → New Event |
 | Post an announcement | Admin Dashboard → Announcements → New Announcement |
 | Upload a photo | Admin Dashboard → Gallery → Upload Image |
 | Add a subject | Admin Dashboard → Subjects |
 | Create an exam | Admin Dashboard → Exams |
+| Set current term and year | Admin Dashboard → Settings |
+| Promote students at year end | Admin Dashboard → Students → End-of-Year Promotion |
 
 ### Teacher
 | Feature | Where to find it |
 |---|---|
-| Upload student results | Teacher Dashboard → Upload Student Results (green button) |
+| Record today's attendance | Teacher Dashboard → Take Attendance |
+| Upload student results | Teacher Dashboard → Upload Results |
+| Write report card comments | Teacher Dashboard → Batch Comments |
 | View students in a class | Teacher Dashboard → click a class card |
 
 ### Parent
 | Feature | Where to find it |
 |---|---|
 | View child's results | Parent Dashboard → child card → View Results |
+| View child's report card | Parent Dashboard → View Results → View Report Card |
+| Check fee balance | Parent Dashboard → child card → View Fees |
+| Pay school fees online | Parent Dashboard → View Fees → Pay Now |
 | View payment history | Parent Dashboard → Payment History |
 
 ### Student
 | Feature | Where to find it |
 |---|---|
 | View all results | Student Dashboard → View All Results |
+| View / print report card | Student Dashboard → View All Results → View Report Card |
+| Check fee status | Student Dashboard (Fee Status card) |
 | See upcoming events | Student Dashboard (bottom of page) |
 
 ---

@@ -17,6 +17,7 @@ import {
   CalendarDays,
   ChevronDown,
   MessageSquare,
+  ClipboardCheck,
 } from 'lucide-react'
 
 type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused'
@@ -50,6 +51,7 @@ export default function TeacherAttendancePage() {
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [hasExistingRecords, setHasExistingRecords] = useState(false)
   const [currentTerm, setCurrentTerm] = useState('First')
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
 
@@ -88,9 +90,11 @@ export default function TeacherAttendancePage() {
       )
 
       // Pre-fill existing records
+      const existingRecords = (data.records || []) as { student_id: string; status: AttendanceStatus; notes?: string }[]
+      setHasExistingRecords(existingRecords.length > 0)
       const statusMap: Record<string, AttendanceStatus> = {}
       const notesMap: Record<string, string> = {}
-      for (const rec of (data.records || []) as { student_id: string; status: AttendanceStatus; notes?: string }[]) {
+      for (const rec of existingRecords) {
         statusMap[rec.student_id] = rec.status
         if (rec.notes) notesMap[rec.student_id] = rec.notes
       }
@@ -161,6 +165,7 @@ export default function TeacherAttendancePage() {
         toast({ title: 'Save failed', description: err.error || 'Could not save attendance', variant: 'destructive' })
         return
       }
+      setHasExistingRecords(true)
       toast({ title: 'Attendance saved', description: `Attendance for ${date} recorded in ${activeClass}.` })
     } finally {
       setSaving(false)
@@ -188,8 +193,8 @@ export default function TeacherAttendancePage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1.5">Date</label>
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
                   <input
                     type="date"
                     value={date}
@@ -198,6 +203,23 @@ export default function TeacherAttendancePage() {
                     data-testid="input-attendance-date"
                     className="border border-input rounded-md px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                   />
+                  {!loading && hasExistingRecords && (
+                    <Badge
+                      data-testid="badge-attendance-recorded"
+                      className="bg-green-100 text-green-700 border border-green-200 gap-1 text-xs"
+                    >
+                      <ClipboardCheck className="h-3 w-3" />
+                      Recorded
+                    </Badge>
+                  )}
+                  {!loading && !hasExistingRecords && students.length > 0 && (
+                    <Badge
+                      data-testid="badge-attendance-not-recorded"
+                      className="bg-amber-100 text-amber-700 border border-amber-200 gap-1 text-xs"
+                    >
+                      Not Recorded
+                    </Badge>
+                  )}
                 </div>
               </div>
 
