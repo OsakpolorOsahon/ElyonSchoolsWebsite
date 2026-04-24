@@ -175,7 +175,17 @@ export default function TeacherBatchCommentsPage() {
   const [affectiveRatings, setAffectiveRatings] = useState<Record<string, RatingsMap>>({})
   const [existingPsychomotor, setExistingPsychomotor] = useState<Record<string, RatingsMap>>({})
   const [existingAffective, setExistingAffective] = useState<Record<string, RatingsMap>>({})
-  const [activeTab, setActiveTab] = useState<Record<string, 'comments' | 'ratings'>>({})
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+
+  function toggleSection(studentId: string, section: 'psy' | 'aff') {
+    setExpandedSections(prev => {
+      const next = new Set(prev)
+      const key = `${studentId}:${section}`
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -406,10 +416,6 @@ export default function TeacherBatchCommentsPage() {
     })
   }
 
-  function setTab(studentId: string, tab: 'comments' | 'ratings') {
-    setActiveTab(prev => ({ ...prev, [studentId]: tab }))
-  }
-
   const changedCount = filteredStudents.filter(s => isStudentDirty(s.id)).length
   const selectedExamObj = exams.find(e => e.id === selectedExam)
 
@@ -476,7 +482,7 @@ export default function TeacherBatchCommentsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Exam *</Label>
-                <Select value={selectedExam} onValueChange={v => { setSelectedExam(v); setExpandedCards(new Set()); setActiveTab({}) }}>
+                <Select value={selectedExam} onValueChange={v => { setSelectedExam(v); setExpandedCards(new Set()); setExpandedSections(new Set()) }}>
                   <SelectTrigger data-testid="select-exam">
                     <SelectValue placeholder="Select exam..." />
                   </SelectTrigger>
@@ -555,9 +561,10 @@ export default function TeacherBatchCommentsPage() {
                   const isDirty = isStudentDirty(student.id)
                   const results = studentResults[student.id] || []
                   const isExpanded = expandedCards.has(student.id)
-                  const tab = activeTab[student.id] || 'comments'
                   const psy = psychomotorRatings[student.id] || {}
                   const aff = affectiveRatings[student.id] || {}
+                  const psyExpanded = expandedSections.has(`${student.id}:psy`)
+                  const affExpanded = expandedSections.has(`${student.id}:aff`)
 
                   return (
                     <Card key={student.id} className={isDirty ? 'border-amber-300 dark:border-amber-700' : ''}>
@@ -615,43 +622,19 @@ export default function TeacherBatchCommentsPage() {
                           </div>
                         )}
 
-                        {/* Tab switcher */}
-                        <div className="flex gap-0 mb-3 border-b">
+                        {/* Psychomotor Skills — collapsible subsection */}
+                        <div className="border border-border rounded mb-2">
                           <button
                             type="button"
-                            onClick={() => setTab(student.id, 'comments')}
-                            className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
-                              tab === 'comments' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
-                            }`}
+                            onClick={() => toggleSection(student.id, 'psy')}
+                            className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/40 transition-colors"
+                            data-testid={`toggle-psy-${student.id}`}
                           >
-                            Teacher&apos;s Comment
+                            <span>Psychomotor Skills</span>
+                            {psyExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setTab(student.id, 'ratings')}
-                            className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
-                              tab === 'ratings' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
-                            }`}
-                          >
-                            Psychomotor &amp; Affective Ratings
-                          </button>
-                        </div>
-
-                        {tab === 'comments' && (
-                          <Textarea
-                            placeholder="Enter your teacher's comment for this student..."
-                            value={comments[student.id] || ''}
-                            onChange={e => setComments(prev => ({ ...prev, [student.id]: e.target.value }))}
-                            rows={2}
-                            className="text-sm resize-none"
-                            data-testid={`textarea-comment-${student.id}`}
-                          />
-                        )}
-
-                        {tab === 'ratings' && (
-                          <div className="space-y-4">
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Psychomotor Skills (1–5)</p>
+                          {psyExpanded && (
+                            <div className="border-t px-3 py-3">
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 {PSYCHOMOTOR_LABELS.map(({ key, label }) => (
                                   <div key={key} className="flex items-center justify-between gap-2">
@@ -667,9 +650,24 @@ export default function TeacherBatchCommentsPage() {
                                   </div>
                                 ))}
                               </div>
+                              <p className="text-xs text-muted-foreground mt-2">1=Poor · 2=Fair · 3=Good · 4=Very Good · 5=Excellent</p>
                             </div>
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Affective Areas (1–5)</p>
+                          )}
+                        </div>
+
+                        {/* Affective Areas — collapsible subsection */}
+                        <div className="border border-border rounded mb-3">
+                          <button
+                            type="button"
+                            onClick={() => toggleSection(student.id, 'aff')}
+                            className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/40 transition-colors"
+                            data-testid={`toggle-aff-${student.id}`}
+                          >
+                            <span>Affective Areas</span>
+                            {affExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                          </button>
+                          {affExpanded && (
+                            <div className="border-t px-3 py-3">
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 {AFFECTIVE_LABELS.map(({ key, label }) => (
                                   <div key={key} className="flex items-center justify-between gap-2">
@@ -685,10 +683,23 @@ export default function TeacherBatchCommentsPage() {
                                   </div>
                                 ))}
                               </div>
+                              <p className="text-xs text-muted-foreground mt-2">1=Poor · 2=Fair · 3=Good · 4=Very Good · 5=Excellent</p>
                             </div>
-                            <p className="text-xs text-muted-foreground">1=Poor · 2=Fair · 3=Good · 4=Very Good · 5=Excellent</p>
-                          </div>
-                        )}
+                          )}
+                        </div>
+
+                        {/* Teacher's Comment — always visible */}
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">Teacher&apos;s Comment</p>
+                          <Textarea
+                            placeholder="Enter your teacher's comment for this student..."
+                            value={comments[student.id] || ''}
+                            onChange={e => setComments(prev => ({ ...prev, [student.id]: e.target.value }))}
+                            rows={2}
+                            className="text-sm resize-none"
+                            data-testid={`textarea-comment-${student.id}`}
+                          />
+                        </div>
                       </CardContent>
                     </Card>
                   )

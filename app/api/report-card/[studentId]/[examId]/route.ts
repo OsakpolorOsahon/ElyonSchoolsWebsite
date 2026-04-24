@@ -415,7 +415,9 @@ export async function POST(
       return NextResponse.json({ error: 'Access denied — you are not the class teacher for this student' }, { status: 403 })
     }
 
-    const { teacher_comment, psychomotor_ratings, affective_ratings } = body
+    const teacher_comment = body.teacher_comment
+    const psychomotor_ratings = body.psychomotor_ratings ?? body.psychomotor
+    const affective_ratings = body.affective_ratings ?? body.affective
 
     if (teacher_comment !== undefined) {
       if (typeof teacher_comment !== 'string') {
@@ -458,7 +460,9 @@ export async function POST(
   }
 
   if (role === 'admin') {
-    const { principal_comment, psychomotor_ratings, affective_ratings } = body
+    const principal_comment = body.principal_comment
+    const psychomotor_ratings = body.psychomotor_ratings ?? body.psychomotor
+    const affective_ratings = body.affective_ratings ?? body.affective
 
     if (principal_comment !== undefined) {
       if (typeof principal_comment !== 'string') {

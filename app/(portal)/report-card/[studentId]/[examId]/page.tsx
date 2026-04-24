@@ -579,108 +579,92 @@ export default function ReportCardPage() {
 
             {/* SECTION 3: PSYCHOMOTOR SKILLS */}
             <SectionHeader title="3. Psychomotor Skills" />
-            <div className="mb-6">
-              <table className="w-full border-collapse text-sm">
+            <div className="mb-2">
+              <table className="w-full border-collapse text-xs">
                 <thead>
                   <tr className="bg-green-700 text-white">
                     <th className="border border-green-800 px-3 py-2 text-left">Skill</th>
-                    <th className="border border-green-800 px-3 py-2 text-center">Rating (1-5)</th>
-                    <th className="border border-green-800 px-3 py-2 text-left">Remark</th>
+                    <th className="border border-green-800 px-2 py-2 text-center w-10">5</th>
+                    <th className="border border-green-800 px-2 py-2 text-center w-10">4</th>
+                    <th className="border border-green-800 px-2 py-2 text-center w-10">3</th>
+                    <th className="border border-green-800 px-2 py-2 text-center w-10">2</th>
+                    <th className="border border-green-800 px-2 py-2 text-center w-10">1</th>
                   </tr>
                 </thead>
                 <tbody>
                   {PSYCHOMOTOR_LABELS.map(({ key, label }, i) => (
                     <tr key={key} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="border border-gray-300 px-3 py-2 font-medium">{label}</td>
-                      <td className="border border-gray-300 px-3 py-2 text-center">
-                        {canEdit ? (
-                          <div className="flex justify-center" data-pdf-hide>
-                            <RatingInput
-                              value={psychomotor[key]}
-                              onChange={v => setPsychomotor(prev => ({ ...prev, [key]: v }))}
-                              testId={`rating-psychomotor-${key}`}
-                            />
-                          </div>
-                        ) : null}
-                        <span
-                          className={canEdit ? 'hidden' : ''}
-                          {...(canEdit ? { 'data-pdf-show': 'true' } : {})}
-                          data-testid={`display-psychomotor-${key}`}
+                      {[5, 4, 3, 2, 1].map(n => (
+                        <td
+                          key={n}
+                          className={`border border-gray-300 px-2 py-2 text-center ${canEdit ? 'cursor-pointer hover:bg-green-50' : ''}`}
+                          onClick={canEdit ? () => setPsychomotor(prev => ({ ...prev, [key]: psychomotor[key] === n ? null : n })) : undefined}
+                          data-testid={canEdit ? `rating-psychomotor-${key}-${n}` : undefined}
                         >
-                          <RatingDisplay value={psychomotor[key]} />
-                        </span>
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2 text-xs text-gray-500 italic">
-                        {psychomotor[key] ? RATING_LABELS[psychomotor[key] as number] : '—'}
-                      </td>
+                          {psychomotor[key] === n ? (
+                            <span className="text-green-700 font-bold text-base" data-testid={`display-psychomotor-${key}`}>✓</span>
+                          ) : null}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="mb-6 flex items-center justify-between text-xs text-gray-500">
+              <span>5=Excellent · 4=Very Good · 3=Good · 2=Fair · 1=Poor</span>
               {canEdit && (
-                <div className="mt-2 flex justify-end" data-pdf-hide>
-                  <Button size="sm" onClick={handleSaveRatings} disabled={savingRatings} className="gap-2" data-testid="button-save-psychomotor">
-                    {savingRatings ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    Save Ratings
-                  </Button>
-                </div>
+                <Button size="sm" onClick={handleSaveRatings} disabled={savingRatings} className="gap-2 ml-4" data-testid="button-save-psychomotor" data-pdf-hide>
+                  {savingRatings ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                  Save Ratings
+                </Button>
               )}
             </div>
 
             {/* SECTION 4: AFFECTIVE AREAS */}
             <SectionHeader title="4. Affective Areas (Character Assessment)" />
-            <div className="mb-6">
-              <table className="w-full border-collapse text-sm">
+            <div className="mb-2">
+              <table className="w-full border-collapse text-xs">
                 <thead>
                   <tr className="bg-green-700 text-white">
                     <th className="border border-green-800 px-3 py-2 text-left">Character Trait</th>
-                    <th className="border border-green-800 px-3 py-2 text-center">Rating (1-5)</th>
-                    <th className="border border-green-800 px-3 py-2 text-left">Remark</th>
+                    <th className="border border-green-800 px-2 py-2 text-center w-10">5</th>
+                    <th className="border border-green-800 px-2 py-2 text-center w-10">4</th>
+                    <th className="border border-green-800 px-2 py-2 text-center w-10">3</th>
+                    <th className="border border-green-800 px-2 py-2 text-center w-10">2</th>
+                    <th className="border border-green-800 px-2 py-2 text-center w-10">1</th>
                   </tr>
                 </thead>
                 <tbody>
                   {AFFECTIVE_LABELS.map(({ key, label }, i) => (
                     <tr key={key} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="border border-gray-300 px-3 py-2 font-medium">{label}</td>
-                      <td className="border border-gray-300 px-3 py-2 text-center">
-                        {canEdit ? (
-                          <div className="flex justify-center" data-pdf-hide>
-                            <RatingInput
-                              value={affective[key]}
-                              onChange={v => setAffective(prev => ({ ...prev, [key]: v }))}
-                              testId={`rating-affective-${key}`}
-                            />
-                          </div>
-                        ) : null}
-                        <span
-                          className={canEdit ? 'hidden' : ''}
-                          {...(canEdit ? { 'data-pdf-show': 'true' } : {})}
-                          data-testid={`display-affective-${key}`}
+                      {[5, 4, 3, 2, 1].map(n => (
+                        <td
+                          key={n}
+                          className={`border border-gray-300 px-2 py-2 text-center ${canEdit ? 'cursor-pointer hover:bg-green-50' : ''}`}
+                          onClick={canEdit ? () => setAffective(prev => ({ ...prev, [key]: affective[key] === n ? null : n })) : undefined}
+                          data-testid={canEdit ? `rating-affective-${key}-${n}` : undefined}
                         >
-                          <RatingDisplay value={affective[key]} />
-                        </span>
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2 text-xs text-gray-500 italic">
-                        {affective[key] ? RATING_LABELS[affective[key] as number] : '—'}
-                      </td>
+                          {affective[key] === n ? (
+                            <span className="text-green-700 font-bold text-base" data-testid={`display-affective-${key}`}>✓</span>
+                          ) : null}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {canEdit && (
-                <div className="mt-2 flex justify-end" data-pdf-hide>
-                  <Button size="sm" onClick={handleSaveRatings} disabled={savingRatings} className="gap-2" data-testid="button-save-affective">
-                    {savingRatings ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    Save Ratings
-                  </Button>
-                </div>
-              )}
             </div>
-
-            {/* RATING KEY */}
-            <div className="mb-6 text-xs text-gray-500 border border-gray-200 rounded px-3 py-2 bg-gray-50">
-              <span className="font-semibold">Rating Key:</span>{' '}
-              5 — Excellent &nbsp;|&nbsp; 4 — Very Good &nbsp;|&nbsp; 3 — Good &nbsp;|&nbsp; 2 — Fair &nbsp;|&nbsp; 1 — Poor
+            <div className="mb-6 flex items-center justify-between text-xs text-gray-500">
+              <span>5=Excellent · 4=Very Good · 3=Good · 2=Fair · 1=Poor</span>
+              {canEdit && (
+                <Button size="sm" onClick={handleSaveRatings} disabled={savingRatings} className="gap-2 ml-4" data-testid="button-save-affective" data-pdf-hide>
+                  {savingRatings ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                  Save Ratings
+                </Button>
+              )}
             </div>
 
             {/* SECTION 5: COMMENTS & SIGNATURES */}
