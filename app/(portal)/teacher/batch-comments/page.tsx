@@ -93,6 +93,43 @@ interface SubjectResult {
   grade: string | null
 }
 
+interface ResultRow {
+  student_id: string
+  ca_score: number | null
+  exam_score: number | null
+  score: number | null
+  grade: string | null
+  subjects: { name: string } | { name: string }[] | null
+}
+
+interface PsychomotorRow {
+  student_id: string
+  handwriting: number | null
+  verbal_fluency: number | null
+  games: number | null
+  sport: number | null
+  handling_tool: number | null
+  drawing_painting: number | null
+  musical_skills: number | null
+}
+
+interface AffectiveRow {
+  student_id: string
+  punctuality: number | null
+  neatness: number | null
+  politeness: number | null
+  honesty: number | null
+  cooperation: number | null
+  leadership: number | null
+  helping_others: number | null
+  emotional_stability: number | null
+  health: number | null
+  attitude_to_school_work: number | null
+  attentiveness: number | null
+  perseverance: number | null
+  speaking_handwriting: number | null
+}
+
 function RatingButtonGroup({ value, onChange, testId }: {
   value: number | null
   onChange: (v: number) => void
@@ -207,7 +244,7 @@ export default function TeacherBatchCommentsPage() {
       setComments(existing)
 
       const byStudent: Record<string, SubjectResult[]> = {}
-      for (const row of (resultsRes.data || []) as any[]) {
+      for (const row of (resultsRes.data || []) as ResultRow[]) {
         if (!myStudentIds.has(row.student_id)) continue
         if (!byStudent[row.student_id]) byStudent[row.student_id] = []
         byStudent[row.student_id].push({
@@ -224,7 +261,7 @@ export default function TeacherBatchCommentsPage() {
       setStudentResults(byStudent)
 
       const psyMap: Record<string, RatingsMap> = {}
-      for (const row of (psychomotorRes.data || []) as any[]) {
+      for (const row of (psychomotorRes.data || []) as PsychomotorRow[]) {
         if (!myStudentIds.has(row.student_id)) continue
         psyMap[row.student_id] = {
           handwriting: row.handwriting, verbal_fluency: row.verbal_fluency,
@@ -236,7 +273,7 @@ export default function TeacherBatchCommentsPage() {
       setPsychomotorRatings(psyMap)
 
       const affMap: Record<string, RatingsMap> = {}
-      for (const row of (affectiveRes.data || []) as any[]) {
+      for (const row of (affectiveRes.data || []) as AffectiveRow[]) {
         if (!myStudentIds.has(row.student_id)) continue
         affMap[row.student_id] = {
           punctuality: row.punctuality, neatness: row.neatness, politeness: row.politeness,

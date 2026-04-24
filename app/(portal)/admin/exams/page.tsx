@@ -275,6 +275,11 @@ export default function AdminExamsPage() {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">{exam.term} · {exam.year}</p>
+                        {exam.resumption_date && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            <span className="font-medium">Next Term Resumption:</span> {exam.resumption_date}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-1">

@@ -46,6 +46,8 @@ interface ResultRow {
   remarks: string | null
   subject_name: string
   subject_code: string
+  class_avg: number | null
+  subject_position: number | null
 }
 
 interface ReportData {
@@ -438,91 +440,141 @@ export default function ReportCardPage() {
 
             {/* SECTION 2: COGNITIVE ABILITY */}
             <SectionHeader title="2. Cognitive Ability (Academic Performance)" />
-            <table className="w-full border-collapse mb-6 text-sm" data-testid="table-results">
-              <thead>
-                <tr className="bg-green-700 text-white">
-                  <th className="border border-green-800 px-3 py-2 text-left">S/N</th>
-                  <th className="border border-green-800 px-3 py-2 text-left">Subject</th>
-                  <th className="border border-green-800 px-3 py-2 text-center">1st Half CA (40)</th>
-                  <th className="border border-green-800 px-3 py-2 text-center">2nd Half Exam (60)</th>
-                  <th className="border border-green-800 px-3 py-2 text-center">Final Total (100)</th>
-                  <th className="border border-green-800 px-3 py-2 text-center">Grade</th>
-                  <th className="border border-green-800 px-3 py-2 text-left">Remark</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r, i) => (
-                  <tr key={r.subject_code + i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="border border-gray-300 px-3 py-2 text-center">{i + 1}</td>
-                    <td className="border border-gray-300 px-3 py-2 font-medium">{r.subject_name}</td>
-                    <td className="border border-gray-300 px-3 py-2 text-center">
-                      {r.score !== null ? (r.ca_score ?? '—') : '—'}
-                    </td>
-                    <td className="border border-gray-300 px-3 py-2 text-center">
-                      {r.score !== null ? (r.exam_score ?? '—') : '—'}
-                    </td>
-                    <td className="border border-gray-300 px-3 py-2 text-center font-semibold">
-                      {r.score !== null ? r.score : '—'}
-                    </td>
-                    <td className="border border-gray-300 px-3 py-2 text-center font-bold">
-                      {r.score !== null ? (
-                        <span className={
-                          r.score >= 90 ? 'text-green-700' :
-                          r.score >= 80 ? 'text-blue-700' :
-                          r.score >= 70 ? 'text-blue-600' :
-                          r.score >= 60 ? 'text-yellow-700' :
-                          r.score >= 50 ? 'text-orange-600' :
-                          'text-red-600'
-                        }>
-                          {getGradeLetter(r.score)}
-                        </span>
-                      ) : '—'}
-                    </td>
-                    <td className="border border-gray-300 px-3 py-2 text-xs text-gray-600 italic">
-                      {r.score !== null ? getGradeRemark(r.score) : '—'}
-                    </td>
+            <div className="overflow-x-auto mb-2">
+              <table className="w-full border-collapse text-xs" data-testid="table-results" style={{ minWidth: '700px' }}>
+                <thead>
+                  <tr className="bg-green-700 text-white">
+                    <th className="border border-green-800 px-2 py-1.5 text-center" rowSpan={2}>S/N</th>
+                    <th className="border border-green-800 px-2 py-1.5 text-left" rowSpan={2}>Subject</th>
+                    <th className="border border-green-800 px-2 py-1 text-center" colSpan={2}>1st Half CA (/40)</th>
+                    <th className="border border-green-800 px-2 py-1 text-center" colSpan={2}>2nd Half Exam (/60)</th>
+                    <th className="border border-green-800 px-2 py-1 text-center" colSpan={2}>Final Result (/100)</th>
+                    <th className="border border-green-800 px-2 py-1.5 text-center" rowSpan={2}>Class Avg</th>
+                    <th className="border border-green-800 px-2 py-1.5 text-center" rowSpan={2}>Pos</th>
+                    <th className="border border-green-800 px-2 py-1.5 text-center" rowSpan={2}>Grade</th>
+                    <th className="border border-green-800 px-2 py-1.5 text-left" rowSpan={2}>Remark</th>
                   </tr>
-                ))}
-              </tbody>
-              {scoredResults.length > 0 && (
-                <tfoot>
-                  <tr className="bg-green-50 font-semibold">
-                    <td className="border border-gray-300 px-3 py-2" colSpan={4}>
-                      Total Score ({scoredResults.length} subject{scoredResults.length !== 1 ? 's' : ''})
-                    </td>
-                    <td className="border border-gray-300 px-3 py-2 text-center" data-testid="text-total-score">{totalScore}</td>
-                    <td className="border border-gray-300 px-3 py-2" colSpan={2}></td>
+                  <tr className="bg-green-700 text-white">
+                    <th className="border border-green-800 px-2 py-1 text-center">Obtainable</th>
+                    <th className="border border-green-800 px-2 py-1 text-center">Obtained</th>
+                    <th className="border border-green-800 px-2 py-1 text-center">Obtainable</th>
+                    <th className="border border-green-800 px-2 py-1 text-center">Obtained</th>
+                    <th className="border border-green-800 px-2 py-1 text-center">Obtainable</th>
+                    <th className="border border-green-800 px-2 py-1 text-center">Obtained</th>
                   </tr>
-                  <tr className="bg-green-50 font-semibold">
-                    <td className="border border-gray-300 px-3 py-2" colSpan={4}>
-                      Average Score
-                    </td>
-                    <td className="border border-gray-300 px-3 py-2 text-center text-green-800 text-base" data-testid="text-average">
-                      {average.toFixed(1)}%
-                    </td>
-                    <td className="border border-gray-300 px-3 py-2" colSpan={2}></td>
-                  </tr>
-                  <tr className="bg-green-50 font-semibold">
-                    <td className="border border-gray-300 px-3 py-2" colSpan={4}>
-                      Position in Class
-                    </td>
-                    <td className="border border-gray-300 px-3 py-2 text-center text-green-800 text-base" data-testid="text-position">
-                      {ordinal(position)} out of {pupils_in_class}
-                    </td>
-                    <td className="border border-gray-300 px-3 py-2" colSpan={2}></td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
+                </thead>
+                <tbody>
+                  {results.map((r, i) => (
+                    <tr key={r.subject_code + i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="border border-gray-300 px-2 py-1.5 text-center">{i + 1}</td>
+                      <td className="border border-gray-300 px-2 py-1.5 font-medium">{r.subject_name}</td>
+                      <td className="border border-gray-300 px-2 py-1.5 text-center text-gray-400">40</td>
+                      <td className="border border-gray-300 px-2 py-1.5 text-center">
+                        {r.score !== null ? (r.ca_score !== null ? r.ca_score : '—') : '—'}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1.5 text-center text-gray-400">60</td>
+                      <td className="border border-gray-300 px-2 py-1.5 text-center">
+                        {r.score !== null ? (r.exam_score !== null ? r.exam_score : '—') : '—'}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1.5 text-center text-gray-400">100</td>
+                      <td className="border border-gray-300 px-2 py-1.5 text-center font-semibold">
+                        {r.score !== null ? r.score : '—'}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1.5 text-center text-blue-700">
+                        {r.class_avg !== null ? r.class_avg : '—'}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1.5 text-center text-green-800 font-medium">
+                        {r.subject_position !== null ? ordinal(r.subject_position) : '—'}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1.5 text-center font-bold">
+                        {r.score !== null ? (
+                          <span className={
+                            r.score >= 90 ? 'text-green-700' :
+                            r.score >= 80 ? 'text-blue-700' :
+                            r.score >= 70 ? 'text-blue-600' :
+                            r.score >= 60 ? 'text-yellow-700' :
+                            r.score >= 50 ? 'text-orange-600' :
+                            'text-red-600'
+                          }>
+                            {getGradeLetter(r.score)}
+                          </span>
+                        ) : '—'}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1.5 text-gray-600 italic">
+                        {r.score !== null ? getGradeRemark(r.score) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                {scoredResults.length > 0 && (
+                  <tfoot>
+                    <tr className="bg-green-50 font-semibold">
+                      <td className="border border-gray-300 px-2 py-1.5" colSpan={6}>
+                        Total Score ({scoredResults.length} subject{scoredResults.length !== 1 ? 's' : ''})
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1.5 text-center">{scoredResults.length * 100}</td>
+                      <td className="border border-gray-300 px-2 py-1.5 text-center" data-testid="text-total-score">{totalScore}</td>
+                      <td className="border border-gray-300 px-2 py-1.5" colSpan={4}></td>
+                    </tr>
+                    <tr className="bg-green-50 font-semibold">
+                      <td className="border border-gray-300 px-2 py-1.5" colSpan={7}>
+                        Average Score
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1.5 text-center text-green-800" data-testid="text-average">
+                        {average.toFixed(1)}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1.5" colSpan={4}></td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
 
-            <div className="mb-6 text-xs text-gray-500 border border-gray-200 rounded px-3 py-2 bg-gray-50">
-              <span className="font-semibold">Grading Key:</span>{' '}
-              A (90-100) Excellent &nbsp;|&nbsp;
-              B+ (80-89) Very Good &nbsp;|&nbsp;
-              B (70-79) Good &nbsp;|&nbsp;
-              C (60-69) Fairly Good &nbsp;|&nbsp;
-              D (50-59) Fair &nbsp;|&nbsp;
-              E (0-49) Poor/Fail
+            {/* Footer Info Row */}
+            <div className="grid grid-cols-3 gap-0 mb-6 border border-gray-300 text-xs">
+              <div className="px-3 py-2 border-r border-gray-300">
+                <span className="font-semibold text-gray-600">No. of Pupils in Class: </span>
+                <span className="font-bold text-gray-800" data-testid="text-pupils-in-class">{pupils_in_class}</span>
+              </div>
+              <div className="px-3 py-2 border-r border-gray-300 text-center">
+                <span className="font-semibold text-gray-600">Position in Class: </span>
+                <span className="font-bold text-green-800" data-testid="text-position">{ordinal(position)}</span>
+              </div>
+              <div className="px-3 py-2">
+                <span className="font-semibold text-gray-600">Resumption Date for Next Term: </span>
+                <span className="font-medium text-gray-800" data-testid="text-resumption-footer">{exam.resumption_date || '—'}</span>
+              </div>
+            </div>
+
+            {/* INTERPRETATION OF RESULT TABLE */}
+            <div className="mb-6">
+              <table className="w-full border-collapse text-xs">
+                <thead>
+                  <tr className="bg-green-700 text-white">
+                    <th className="border border-green-800 px-2 py-1 text-center">S/NO</th>
+                    <th className="border border-green-800 px-2 py-1 text-center">100% Score</th>
+                    <th className="border border-green-800 px-2 py-1 text-center">Grade</th>
+                    <th className="border border-green-800 px-2 py-1 text-left">Comment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { range: '90 – 100', grade: 'A', comment: 'Excellent' },
+                    { range: '80 – 89', grade: 'B+', comment: 'Very Good' },
+                    { range: '70 – 79', grade: 'B', comment: 'Good' },
+                    { range: '60 – 69', grade: 'C', comment: 'Fairly Good' },
+                    { range: '50 – 59', grade: 'D', comment: 'Fair' },
+                    { range: '0 – 49', grade: 'E', comment: 'Poor / Fail' },
+                  ].map((row, i) => (
+                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="border border-gray-300 px-2 py-1 text-center">{i + 1}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-center">{row.range}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-center font-bold">{row.grade}</td>
+                      <td className="border border-gray-300 px-2 py-1">{row.comment}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
             {/* SECTION 3: PSYCHOMOTOR SKILLS */}
@@ -699,6 +751,23 @@ export default function ReportCardPage() {
                 >
                   {comment || '—'}
                 </p>
+              </div>
+
+              {/* Parent/Guardian Comment */}
+              <div>
+                <p className="text-sm font-semibold text-gray-600 mb-1">Parent&apos;s / Guardian&apos;s Comment:</p>
+                <div className="border-b border-dotted border-gray-400 min-h-[24px] pb-1 mb-1" />
+                <div className="border-b border-dotted border-gray-400 min-h-[24px] pb-1 mb-1" />
+                <div className="mt-2 flex items-center gap-8">
+                  <div className="flex-1">
+                    <div className="border-b border-gray-300 mt-6 mb-1"></div>
+                    <p className="text-xs text-gray-500">Parent / Guardian Signature</p>
+                  </div>
+                  <div className="flex-1">
+                    <div className="border-b border-gray-300 mt-6 mb-1"></div>
+                    <p className="text-xs text-gray-500">Date</p>
+                  </div>
+                </div>
               </div>
 
               {/* Teacher name and Principal signature */}

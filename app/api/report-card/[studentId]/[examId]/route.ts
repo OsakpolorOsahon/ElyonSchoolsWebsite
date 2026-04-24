@@ -26,13 +26,28 @@ interface SubjectRow {
 
 interface ResultRow {
   id: string
-  score: number
+  score: number | null
   ca_score: number | null
   exam_score: number | null
   grade: string | null
   remarks: string | null
   subject_id: string
   subjects: { id: string; name: string; code: string }[] | null
+}
+
+interface AttendanceRow {
+  date: string
+  status: string
+}
+
+interface DateRow {
+  date: string
+}
+
+interface PeerSubjectRow {
+  student_id: string
+  subject_id: string
+  score: number | null
 }
 
 const SSS_CLASSES = new Set(['SSS 1', 'SSS 2', 'SSS 3'])
@@ -135,14 +150,25 @@ export async function GET(
     }
   }
 
+  // Pre-fetch all active students in the class (needed for pupils_in_class, attendance dates, and peer results)
+  const { data: classStudentsData } = await adminDb
+    .from('students')
+    .select('id')
+    .eq('class', student.class)
+    .eq('status', 'active')
+
+  const classStudentIds = (classStudentsData || []).map(s => s.id as string)
+  const pupilsInClass = Math.max(classStudentIds.length, 1)
+
   const [
     resultsRes,
     subjectsRes,
     settingsRes,
     commentRes,
     classTeacherRes,
-    attendanceRes,
-    classStudentsRes,
+    studentAttendanceRes,
+    classAttendanceDatesRes,
+    peerSubjectResultsRes,
     psychomotorRes,
     affectiveRes,
   ] = await Promise.all([
@@ -172,19 +198,30 @@ export async function GET(
       .select('teacher_profile_id, profiles!teacher_profile_id(full_name)')
       .eq('class', student.class)
       .single(),
+    // This student's individual attendance (for times_present and times_punctual)
     adminDb
       .from('attendance_records')
       .select('date, status')
       .eq('student_id', studentId)
       .eq('term', exam.term)
       .eq('year', exam.year),
-    adminDb
-      .from('student_results')
-      .select('student_id, score')
-      .eq('exam_id', examId)
-      .in('student_id',
-        (await adminDb.from('students').select('id').eq('class', student.class).eq('status', 'active')).data?.map(s => s.id) || []
-      ),
+    // Class-level attendance dates (for times_opened = how many days the school ran)
+    classStudentIds.length > 0
+      ? adminDb
+          .from('attendance_records')
+          .select('date')
+          .in('student_id', classStudentIds)
+          .eq('term', exam.term)
+          .eq('year', exam.year)
+      : Promise.resolve({ data: [] as DateRow[], error: null }),
+    // All subject results for class peers (for per-subject class averages and position)
+    classStudentIds.length > 0
+      ? adminDb
+          .from('student_results')
+          .select('student_id, subject_id, score')
+          .eq('exam_id', examId)
+          .in('student_id', classStudentIds)
+      : Promise.resolve({ data: [] as PeerSubjectRow[], error: null }),
     adminDb
       .from('psychomotor_ratings')
       .select('*')
@@ -219,41 +256,63 @@ export async function GET(
   })
 
   const resultsBySubjectId = new Map(results.map(r => [r.subject_id, r]))
+  const peerSubjectRows = (peerSubjectResultsRes.data || []) as PeerSubjectRow[]
+
+  // Build per-subject peer score map for class averages and subject positions
+  const subjectPeerScoresMap: Record<string, number[]> = {}
+  for (const row of peerSubjectRows) {
+    if (row.score === null) continue
+    if (!subjectPeerScoresMap[row.subject_id]) subjectPeerScoresMap[row.subject_id] = []
+    subjectPeerScoresMap[row.subject_id].push(row.score)
+  }
 
   const assembledResults = applicableSubjects.map(subject => {
     const result = resultsBySubjectId.get(subject.id)
+    const subjectScore = result && result.score !== null ? result.score : null
+    const subjectPeerScores = subjectPeerScoresMap[subject.id] || []
+    const classAvg = subjectPeerScores.length > 0
+      ? Math.round((subjectPeerScores.reduce((a, b) => a + b, 0) / subjectPeerScores.length) * 10) / 10
+      : null
+    const subjectPosition = subjectScore !== null && subjectPeerScores.length > 0
+      ? subjectPeerScores.filter(s => s > subjectScore).length + 1
+      : null
     return {
       id: result?.id || null,
       subject_name: subject.name,
       subject_code: subject.code,
-      ca_score: result ? Number(result.ca_score ?? 0) : null,
-      exam_score: result ? Number(result.exam_score ?? 0) : null,
-      score: result ? Number(result.score) : null,
+      ca_score: result ? (result.ca_score !== null ? Number(result.ca_score) : null) : null,
+      exam_score: result ? (result.exam_score !== null ? Number(result.exam_score) : null) : null,
+      score: subjectScore,
       grade: result?.grade || null,
       remarks: result?.remarks || null,
+      class_avg: classAvg,
+      subject_position: subjectPosition,
     }
   })
 
-  const attendanceRows = (attendanceRes.data || []) as Array<{ date: string; status: string }>
-  const distinctDates = new Set(attendanceRows.map(r => r.date))
-  const timesOpened = distinctDates.size
-  const timesPresent = attendanceRows.filter(r => r.status === 'present' || r.status === 'late').length
-  const timesPunctual = attendanceRows.filter(r => r.status === 'present').length
+  // Attendance: class-level opened days (any distinct date any class member had a record)
+  const studentAttendanceRows = (studentAttendanceRes.data || []) as AttendanceRow[]
+  const classDateRows = (classAttendanceDatesRes.data || []) as DateRow[]
+  const distinctClassDates = new Set(classDateRows.map(r => r.date))
+  const timesOpened = distinctClassDates.size
+  const timesPresent = studentAttendanceRows.filter(r => r.status === 'present' || r.status === 'late').length
+  const timesPunctual = studentAttendanceRows.filter(r => r.status === 'present').length
 
-  const peerRows = (classStudentsRes.data || []) as Array<{ student_id: string; score: number }>
-  const peerAvgMap: Record<string, number[]> = {}
-  for (const row of peerRows) {
-    if (!peerAvgMap[row.student_id]) peerAvgMap[row.student_id] = []
-    peerAvgMap[row.student_id].push(Number(row.score))
+  // Overall position: compute per-student average across all subjects (null-safe)
+  const peerOverallAvgMap: Record<string, number[]> = {}
+  for (const row of peerSubjectRows) {
+    if (row.score === null) continue
+    if (!peerOverallAvgMap[row.student_id]) peerOverallAvgMap[row.student_id] = []
+    peerOverallAvgMap[row.student_id].push(row.score)
   }
-  const myResultScores = results.map(r => Number(r.score))
-  const myAvg = myResultScores.length > 0 ? myResultScores.reduce((a, b) => a + b, 0) / myResultScores.length : 0
-  const peerAvgs = Object.values(peerAvgMap).map(scores =>
-    scores.reduce((a, b) => a + b, 0) / scores.length
-  )
-  const pupilsInClass = Math.max(peerAvgs.length, 1)
-  const higherCount = peerAvgs.filter(avg => avg > myAvg).length
-  const position = higherCount + 1
+  const myScores = results.map(r => r.score).filter((s): s is number => s !== null)
+  const myAvg = myScores.length > 0 ? myScores.reduce((a, b) => a + b, 0) / myScores.length : null
+  const peerAvgs = Object.values(peerOverallAvgMap)
+    .filter(scores => scores.length > 0)
+    .map(scores => scores.reduce((a, b) => a + b, 0) / scores.length)
+  const position = myAvg !== null
+    ? peerAvgs.filter(avg => avg > myAvg).length + 1
+    : pupilsInClass
 
   const psychomotorData = psychomotorRes.data as Record<string, number | null> | null
   const affectiveData = affectiveRes.data as Record<string, number | null> | null
