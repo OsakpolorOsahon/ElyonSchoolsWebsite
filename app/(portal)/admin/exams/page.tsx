@@ -21,6 +21,7 @@ interface Exam {
   year: number
   published: boolean
   created_at: string
+  resumption_date?: string | null
 }
 
 const currentYear = new Date().getFullYear()
@@ -32,12 +33,12 @@ export default function AdminExamsPage() {
   const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [profile, setProfile] = useState<any>(null)
-  const [form, setForm] = useState({ name: '', term: '', year: String(currentYear) })
+  const [form, setForm] = useState({ name: '', term: '', year: String(currentYear), resumption_date: '' })
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Exam | null>(null)
-  const [editForm, setEditForm] = useState({ name: '', term: '', year: String(currentYear) })
+  const [editForm, setEditForm] = useState({ name: '', term: '', year: String(currentYear), resumption_date: '' })
   const [editSaving, setEditSaving] = useState(false)
 
   useEffect(() => {
@@ -71,10 +72,11 @@ export default function AdminExamsPage() {
         term: form.term,
         year: parseInt(form.year),
         published: false,
+        resumption_date: form.resumption_date.trim() || null,
       })
       if (error) throw error
       toast({ title: 'Exam created', description: `${form.name} has been added (unpublished).` })
-      setForm({ name: '', term: '', year: String(currentYear) })
+      setForm({ name: '', term: '', year: String(currentYear), resumption_date: '' })
       await load()
     } catch (err: any) {
       toast({ title: 'Error', description: err.message || 'Failed to create exam', variant: 'destructive' })
@@ -101,7 +103,7 @@ export default function AdminExamsPage() {
 
   const openEditDialog = (exam: Exam) => {
     setEditTarget(exam)
-    setEditForm({ name: exam.name, term: exam.term, year: String(exam.year) })
+    setEditForm({ name: exam.name, term: exam.term, year: String(exam.year), resumption_date: exam.resumption_date || '' })
     setEditOpen(true)
   }
 
@@ -120,7 +122,12 @@ export default function AdminExamsPage() {
       const supabase = createClient()
       const { error } = await supabase
         .from('exams')
-        .update({ name: editForm.name.trim(), term: editForm.term, year: parseInt(editForm.year) })
+        .update({
+          name: editForm.name.trim(),
+          term: editForm.term,
+          year: parseInt(editForm.year),
+          resumption_date: editForm.resumption_date.trim() || null,
+        })
         .eq('id', editTarget.id)
       if (error) throw error
       toast({ title: 'Exam updated', description: `${editForm.name} has been saved.` })
@@ -216,6 +223,16 @@ export default function AdminExamsPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="resumption_date">Next Term Resumption Date</Label>
+                <Input
+                  id="resumption_date"
+                  placeholder="e.g. Monday, 19th January, 2026"
+                  value={form.resumption_date}
+                  onChange={e => setForm(f => ({ ...f, resumption_date: e.target.value }))}
+                  data-testid="input-exam-resumption-date"
+                />
               </div>
               <div className="sm:col-span-3">
                 <Button type="submit" disabled={isSubmitting} className="gap-2" data-testid="button-create-exam">
@@ -350,6 +367,16 @@ export default function AdminExamsPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-resumption-date">Next Term Resumption Date</Label>
+              <Input
+                id="edit-resumption-date"
+                placeholder="e.g. Monday, 19th January, 2026"
+                value={editForm.resumption_date}
+                onChange={e => setEditForm(f => ({ ...f, resumption_date: e.target.value }))}
+                data-testid="input-edit-resumption-date"
+              />
             </div>
           </div>
           <DialogFooter>
